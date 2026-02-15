@@ -13,14 +13,14 @@ Route::get('/status-pages/public/{slug}', [StatusPageApiController::class, 'publ
 
 // Authenticated API routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('monitors', MonitorApiController::class);
+    Route::apiResource('monitors', MonitorApiController::class)->names('api.monitors');
     Route::post('/monitors/{monitor}/pause', [MonitorApiController::class, 'pause'])->name('api.monitors.pause');
     Route::post('/monitors/{monitor}/resume', [MonitorApiController::class, 'resume'])->name('api.monitors.resume');
     Route::get('/monitors/{monitor}/checks', [MonitorApiController::class, 'checks'])->name('api.monitors.checks');
 
-    Route::apiResource('notification-channels', NotificationChannelApiController::class);
+    Route::apiResource('notification-channels', NotificationChannelApiController::class)->names('api.notification-channels');
 
-    Route::apiResource('status-pages', StatusPageApiController::class);
+    Route::apiResource('status-pages', StatusPageApiController::class)->names('api.status-pages');
 
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store']);
     Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy']);
