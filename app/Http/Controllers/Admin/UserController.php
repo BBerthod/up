@@ -1,75 +1,95 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreUserRequest;
-use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
-        $users = User::with('team')->paginate(15);
+        $users = User::with('team')
+            ->paginate(15)
+            ->through(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->is_admin ? 'admin' : 'member',
+                'created_at' => $user->created_at,
+                'team' => $user->team,
+            ]);
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
         ]);
     }
 
-    public function create(Request $request)
+    public function create(Request $request): Response
     {
         return Inertia::render('Admin/Users/Create', [
-            'assignableRoles' => $this->assignableRoles($request->user()),
+            'assignableRoles' => $this->getAssignableRoles(),
         ]);
     }
 
-    public function store(StoreUserRequest $request)
+    public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validated();
-        $role = UserRole::from($validated['role'] ?? UserRole::MEMBER->value);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|confirmed|min:8',
+            'role' => 'sometimes|string|in:admin,member',
+        ]);
 
-        DB::transaction(function () use ($validated, $role) {
+        DB::transaction(function () use ($validated) {
             $team = Team::create([
                 'name' => $validated['name']."'s Team",
             ]);
 
-            $user = User::create([
+            User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'team_id' => $team->id,
+                'is_admin' => ($validated['role'] ?? 'member') === 'admin',
             ]);
-
-            $user->role = $role;
-            $user->save();
         });
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
-    public function edit(Request $request, User $user)
+    public function edit(Request $request, User $user): Response
     {
-        $actor = $request->user();
-        $canChangeRole = $actor->role->level() > $user->role->level() || $actor->id === $user->id && $actor->isSuperAdmin();
-
         return Inertia::render('Admin/Users/Edit', [
-            'user' => $user->load('team'),
-            'assignableRoles' => $this->assignableRoles($actor),
-            'canChangeRole' => $canChangeRole,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->is_admin ? 'admin' : 'member',
+                'team' => $user->team,
+            ],
+            'assignableRoles' => $this->getAssignableRoles(),
+            'canChangeRole' => $request->user()->id !== $user->id,
         ]);
     }
 
-    public function update(UpdateUserRequest $request, User $user)
+    public function update(Request $request, User $user): RedirectResponse
     {
-        $validated = $request->validated();
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'password' => 'nullable|string|confirmed|min:8',
+            'role' => 'sometimes|string|in:admin,member',
+        ]);
 
         $updateData = [
             'name' => $validated['name'],
@@ -80,29 +100,19 @@ class UserController extends Controller
             $updateData['password'] = Hash::make($validated['password']);
         }
 
-        $user->update($updateData);
-
-        if (isset($validated['role'])) {
-            $actor = $request->user();
-            $newRole = UserRole::from($validated['role']);
-
-            if (in_array($newRole, $actor->role->assignableRoles())) {
-                $user->role = $newRole;
-                $user->save();
-            }
+        if (isset($validated['role']) && $request->user()->id !== $user->id) {
+            $updateData['is_admin'] = $validated['role'] === 'admin';
         }
+
+        $user->update($updateData);
 
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    public function destroy(Request $request, User $user)
+    public function destroy(Request $request, User $user): RedirectResponse
     {
         if ($user->id === $request->user()->id) {
             return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own account.');
-        }
-
-        if ($user->role->level() >= $request->user()->role->level()) {
-            return redirect()->route('admin.users.index')->with('error', 'You cannot delete a user with equal or higher role.');
         }
 
         $teamId = $user->team_id;
@@ -116,11 +126,11 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
     }
 
-    private function assignableRoles(User $actor): array
+    private function getAssignableRoles(): array
     {
-        return array_map(fn (UserRole $r) => [
-            'value' => $r->value,
-            'label' => $r->label(),
-        ], $actor->role->assignableRoles());
+        return [
+            ['value' => 'member', 'label' => 'Member'],
+            ['value' => 'admin', 'label' => 'Admin'],
+        ];
     }
 }
