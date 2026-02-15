@@ -17,8 +17,10 @@ Route::redirect('/', '/dashboard');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
-    Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirectToProvider'])->name('oauth.redirect');
-    Route::get('/auth/{provider}/callback', [OAuthController::class, 'handleProviderCallback'])->name('oauth.callback');
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirectToProvider'])->name('oauth.redirect');
+        Route::get('/auth/{provider}/callback', [OAuthController::class, 'handleProviderCallback'])->name('oauth.callback');
+    });
 });
 
 Route::middleware('auth')->group(function () {

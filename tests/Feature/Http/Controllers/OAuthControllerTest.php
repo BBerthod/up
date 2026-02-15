@@ -64,4 +64,23 @@ class OAuthControllerTest extends TestCase
         $this->assertEquals('google', $user->oauth_provider);
         $this->assertEquals('12345', $user->oauth_id);
     }
+
+    public function test_oauth_callback_rejects_different_provider(): void
+    {
+        $team = Team::factory()->create();
+        User::factory()->create([
+            'email' => 'test@example.com',
+            'team_id' => $team->id,
+            'oauth_provider' => 'google',
+            'oauth_id' => '12345',
+        ]);
+
+        $this->mockSocialiteCallback('github', 'test@example.com', '67890');
+
+        $response = $this->get('/auth/github/callback');
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('error');
+        $this->assertGuest();
+    }
 }

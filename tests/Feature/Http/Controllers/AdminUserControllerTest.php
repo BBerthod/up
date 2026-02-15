@@ -130,4 +130,16 @@ class AdminUserControllerTest extends TestCase
 
         $response->assertSessionHasErrors(['email']);
     }
+
+    public function test_admin_cannot_delete_self(): void
+    {
+        $admin = $this->createAdmin();
+
+        $response = $this->actingAs($admin)->delete(route('admin.users.destroy', $admin));
+
+        $response->assertRedirect(route('admin.users.index'));
+        $response->assertSessionHas('error');
+
+        $this->assertDatabaseHas('users', ['id' => $admin->id]);
+    }
 }

@@ -35,10 +35,18 @@ class OAuthController extends Controller
                 ->with('error', 'No account found for this email. Please contact your administrator.');
         }
 
-        $user->update([
-            'oauth_provider' => $provider,
-            'oauth_id' => $socialiteUser->getId(),
-        ]);
+        if ($user->oauth_provider && $user->oauth_provider !== $provider) {
+            return redirect()
+                ->route('login')
+                ->with('error', 'This account is linked to a different provider. Please use '.$user->oauth_provider.' to log in.');
+        }
+
+        if (! $user->oauth_provider) {
+            $user->update([
+                'oauth_provider' => $provider,
+                'oauth_id' => $socialiteUser->getId(),
+            ]);
+        }
 
         Auth::login($user, true);
 

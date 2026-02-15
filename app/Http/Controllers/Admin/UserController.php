@@ -39,13 +39,15 @@ class UserController extends Controller
                 'name' => $validated['name']."'s Team",
             ]);
 
-            User::create([
+            $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'team_id' => $team->id,
-                'is_admin' => false,
             ]);
+
+            $user->is_admin = false;
+            $user->save();
         });
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
@@ -80,8 +82,12 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
+        if ($user->id === $request->user()->id) {
+            return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own account.');
+        }
+
         $teamId = $user->team_id;
 
         $user->delete();
