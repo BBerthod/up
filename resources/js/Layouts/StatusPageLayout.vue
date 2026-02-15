@@ -5,7 +5,7 @@ defineProps<{
 </script>
 
 <template>
-    <div :class="theme === 'light' ? 'bg-gray-50 min-h-screen' : 'bg-[#0a0f1a] min-h-screen'">
+    <div :class="theme === 'light' ? 'bg-gray-50 min-h-screen' : 'bg-navy min-h-screen'">
         <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-3xl">
                 <main>

@@ -57,7 +57,7 @@ const testChannel = (channel: Channel) => {
             <div v-for="channel in channels" :key="channel.id" class="glass p-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div :class="['status-dot', channel.is_active ? 'online' : '']" :style="!channel.is_active ? 'background-color: #64748b' : ''" />
+                        <div :class="['status-dot', channel.is_active ? 'online' : '']" :style="!channel.is_active ? 'background-color: var(--color-muted)' : ''" />
                         <div>
                             <p class="text-white font-medium">{{ channel.name }}</p>
                             <span :class="['px-2 py-0.5 rounded-full text-xs font-medium uppercase', typeColors[channel.type] || 'bg-slate-500/20 text-slate-400']">{{ channel.type }}</span>
