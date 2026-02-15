@@ -48,4 +48,13 @@ class NotificationChannelFactory extends Factory
             'settings' => ['webhook_url' => 'https://discord.com/api/webhooks/00/XXX'],
         ]);
     }
+
+    public function telegram(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => 'Test Telegram',
+            'type' => ChannelType::TELEGRAM,
+            'settings' => ['bot_token' => '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11', 'chat_id' => '-1001234567890'],
+        ]);
+    }
 }

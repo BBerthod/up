@@ -9,4 +9,5 @@ enum ChannelType: string
     case SLACK = 'slack';
     case DISCORD = 'discord';
     case PUSH = 'push';
+    case TELEGRAM = 'telegram';
 }
