@@ -31,7 +31,10 @@ class TeamSettingsController extends Controller
         $validated = $request->validate(['name' => 'required|string|max:255']);
         $token = $request->user()->createToken($validated['name']);
 
-        return back()->with('success', 'API Token: '.$token->plainTextToken);
+        return back()->with([
+            'success' => 'API Token created successfully.',
+            'newToken' => $token->plainTextToken,
+        ]);
     }
 
     public function deleteToken(Request $request, int $tokenId): RedirectResponse

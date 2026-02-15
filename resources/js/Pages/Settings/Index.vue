@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm, usePage, router } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { usePushNotifications } from '@/Composables/usePushNotifications'
 
 interface Member { id: number; name: string; email: string; created_at: string }
@@ -23,6 +23,22 @@ const deleteToken = (id: number) => { if (confirm('Revoke this token?')) router.
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
+const newToken = ref<string | null>(null)
+const copied = ref(false)
+
+watch(flash, (val) => {
+    if (val?.newToken) newToken.value = val.newToken
+}, { immediate: true })
+
+const copyToken = async () => {
+    if (!newToken.value) return
+    await navigator.clipboard.writeText(newToken.value)
+    copied.value = true
+    setTimeout(() => copied.value = false, 2000)
+}
+
+const dismissToken = () => { newToken.value = null }
+
 const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = usePushNotifications()
 </script>
 
@@ -34,6 +50,17 @@ const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = 
 
         <div v-if="flash?.success" class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
             {{ flash.success }}
+        </div>
+
+        <div v-if="newToken" class="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-amber-400 text-sm font-medium">Copy this token now. It won't be shown again.</p>
+                <button @click="dismissToken" class="text-slate-500 hover:text-slate-300 transition-colors">&times;</button>
+            </div>
+            <div class="flex items-center gap-2">
+                <input :value="newToken" readonly class="form-input w-full font-mono text-sm bg-white/5" />
+                <button @click="copyToken" class="btn-primary whitespace-nowrap text-sm">{{ copied ? 'Copied!' : 'Copy' }}</button>
+            </div>
         </div>
 
         <div class="glass p-6">
