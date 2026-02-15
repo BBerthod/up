@@ -9,7 +9,10 @@ use App\Enums\MonitorType;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
+use App\Services\Checkers\DnsChecker;
 use App\Services\Checkers\HttpChecker;
+use App\Services\Checkers\PingChecker;
+use App\Services\Checkers\PortChecker;
 
 class CheckService
 {
@@ -69,7 +72,9 @@ class CheckService
     {
         return $this->checkers[$type->value] ??= match ($type) {
             MonitorType::HTTP => new HttpChecker,
-            default => throw new \InvalidArgumentException("No checker for monitor type: {$type->value}"),
+            MonitorType::PING => new PingChecker,
+            MonitorType::PORT => new PortChecker,
+            MonitorType::DNS => new DnsChecker,
         };
     }
 
