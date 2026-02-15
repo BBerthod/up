@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Http\Request;
+use Inertia\Middleware;
+
+class HandleInertiaRequests extends Middleware
+{
+    protected $rootView = 'app';
+
+    public function share(Request $request): array
+    {
+        return array_merge(parent::share($request), [
+            'auth' => fn () => $this->getAuthData(),
+        ]);
+    }
+
+    private function getAuthData(): array
+    {
+        $user = auth()->user();
+
+        if ($user === null) {
+            return ['user' => null, 'team' => null];
+        }
+
+        return [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'team' => $user->team ? [
+                'id' => $user->team->id,
+                'name' => $user->team->name,
+            ] : null,
+        ];
+    }
+}
