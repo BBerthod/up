@@ -17,6 +17,11 @@ FROM node:20-alpine AS assets
 
 WORKDIR /var/www/html
 
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT=443
+ARG VITE_REVERB_SCHEME=https
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
