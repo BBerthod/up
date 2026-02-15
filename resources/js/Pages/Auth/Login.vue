@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3'
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 
@@ -8,6 +8,8 @@ defineOptions({ layout: GuestLayout })
 const flash = computed(() => (usePage().props as any).flash)
 
 const showPassword = ref(false)
+const rateLimited = ref(false)
+const cooldown = ref(0)
 
 const form = useForm({
     email: '',
@@ -18,6 +20,17 @@ const form = useForm({
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
+        onError: () => {
+            rateLimited.value = true
+            cooldown.value = 5
+            const interval = setInterval(() => {
+                cooldown.value--
+                if (cooldown.value <= 0) {
+                    rateLimited.value = false
+                    clearInterval(interval)
+                }
+            }, 1000)
+        },
     })
 }
 </script>
@@ -46,6 +59,7 @@ const submit = () => {
                 </button>
             </div>
             <p v-if="form.errors.password" class="mt-2 text-sm text-red-400">{{ form.errors.password }}</p>
+            <Link :href="route('password.request')" class="inline-block mt-2 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Forgot password?</Link>
         </div>
 
         <div class="flex items-center">
@@ -55,8 +69,9 @@ const submit = () => {
             </label>
         </div>
 
-        <button type="submit" :disabled="form.processing" class="w-full py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50">
-            Sign in
+        <button type="submit" :disabled="form.processing || rateLimited" class="w-full py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50">
+            <template v-if="rateLimited">Try again in {{ cooldown }}s</template>
+            <template v-else>Sign in</template>
         </button>
     </form>
 

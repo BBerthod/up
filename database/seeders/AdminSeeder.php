@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -25,13 +26,15 @@ class AdminSeeder extends Seeder
                 'name' => "{$adminName}'s Team",
             ]);
 
-            User::create([
+            $user = User::create([
                 'name' => $adminName,
                 'email' => $adminEmail,
                 'password' => Hash::make($adminPassword),
                 'team_id' => $team->id,
-                'is_admin' => true,
             ]);
+
+            $user->role = UserRole::SUPER_ADMIN;
+            $user->save();
         });
     }
 }

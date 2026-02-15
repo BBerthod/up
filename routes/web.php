@@ -3,10 +3,12 @@
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\OAuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NotificationChannelController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicStatusPageController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TeamSettingsController;
@@ -21,12 +23,23 @@ Route::middleware('guest')->group(function () {
         Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirectToProvider'])->name('oauth.redirect');
         Route::get('/auth/{provider}/callback', [OAuthController::class, 'handleProviderCallback'])->name('oauth.callback');
     });
+
+    // Password reset
+    Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::get('/settings', [TeamSettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/team', [TeamSettingsController::class, 'updateTeam'])->name('settings.team.update');
