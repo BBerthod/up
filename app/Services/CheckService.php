@@ -91,7 +91,40 @@ class CheckService
             }
         }
 
+        $this->checkThresholds($monitor, $check);
+
         return $check;
+    }
+
+    private function checkThresholds(Monitor $monitor, MonitorCheck $check): void
+    {
+        if ($check->status !== CheckStatus::UP || ! $monitor->critical_threshold_ms) {
+            return;
+        }
+
+        $recentChecks = $monitor->checks()
+            ->latest('checked_at')
+            ->limit(3)
+            ->pluck('response_time_ms');
+
+        if ($recentChecks->count() < 3) {
+            return;
+        }
+
+        $allExceedCritical = $recentChecks->every(fn ($ms) => $ms >= $monitor->critical_threshold_ms);
+
+        if ($allExceedCritical) {
+            $hasActiveIncident = $monitor->incidents()->whereNull('resolved_at')->exists();
+
+            if (! $hasActiveIncident) {
+                $incident = MonitorIncident::create([
+                    'monitor_id' => $monitor->id,
+                    'started_at' => now(),
+                    'cause' => IncidentCause::TIMEOUT,
+                ]);
+                $this->notificationService->notifyDown($monitor, $incident, $check);
+            }
+        }
     }
 
     private function makeHttpRequest(Monitor $monitor)
