@@ -27,7 +27,7 @@ const toggleChannel = (id: number) => {
 </script>
 
 <template>
-    <Head title="Edit Monitor" />
+    <Head :title="'Edit ' + monitor.name" />
 
     <div class="max-w-2xl mx-auto space-y-6">
         <Link :href="route('monitors.index')" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">

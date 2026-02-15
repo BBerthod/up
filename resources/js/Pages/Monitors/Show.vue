@@ -84,32 +84,32 @@ const handlePeriodChange = (period: string) => {
                 <p class="text-slate-400 mt-1">{{ monitor.url }}</p>
             </div>
             <div class="flex items-center gap-3">
-                <Link :href="route('monitors.edit', monitor.id)" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                <button @click="togglePause" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
-                <button @click="deleteMonitor" class="px-4 py-2 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
+                <Link :href="route('monitors.edit', monitor.id)" title="Edit monitor settings" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
+                <button @click="togglePause" :title="monitor.is_active ? 'Pause monitoring' : 'Resume monitoring'" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
+                <button @click="deleteMonitor" title="Permanently delete this monitor" class="px-4 py-2 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
             </div>
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="glass p-4">
+            <div class="glass p-4" title="Current monitor status">
                 <p class="text-slate-400 text-sm mb-1">Status</p>
                 <div class="flex items-center gap-2">
                     <div :class="['status-dot', checks[0]?.status === 'up' ? 'online' : 'offline']" />
                     <span class="text-lg font-semibold text-white">{{ checks[0]?.status?.toUpperCase() || 'UNKNOWN' }}</span>
                 </div>
             </div>
-            <div class="glass p-4">
+            <div class="glass p-4" title="Uptime percentage over 24 hours and 7 days">
                 <p class="text-slate-400 text-sm mb-1">Uptime</p>
                 <div class="flex items-center gap-3 font-mono text-sm">
                     <span :class="uptimeColor(uptime.day)">24h: {{ uptime.day.toFixed(1) }}%</span>
                     <span :class="uptimeColor(uptime.week)">7d: {{ uptime.week.toFixed(1) }}%</span>
                 </div>
             </div>
-            <div class="glass p-4">
+            <div class="glass p-4" title="Average response time from last 50 checks">
                 <p class="text-slate-400 text-sm mb-1">Avg Response</p>
                 <p class="text-lg font-semibold text-white font-mono">{{ avgMs }}<span class="text-sm text-slate-400">ms</span></p>
             </div>
-            <div class="glass p-4">
+            <div class="glass p-4" title="Number of currently unresolved incidents">
                 <p class="text-slate-400 text-sm mb-1">Active Incidents</p>
                 <p class="text-lg font-semibold font-mono" :class="activeIncidents > 0 ? 'text-red-400' : 'text-emerald-400'">{{ activeIncidents }}</p>
             </div>

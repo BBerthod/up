@@ -34,7 +34,7 @@ const submit = () => form.put(route('status-pages.update', props.statusPage.id))
 </script>
 
 <template>
-    <Head title="Edit Status Page" />
+    <Head :title="'Edit ' + statusPage.name" />
 
     <div class="max-w-2xl mx-auto space-y-6">
         <Link :href="route('status-pages.index')" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">

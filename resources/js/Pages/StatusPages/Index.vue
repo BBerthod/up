@@ -29,7 +29,7 @@ const deleteStatusPage = (sp: StatusPage) => {
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-white">Status Pages</h1>
-            <Link :href="route('status-pages.create')" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
+            <Link :href="route('status-pages.create')" title="Create a new public status page" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
                 Create Status Page
             </Link>
         </div>
@@ -54,9 +54,9 @@ const deleteStatusPage = (sp: StatusPage) => {
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <a :href="route('status.show', sp.slug)" target="_blank" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">View</a>
-                        <Link :href="route('status-pages.edit', sp.id)" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                        <button @click="deleteStatusPage(sp)" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
+                        <a :href="route('status.show', sp.slug)" target="_blank" title="View public status page" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">View</a>
+                        <Link :href="route('status-pages.edit', sp.id)" title="Edit status page settings" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
+                        <button @click="deleteStatusPage(sp)" title="Delete this status page" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
                     </div>
                 </div>
             </div>
