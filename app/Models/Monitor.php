@@ -68,8 +68,16 @@ class Monitor extends Model
 
     public function scopeDueForCheck($query)
     {
-        return $query->whereNull('last_checked_at')
-            ->orWhereRaw('last_checked_at <= now() - make_interval(mins => interval)');
+        return $query->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('last_checked_at');
+
+                if ($q->getConnection()->getDriverName() === 'pgsql') {
+                    $q->orWhereRaw('last_checked_at <= now() - make_interval(mins => "interval")');
+                } else {
+                    $q->orWhereRaw("last_checked_at <= datetime('now', '-' || \"interval\" || ' minutes')");
+                }
+            });
     }
 
     public function isUp(): bool
