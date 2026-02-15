@@ -16,7 +16,7 @@ const props = defineProps<{
     lighthouseScore: { performance: number; accessibility: number; best_practices: number; seo: number; scored_at: string } | null
 }>()
 
-const origin = window.location.origin
+const baseUrl = computed(() => typeof window !== 'undefined' ? window.location.origin : '')
 const pauseForm = useForm({})
 
 const togglePause = () => {
@@ -150,7 +150,7 @@ const uptimeColor = (v: number) => v > 99 ? 'text-emerald-400' : v > 95 ? 'text-
             <h3 class="text-white font-medium mb-4">Status Badge</h3>
             <div class="flex items-center gap-4">
                 <img :src="`/badge/${monitor.badge_hash}.svg`" :alt="`${monitor.name} uptime badge`" />
-                <code class="text-sm text-slate-400 font-mono bg-white/5 px-3 py-2 rounded">![Uptime]({{ origin }}/badge/{{ monitor.badge_hash }}.svg)</code>
+                <code class="text-sm text-slate-400 font-mono bg-white/5 px-3 py-2 rounded">![Uptime]({{ baseUrl }}/badge/{{ monitor.badge_hash }}.svg)</code>
             </div>
         </div>
 
