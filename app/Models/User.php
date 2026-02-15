@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,18 +22,33 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
+            'role' => UserRole::class,
         ];
     }
 
     public function isAdmin(): bool
     {
-        return $this->is_admin === true;
+        return $this->role->isAtLeast(UserRole::ADMIN);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === UserRole::SUPER_ADMIN;
+    }
+
+    public function isAtLeast(UserRole $role): bool
+    {
+        return $this->role->isAtLeast($role);
+    }
+
+    public function hasRole(UserRole $role): bool
+    {
+        return $this->role === $role;
     }
 
     public function scopeAdmin($query)
     {
-        return $query->where('is_admin', true);
+        return $query->whereIn('role', [UserRole::ADMIN->value, UserRole::SUPER_ADMIN->value]);
     }
 
     public function team(): BelongsTo
