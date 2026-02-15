@@ -41,8 +41,26 @@
 - **Severity**: Low
 - **Detail**: VAPID keys must be generated and configured. No automated test for actual push delivery.
 
-### Socialite requires packages not yet installed
+### Socialite requires packages not yet installed — RESOLVED
 - **Location**: `composer.json`
-- **Severity**: High (blocks OAuth)
-- **Detail**: `laravel/socialite` must be installed via `composer require laravel/socialite`. Also `minishlink/web-push` for push notifications.
+- **Severity**: ~~High~~ Resolved
+- **Detail**: Both `laravel/socialite` and `minishlink/web-push` installed.
+- **Resolved**: 2026-02-15
+
+### Docker: worker/scheduler/reverb show "unhealthy"
+- **Location**: `Dockerfile:86-87`, `docker-compose.yml`
+- **Severity**: Low (cosmetic)
+- **Detail**: Dockerfile HEALTHCHECK curls port 8000 which only the app container serves. Worker/scheduler/reverb inherit this check but don't run nginx. Containers function correctly despite the status.
+- **Discovered**: 2026-02-15
+
+### Security: is_admin removed from $fillable
+- **Location**: `app/Models/User.php:15`
+- **Severity**: N/A (fixed)
+- **Detail**: `is_admin` must be set via explicit assignment (`$user->is_admin = true; $user->save()`), not mass assignment. Prevents privilege escalation.
+- **Discovered**: 2026-02-15
+
+### Security: OAuth provider lock
+- **Location**: `app/Http/Controllers/Auth/OAuthController.php`
+- **Severity**: N/A (fixed)
+- **Detail**: Once a user links to a provider (google/github), they cannot switch to a different one via OAuth. Prevents email-collision account hijacking.
 - **Discovered**: 2026-02-15
