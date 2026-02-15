@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 
 interface User {
@@ -21,9 +22,22 @@ defineProps<{
     users: PaginatedUsers
 }>()
 
-const deleteUser = (userId: number, userName: string) => {
-    if (confirm(`Are you sure you want to delete "${userName}"?`)) {
-        router.delete(route('admin.users.destroy', userId), { preserveScroll: true })
+const deleteModal = ref<{ open: boolean; userId: number | null; userName: string }>({ open: false, userId: null, userName: '' })
+
+const openDeleteModal = (userId: number, userName: string) => {
+    deleteModal.value = { open: true, userId, userName }
+}
+
+const closeDeleteModal = () => {
+    deleteModal.value = { open: false, userId: null, userName: '' }
+}
+
+const confirmDelete = () => {
+    if (deleteModal.value.userId) {
+        router.delete(route('admin.users.destroy', deleteModal.value.userId), {
+            preserveScroll: true,
+            onFinish: () => closeDeleteModal(),
+        })
     }
 }
 </script>
@@ -77,7 +91,7 @@ const deleteUser = (userId: number, userName: string) => {
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <Link :href="route('admin.users.edit', user.id)" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                                    <button @click="deleteUser(user.id, user.name)" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
+                                    <button @click="openDeleteModal(user.id, user.name)" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
                                 </div>
                             </td>
                         </tr>
@@ -103,4 +117,29 @@ const deleteUser = (userId: number, userName: string) => {
             </div>
         </div>
     </div>
+
+    <Teleport to="body">
+        <Transition name="fade">
+            <div v-if="deleteModal.open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="closeDeleteModal">
+                <div class="w-full max-w-md glass-intense p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/20 border border-red-500/30">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white text-center mb-2">Delete User</h3>
+                    <p class="text-slate-400 text-sm text-center mb-6">
+                        Are you sure you want to delete <span class="text-white font-medium">"{{ deleteModal.userName }}"</span>? This action cannot be undone.
+                    </p>
+                    <div class="flex items-center justify-end gap-3">
+                        <button @click="closeDeleteModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors">Cancel</button>
+                        <button @click="confirmDelete" class="px-4 py-2 rounded-lg text-white font-semibold bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/20">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+    </Teleport>
 </template>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 200ms; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>
