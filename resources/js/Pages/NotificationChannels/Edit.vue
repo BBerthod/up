@@ -42,7 +42,7 @@ const submit = () => form.put(route('channels.update', props.channel.id))
 </script>
 
 <template>
-    <Head title="Edit Channel" />
+    <Head :title="'Edit ' + channel.name" />
 
     <div class="max-w-2xl mx-auto space-y-6">
         <Link :href="route('channels.index')" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">

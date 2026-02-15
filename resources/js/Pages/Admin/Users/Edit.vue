@@ -40,7 +40,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Edit User" />
+    <Head :title="'Edit ' + user.name" />
 
     <div class="max-w-2xl mx-auto">
         <div class="mb-8">

@@ -65,20 +65,21 @@ const activeFilter = computed(() => props.filters.status || 'all')
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-white">Monitors</h1>
-            <Link :href="route('monitors.create')" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
+            <Link :href="route('monitors.create')" title="Create a new monitor" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
                 Add Monitor
             </Link>
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="glass p-4"><p class="text-slate-400 text-sm">Total</p><p class="text-2xl font-bold text-white font-mono">{{ stats.total }}</p></div>
-            <div class="glass p-4"><p class="text-slate-400 text-sm">Up</p><p class="text-2xl font-bold text-emerald-400 font-mono">{{ stats.up }}</p></div>
-            <div class="glass p-4"><p class="text-slate-400 text-sm">Down</p><p class="text-2xl font-bold text-red-400 font-mono">{{ stats.down }}</p></div>
-            <div class="glass p-4"><p class="text-slate-400 text-sm">Avg Response</p><p class="text-2xl font-bold text-white font-mono">{{ stats.avgMs }}<span class="text-sm text-slate-400">ms</span></p></div>
+            <div class="glass p-4" title="Total number of configured monitors"><p class="text-slate-400 text-sm">Total</p><p class="text-2xl font-bold text-white font-mono">{{ stats.total }}</p></div>
+            <div class="glass p-4" title="Monitors currently online"><p class="text-slate-400 text-sm">Up</p><p class="text-2xl font-bold text-emerald-400 font-mono">{{ stats.up }}</p></div>
+            <div class="glass p-4" title="Monitors currently failing"><p class="text-slate-400 text-sm">Down</p><p class="text-2xl font-bold text-red-400 font-mono">{{ stats.down }}</p></div>
+            <div class="glass p-4" title="Average response time across all monitors"><p class="text-slate-400 text-sm">Avg Response</p><p class="text-2xl font-bold text-white font-mono">{{ stats.avgMs }}<span class="text-sm text-slate-400">ms</span></p></div>
         </div>
 
         <div class="flex gap-2">
-            <button v-for="f in [{ key: 'all', label: 'All' }, { key: 'up', label: 'Up' }, { key: 'down', label: 'Down' }, { key: 'paused', label: 'Paused' }]" :key="f.key"
+            <button v-for="f in [{ key: 'all', label: 'All', tip: 'Show all monitors' }, { key: 'up', label: 'Up', tip: 'Show online monitors only' }, { key: 'down', label: 'Down', tip: 'Show failing monitors only' }, { key: 'paused', label: 'Paused', tip: 'Show paused monitors only' }]" :key="f.key"
+                :title="f.tip"
                 @click="filterMonitors(f.key === 'all' ? null : f.key)"
                 :class="['px-4 py-2 rounded-lg text-sm font-medium transition-colors', activeFilter === f.key ? 'bg-white/10 text-white border border-white/20' : 'text-slate-400 hover:text-white hover:bg-white/5']">
                 {{ f.label }}

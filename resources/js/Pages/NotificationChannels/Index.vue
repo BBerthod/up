@@ -42,7 +42,7 @@ const testChannel = (channel: Channel) => {
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-white">Notification Channels</h1>
-            <Link :href="route('channels.create')" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
+            <Link :href="route('channels.create')" title="Create a new notification channel" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
                 Add Channel
             </Link>
         </div>
@@ -65,9 +65,9 @@ const testChannel = (channel: Channel) => {
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button @click="testChannel(channel)" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Test</button>
-                        <Link :href="route('channels.edit', channel.id)" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                        <button @click="deleteChannel(channel)" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
+                        <button @click="testChannel(channel)" title="Send a test notification" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Test</button>
+                        <Link :href="route('channels.edit', channel.id)" title="Edit channel settings" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
+                        <button @click="deleteChannel(channel)" title="Delete this channel" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
                     </div>
                 </div>
             </div>
