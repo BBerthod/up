@@ -12,7 +12,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password', 'team_id'];
+    protected $fillable = ['name', 'email', 'password', 'team_id', 'is_admin', 'oauth_provider', 'oauth_id'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -21,7 +21,18 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === true;
+    }
+
+    public function scopeAdmin($query)
+    {
+        return $query->where('is_admin', true);
     }
 
     public function team(): BelongsTo
