@@ -114,6 +114,7 @@ const logout = () => {
 
                             <Transition name="fade">
                                 <div v-if="userDropdownOpen" class="absolute right-0 mt-2 w-48 py-1 glass-intense" @click="userDropdownOpen = false">
+                                    <Link href="/profile" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5">My Profile</Link>
                                     <Link href="/settings" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5">Settings</Link>
                                     <hr class="my-1 border-white/10" />
                                     <button @click="logout" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-white/5">Logout</button>
