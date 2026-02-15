@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreMonitorRequest;
+use App\Http\Requests\UpdateMonitorRequest;
 use App\Http\Resources\MonitorCheckResource;
 use App\Http\Resources\MonitorResource;
 use App\Models\Monitor;
@@ -51,20 +53,9 @@ class MonitorApiController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreMonitorRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'url' => 'required|url|max:2048',
-            'method' => 'required|in:GET,POST,HEAD',
-            'expected_status_code' => 'required|integer|min:100|max:599',
-            'keyword' => 'nullable|string|max:255',
-            'interval' => 'required|integer|min:1|max:60',
-            'warning_threshold_ms' => 'nullable|integer|min:1',
-            'critical_threshold_ms' => 'nullable|integer|min:1',
-            'notification_channels' => 'array',
-            'notification_channels.*' => 'exists:notification_channels,id',
-        ]);
+        $validated = $request->validated();
 
         $channels = $validated['notification_channels'] ?? [];
         unset($validated['notification_channels']);
@@ -78,20 +69,9 @@ class MonitorApiController extends Controller
         return (new MonitorResource($monitor))->response()->setStatusCode(201);
     }
 
-    public function update(Request $request, Monitor $monitor): MonitorResource
+    public function update(UpdateMonitorRequest $request, Monitor $monitor): MonitorResource
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'url' => 'sometimes|required|url|max:2048',
-            'method' => 'sometimes|required|in:GET,POST,HEAD',
-            'expected_status_code' => 'sometimes|required|integer|min:100|max:599',
-            'keyword' => 'nullable|string|max:255',
-            'interval' => 'sometimes|required|integer|min:1|max:60',
-            'warning_threshold_ms' => 'nullable|integer|min:1',
-            'critical_threshold_ms' => 'nullable|integer|min:1',
-            'notification_channels' => 'array',
-            'notification_channels.*' => 'exists:notification_channels,id',
-        ]);
+        $validated = $request->validated();
 
         $channels = $validated['notification_channels'] ?? null;
         unset($validated['notification_channels']);

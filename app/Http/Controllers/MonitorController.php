@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreMonitorRequest;
+use App\Http\Requests\UpdateMonitorRequest;
 use App\Models\Monitor;
 use App\Models\NotificationChannel;
 use Carbon\Carbon;
@@ -126,9 +128,9 @@ class MonitorController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreMonitorRequest $request): RedirectResponse
     {
-        $validated = $this->validateMonitor($request);
+        $validated = $request->validated();
 
         $channels = $validated['notification_channels'] ?? [];
         unset($validated['notification_channels']);
@@ -150,9 +152,9 @@ class MonitorController extends Controller
         ]);
     }
 
-    public function update(Request $request, Monitor $monitor): RedirectResponse
+    public function update(UpdateMonitorRequest $request, Monitor $monitor): RedirectResponse
     {
-        $validated = $this->validateMonitor($request);
+        $validated = $request->validated();
 
         $channels = $validated['notification_channels'] ?? [];
         unset($validated['notification_channels']);
@@ -231,21 +233,5 @@ class MonitorController extends Controller
             ->limit($limit)
             ->get()
             ->toArray();
-    }
-
-    private function validateMonitor(Request $request): array
-    {
-        return $request->validate([
-            'name' => 'required|string|max:255',
-            'url' => 'required|url|max:2048',
-            'method' => 'required|in:GET,POST,HEAD',
-            'expected_status_code' => 'required|integer|min:100|max:599',
-            'keyword' => 'nullable|string|max:255',
-            'interval' => 'required|integer|min:1|max:60',
-            'warning_threshold_ms' => 'nullable|integer|min:1',
-            'critical_threshold_ms' => 'nullable|integer|min:1',
-            'notification_channels' => 'array',
-            'notification_channels.*' => 'exists:notification_channels,id',
-        ]);
     }
 }
