@@ -55,28 +55,11 @@ class AuthControllerTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_register_page_renders(): void
+    public function test_register_route_is_removed(): void
     {
-        $response = $this->get(route('register'));
+        $response = $this->get('/register');
 
-        $response->assertStatus(200);
-    }
-
-    public function test_new_users_can_register(): void
-    {
-        $response = $this->post('/register', [
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
-
-        $response->assertRedirect();
-        $this->assertAuthenticated();
-
-        $user = User::where('email', 'john@example.com')->first();
-        $this->assertNotNull($user);
-        $this->assertNotNull($user->team_id);
+        $response->assertNotFound();
     }
 
     public function test_authenticated_users_can_logout(): void
