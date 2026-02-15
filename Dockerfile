@@ -60,6 +60,8 @@ COPY docker/supervisor/supervisord.conf /etc/supervisord.conf
 COPY docker/supervisor/app.conf /etc/supervisor/conf.d/app.conf
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/zz-custom.conf
+COPY docker/entrypoint/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 COPY . .
 COPY --from=php-deps /var/www/html/vendor ./vendor
@@ -76,4 +78,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://127.0.0.1:8000/health || exit 1
 
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/usr/local/bin/start.sh"]
