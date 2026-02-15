@@ -1,0 +1,113 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: up-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - up-storage:/var/www/html/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - up-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: up-worker
+    restart: unless-stopped
+    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+    env_file:
+      - .env
+    volumes:
+      - up-storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - up-network
+    stop_signal: SIGTERM
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: up-scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    env_file:
+      - .env
+    volumes:
+      - up-storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - up-network
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: up-reverb
+    restart: unless-stopped
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - up-storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - up-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: up-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-up}
+      POSTGRES_USER: ${DB_USERNAME:-up}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - up-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-up} -d ${DB_DATABASE:-up}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: up-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    networks:
+      - up-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  up-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
+  up-storage:
