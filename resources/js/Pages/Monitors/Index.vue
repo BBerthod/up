@@ -88,7 +88,7 @@ const activeFilter = computed(() => props.filters.status || 'all')
         <div v-if="monitors.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Link v-for="monitor in monitors" :key="monitor.id" :href="route('monitors.show', monitor.id)" class="glass glass-hover p-4 block">
                 <div class="flex items-center gap-3 mb-3">
-                    <div v-if="!monitor.is_active" class="status-dot" style="background-color: #64748b;" />
+                    <div v-if="!monitor.is_active" class="status-dot" style="background-color: var(--color-muted);" />
                     <div v-else-if="monitor.latest_check?.status === 'up'" class="status-dot online" />
                     <div v-else class="status-dot offline" />
                     <div class="flex-1 min-w-0">

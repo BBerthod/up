@@ -24,6 +24,7 @@ class MonitorResource extends JsonResource
             'updated_at' => $this->updated_at?->toIso8601String(),
             'latest_check' => $this->whenLoaded('checks', function () {
                 $check = $this->checks->first();
+
                 return $check ? new MonitorCheckResource($check) : null;
             }),
             'notification_channels' => NotificationChannelResource::collection($this->whenLoaded('notificationChannels')),

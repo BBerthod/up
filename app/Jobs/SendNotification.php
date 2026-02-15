@@ -8,6 +8,7 @@ use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Models\NotificationChannel;
+use App\Models\PushSubscription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -16,6 +17,8 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Minishlink\WebPush\Subscription;
+use Minishlink\WebPush\WebPush;
 use Throwable;
 
 class SendNotification implements ShouldQueue
@@ -45,7 +48,7 @@ class SendNotification implements ShouldQueue
             ChannelType::WEBHOOK => $this->sendWebhook($payload),
             ChannelType::SLACK => $this->sendSlack(),
             ChannelType::DISCORD => $this->sendDiscord(),
-            ChannelType::PUSH => null, // TODO: Web Push API
+            ChannelType::PUSH => $this->sendPush(),
         };
     }
 
@@ -122,6 +125,60 @@ class SendNotification implements ShouldQueue
                 ],
             ]],
         ]);
+    }
+
+    private function sendPush(): void
+    {
+        $auth = [
+            'VAPID' => [
+                'subject' => config('app.url'),
+                'publicKey' => config('services.webpush.vapid.public_key'),
+                'privateKey' => config('services.webpush.vapid.private_key'),
+            ],
+        ];
+
+        try {
+            $webPush = new WebPush($auth);
+        } catch (\Exception $e) {
+            Log::error('WebPush initialization failed', ['error' => $e->getMessage()]);
+
+            return;
+        }
+
+        $statusText = $this->event === 'down' ? 'Down' : 'Up';
+
+        $payload = json_encode([
+            'title' => "Monitor {$statusText}: {$this->monitor->name}",
+            'body' => "URL: {$this->monitor->url} - Cause: ".ucfirst(str_replace('_', ' ', $this->incident->cause->value)),
+            'data' => ['url' => "/monitors/{$this->monitor->id}"],
+        ]);
+
+        $userIds = $this->channel->team->users()->pluck('id');
+        $subscriptions = PushSubscription::whereIn('user_id', $userIds)->get();
+
+        foreach ($subscriptions as $dbSubscription) {
+            $subscription = Subscription::create([
+                'endpoint' => $dbSubscription->endpoint,
+                'publicKey' => $dbSubscription->p256dh,
+                'authToken' => $dbSubscription->auth,
+            ]);
+
+            $report = $webPush->sendOneNotification($subscription, $payload);
+
+            if ($report->isSuccess()) {
+                continue;
+            }
+
+            if ($report->isSubscriptionExpired()) {
+                $dbSubscription->delete();
+                Log::info('Deleted expired push subscription', ['endpoint' => $dbSubscription->endpoint]);
+            } else {
+                Log::error('Push notification failed', [
+                    'endpoint' => $dbSubscription->endpoint,
+                    'reason' => $report->getReason(),
+                ]);
+            }
+        }
     }
 
     private function sendDiscord(): void

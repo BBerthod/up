@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MonitorIncident extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
 
     protected $fillable = [

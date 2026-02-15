@@ -73,7 +73,9 @@ COPY . .
 COPY --from=php-deps /var/www/html/vendor ./vendor
 COPY --from=assets /var/www/html/public/build ./public/build
 
-RUN chown -R www-data:www-data /var/www/html \
+RUN rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
+    && php artisan package:discover --ansi \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 

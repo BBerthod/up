@@ -12,6 +12,8 @@
         "laravel/reverb": "^1.7",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.10.1",
+        "laravel/socialite": "^5.0",
+        "minishlink/web-push": "^9.0",
         "tightenco/ziggy": "^2.6"
     },
     "require-dev": {
@@ -73,7 +75,11 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "laravel/pail",
+                "laravel/sail",
+                "nunomaduro/collision"
+            ]
         }
     },
     "config": {

@@ -9,9 +9,9 @@ use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Services\CheckService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CheckServiceTest extends TestCase

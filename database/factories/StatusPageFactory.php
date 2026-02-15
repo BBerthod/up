@@ -13,12 +13,12 @@ class StatusPageFactory extends Factory
 
     public function definition(): array
     {
-        $name = $this->faker->company() . ' Status';
+        $name = $this->faker->company().' Status';
 
         return [
             'team_id' => Team::factory(),
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . Str::random(6),
+            'slug' => Str::slug($name).'-'.Str::random(6),
             'description' => $this->faker->sentence(),
             'is_active' => true,
             'theme' => 'dark',

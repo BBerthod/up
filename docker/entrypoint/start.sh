@@ -3,7 +3,9 @@ set -e
 
 cd /var/www/html
 
-# Run migrations
+# Clear stale cache and discover packages
+rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
+php artisan package:discover --ansi
 php artisan migrate --force
 
 # Cache config/routes/views
