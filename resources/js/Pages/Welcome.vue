@@ -130,13 +130,25 @@ onMounted(() => {
         </div>
 
         <!-- Footer -->
-        <div class="relative z-10 py-6 text-center text-sm text-gray-500">
-            Open source &mdash;
+        <div class="relative z-10 py-6 flex flex-col items-center gap-3 text-sm text-gray-500">
+            <a
+                href="https://radiank.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors"
+            >
+                <span>by</span>
+                <svg class="w-4 h-4" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="6" fill="#10b981"/>
+                    <path fill="#fff" d="M8 6h8c4.4 0 7 2.6 7 6.5S20.4 19 16 19l6 7h-4.5L12 19v-3h4c2.8 0 4.5-1.5 4.5-3.5S18.8 9 16 9h-4.5v17H8V6z"/>
+                </svg>
+                <span class="font-semibold">Radiank</span>
+            </a>
             <a
                 href="https://github.com/BBerthod/up"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-gray-400 hover:text-cyan-400 transition-colors"
+                class="text-gray-500 hover:text-cyan-400 transition-colors"
             >
                 GitHub
             </a>
