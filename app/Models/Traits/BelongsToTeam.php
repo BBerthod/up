@@ -10,7 +10,7 @@ trait BelongsToTeam
 {
     protected static function bootBelongsToTeam(): void
     {
-        static::addGlobalScope(new TeamScope());
+        static::addGlobalScope(new TeamScope);
 
         static::creating(function (self $model): void {
             if ($model->team_id === null && auth()->check()) {

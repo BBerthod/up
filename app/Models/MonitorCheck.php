@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MonitorCheck extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
 
     protected $fillable = [

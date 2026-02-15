@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\MonitorIncident;
 use App\Models\StatusPage;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,7 +27,7 @@ class PublicStatusPageController extends Controller
             // Aggregate daily uptime in a single query
             $dailyStats = $monitor->checks()
                 ->where('checked_at', '>=', now()->subDays(90))
-                ->selectRaw("DATE(checked_at) as date")
+                ->selectRaw('DATE(checked_at) as date')
                 ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
                 ->groupByRaw('DATE(checked_at)')
                 ->orderBy('date')
