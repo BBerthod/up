@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NotificationChannelController;
 use App\Http\Controllers\ProfileController;
@@ -45,6 +46,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/settings/team', [TeamSettingsController::class, 'updateTeam'])->name('settings.team.update');
     Route::post('/settings/tokens', [TeamSettingsController::class, 'createToken'])->name('settings.tokens.store');
     Route::delete('/settings/tokens/{tokenId}', [TeamSettingsController::class, 'deleteToken'])->name('settings.tokens.destroy');
+
+    Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
+    Route::get('/incidents/export', [IncidentController::class, 'export'])->name('incidents.export');
 
     Route::resource('monitors', MonitorController::class);
     Route::post('/monitors/{monitor}/pause', [MonitorController::class, 'pause'])->name('monitors.pause');
