@@ -11,9 +11,8 @@ const user = computed(() => (page.props as any).auth?.user)
 const team = computed(() => (page.props as any).auth?.team)
 
 const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: 'grid' },
     { name: 'Monitors', href: '/monitors', icon: 'activity' },
-    { name: 'Notifications', href: '/notification-channels', icon: 'bell' },
+    { name: 'Channels', href: '/channels', icon: 'bell' },
     { name: 'Status Pages', href: '/status-pages', icon: 'globe' },
     { name: 'Settings', href: '/settings', icon: 'settings' },
 ]
