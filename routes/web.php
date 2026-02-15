@@ -4,6 +4,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NotificationChannelController;
+use App\Http\Controllers\PublicStatusPageController;
+use App\Http\Controllers\StatusPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
@@ -26,4 +28,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('channels', NotificationChannelController::class)->except(['show']);
     Route::post('/channels/{channel}/test', [NotificationChannelController::class, 'test'])->name('channels.test');
+
+    Route::resource('status-pages', StatusPageController::class)->except(['show']);
 });
+
+// Public status page (no auth)
+Route::get('/status/{slug}', [PublicStatusPageController::class, 'show'])->name('status.show');
