@@ -10,13 +10,16 @@
         "@tailwindcss/vite": "^4.1.18",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^2.0.0",
+        "laravel-vite-plugin": "^2.1.0",
         "tailwindcss": "^4.1.18",
         "vite": "^7.0.7"
     },
     "dependencies": {
         "@inertiajs/vue3": "^2.3.15",
         "@vitejs/plugin-vue": "^6.0.4",
-        "vue": "^3.5.28"
+        "laravel-echo": "^2.3.0",
+        "pusher-js": "^8.4.0",
+        "vue": "^3.5.28",
+        "ziggy-js": "^2.6.0"
     }
 }
