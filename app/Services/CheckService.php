@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Http;
 
 class CheckService
 {
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
+
     public function check(Monitor $monitor): MonitorCheck
     {
         $startTime = microtime(true);
@@ -69,17 +73,22 @@ class CheckService
         $isUp = $status === CheckStatus::UP;
 
         if ($wasUp && ! $isUp) {
-            MonitorIncident::create([
+            $incident = MonitorIncident::create([
                 'monitor_id' => $monitor->id,
                 'started_at' => now(),
                 'cause' => $cause,
             ]);
+            $this->notificationService->notifyDown($monitor, $incident, $check);
         } elseif (! $wasUp && $isUp) {
-            $monitor->incidents()
+            $incident = $monitor->incidents()
                 ->whereNull('resolved_at')
                 ->latest('started_at')
-                ->first()
-                ?->resolve();
+                ->first();
+
+            if ($incident) {
+                $incident->resolve();
+                $this->notificationService->notifyUp($monitor, $incident, $check);
+            }
         }
 
         return $check;
