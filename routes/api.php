@@ -1,5 +1,23 @@
 <?php
 
+use App\Http\Controllers\Api\MonitorApiController;
+use App\Http\Controllers\Api\NotificationChannelApiController;
+use App\Http\Controllers\Api\StatusPageApiController;
 use Illuminate\Support\Facades\Route;
 
-// API routes will be added later
+Route::get('/health', fn () => response()->json(['status' => 'ok', 'timestamp' => now()->toIso8601String()]));
+
+// Public status page API (no auth)
+Route::get('/status-pages/public/{slug}', [StatusPageApiController::class, 'publicShow'])->name('api.status-pages.public');
+
+// Authenticated API routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('monitors', MonitorApiController::class);
+    Route::post('/monitors/{monitor}/pause', [MonitorApiController::class, 'pause'])->name('api.monitors.pause');
+    Route::post('/monitors/{monitor}/resume', [MonitorApiController::class, 'resume'])->name('api.monitors.resume');
+    Route::get('/monitors/{monitor}/checks', [MonitorApiController::class, 'checks'])->name('api.monitors.checks');
+
+    Route::apiResource('notification-channels', NotificationChannelApiController::class);
+
+    Route::apiResource('status-pages', StatusPageApiController::class);
+});
