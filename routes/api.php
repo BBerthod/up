@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\MonitorApiController;
 use App\Http\Controllers\Api\NotificationChannelApiController;
 use App\Http\Controllers\Api\StatusPageApiController;
+use App\Http\Controllers\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json(['status' => 'ok', 'timestamp' => now()->toIso8601String()]));
@@ -20,4 +21,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('notification-channels', NotificationChannelApiController::class);
 
     Route::apiResource('status-pages', StatusPageApiController::class);
+
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store']);
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy']);
 });
