@@ -3,6 +3,7 @@ import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import LatencyHeatmap from '@/Components/LatencyHeatmap.vue'
 import LighthouseScores from '@/Components/LighthouseScores.vue'
+import ResponseTimeChart from '@/Components/ResponseTimeChart.vue'
 
 interface Check { id: number; status: 'up' | 'down'; response_time_ms: number; status_code: number; checked_at: string }
 interface Incident { id: number; started_at: string; resolved_at: string | null; cause: string }
@@ -14,6 +15,8 @@ const props = defineProps<{
     uptime: { day: number; week: number; month: number }
     heatmapData: Record<string, number>
     lighthouseScore: { performance: number; accessibility: number; best_practices: number; seo: number; scored_at: string } | null
+    chartData: Array<any>
+    currentPeriod: string
 }>()
 
 const baseUrl = computed(() => typeof window !== 'undefined' ? window.location.origin : '')
@@ -51,6 +54,14 @@ const maxMs = computed(() => Math.max(...props.checks.map(c => c.response_time_m
 const activeIncidents = computed(() => props.incidents.filter(i => !i.resolved_at).length)
 
 const uptimeColor = (v: number) => v > 99 ? 'text-emerald-400' : v > 95 ? 'text-yellow-400' : 'text-red-400'
+
+const handlePeriodChange = (period: string) => {
+    router.visit(route('monitors.show', props.monitor.id) + '?period=' + period, {
+        only: ['chartData', 'currentPeriod'],
+        preserveState: true,
+        preserveScroll: true,
+    })
+}
 </script>
 
 <template>
@@ -104,19 +115,7 @@ const uptimeColor = (v: number) => v > 99 ? 'text-emerald-400' : v > 95 ? 'text-
             </div>
         </div>
 
-        <div class="glass p-6">
-            <h3 class="text-white font-medium mb-4">Response Time (Last {{ checks.length }} checks)</h3>
-            <div class="h-32">
-                <svg class="w-full h-full" preserveAspectRatio="none">
-                    <rect v-for="(check, i) in checks" :key="check.id"
-                        :x="`${(i / checks.length) * 100}%`"
-                        :y="`${100 - Math.max(4, (check.response_time_ms / maxMs) * 100)}%`"
-                        :width="`${Math.max(100 / checks.length - 0.5, 1)}%`"
-                        :height="`${Math.max(4, (check.response_time_ms / maxMs) * 100)}%`"
-                        :fill="check.status === 'up' ? '#10b981' : '#ef4444'" rx="1" />
-                </svg>
-            </div>
-        </div>
+        <ResponseTimeChart :chart-data="chartData" :current-period="currentPeriod" :monitor-id="monitor.id" @period-change="handlePeriodChange" />
 
         <div class="glass p-6">
             <h3 class="text-white font-medium mb-4">Incident History</h3>

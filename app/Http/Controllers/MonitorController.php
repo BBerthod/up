@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Monitor;
 use App\Models\NotificationChannel;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -59,8 +60,13 @@ class MonitorController extends Controller
         ]);
     }
 
-    public function show(Monitor $monitor): Response
+    public function show(Request $request, Monitor $monitor): Response
     {
+        $period = $request->query('period', '24h');
+        if (! in_array($period, ['6mo', '3mo', '1mo', '7d', '24h', '1h'])) {
+            $period = '24h';
+        }
+
         $checks = $monitor->checks()
             ->latest('checked_at')
             ->limit(50)
@@ -90,6 +96,8 @@ class MonitorController extends Controller
 
         $badgeHash = base64_encode(pack('V', $monitor->id));
 
+        $chartData = $this->getChartData($monitor, $period);
+
         return Inertia::render('Monitors/Show', [
             'monitor' => array_merge($monitor->toArray(), [
                 'notification_channels' => $monitor->notificationChannels()
@@ -105,6 +113,8 @@ class MonitorController extends Controller
             ],
             'heatmapData' => $heatmapData,
             'lighthouseScore' => $lighthouseScore,
+            'chartData' => $chartData,
+            'currentPeriod' => $period,
         ]);
     }
 
@@ -172,6 +182,55 @@ class MonitorController extends Controller
         $monitor->update(['is_active' => true]);
 
         return back();
+    }
+
+    private function getChartData(Monitor $monitor, string $period): array
+    {
+        if (in_array($period, ['6mo', '3mo', '1mo'])) {
+            $from = match ($period) {
+                '6mo' => now()->subMonths(6),
+                '3mo' => now()->subMonths(3),
+                '1mo' => now()->subMonth(),
+            };
+
+            return $this->getAggregatedChartData($monitor, $from);
+        }
+
+        [$from, $limit] = match ($period) {
+            '7d' => [now()->subDays(7), 2000],
+            '24h' => [now()->subDay(), 1500],
+            '1h' => [now()->subHour(), 500],
+        };
+
+        return $this->getRawChartData($monitor, $from, $limit);
+    }
+
+    private function getAggregatedChartData(Monitor $monitor, Carbon $from): array
+    {
+        return $monitor->checks()
+            ->selectRaw("
+                DATE(checked_at) as date,
+                ROUND(AVG(response_time_ms)) as avg_ms,
+                MIN(response_time_ms) as min_ms,
+                MAX(response_time_ms) as max_ms,
+                ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime_percent
+            ")
+            ->where('checked_at', '>=', $from)
+            ->groupByRaw('DATE(checked_at)')
+            ->orderBy('date')
+            ->get()
+            ->toArray();
+    }
+
+    private function getRawChartData(Monitor $monitor, Carbon $from, int $limit): array
+    {
+        return $monitor->checks()
+            ->select(['id', 'status', 'response_time_ms', 'status_code', 'checked_at'])
+            ->where('checked_at', '>=', $from)
+            ->oldest('checked_at')
+            ->limit($limit)
+            ->get()
+            ->toArray();
     }
 
     private function validateMonitor(Request $request): array
