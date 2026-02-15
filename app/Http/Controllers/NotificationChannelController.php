@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ChannelType;
+use App\Enums\IncidentCause;
+use App\Jobs\SendNotification;
+use App\Models\Monitor;
+use App\Models\MonitorCheck;
+use App\Models\MonitorIncident;
 use App\Models\NotificationChannel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -77,8 +82,34 @@ class NotificationChannelController extends Controller
 
     public function test(NotificationChannel $channel): RedirectResponse
     {
-        // TODO: Implement actual test notification per channel type
-        return back()->with('success', "Test notification sent to {$channel->name}.");
+        $monitor = new Monitor([
+            'name' => 'Test Monitor',
+            'url' => 'https://example.com',
+        ]);
+        $monitor->id = 0;
+
+        $incident = new MonitorIncident([
+            'monitor_id' => 0,
+            'cause' => IncidentCause::TIMEOUT,
+            'started_at' => now(),
+        ]);
+        $incident->id = 0;
+
+        $check = new MonitorCheck([
+            'monitor_id' => 0,
+            'status_code' => 0,
+            'response_time_ms' => 0,
+            'checked_at' => now(),
+        ]);
+        $check->id = 0;
+
+        try {
+            (new SendNotification($channel, 'down', $monitor, $incident, $check))->handle();
+
+            return back()->with('success', "Test notification sent to {$channel->name}.");
+        } catch (\Throwable $e) {
+            return back()->with('error', "Test notification failed: {$e->getMessage()}");
+        }
     }
 
     private function validateChannel(Request $request): array
