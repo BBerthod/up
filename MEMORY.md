@@ -6,7 +6,6 @@
 - **Decision**: Closed registration model. Only admins create accounts.
 - **Reason**: Self-hosted monitoring tool — no public signup needed.
 - **Implementation**: Removed `/register` routes, added `is_admin` column, AdminSeeder reads from `.env`.
-- **OAuth**: Google & GitHub login for convenience only. No account creation via OAuth.
 
 ### Admin System (2026-02-15)
 - **Decision**: Simple `is_admin` boolean on users table (no roles/permissions package).
@@ -41,12 +40,6 @@
 - **Severity**: Low
 - **Detail**: VAPID keys must be generated and configured. No automated test for actual push delivery.
 
-### Socialite requires packages not yet installed — RESOLVED
-- **Location**: `composer.json`
-- **Severity**: ~~High~~ Resolved
-- **Detail**: Both `laravel/socialite` and `minishlink/web-push` installed.
-- **Resolved**: 2026-02-15
-
 ### Docker: worker/scheduler/reverb show "unhealthy"
 - **Location**: `Dockerfile:86-87`, `docker-compose.yml`
 - **Severity**: Low (cosmetic)
@@ -59,8 +52,3 @@
 - **Detail**: `is_admin` must be set via explicit assignment (`$user->is_admin = true; $user->save()`), not mass assignment. Prevents privilege escalation.
 - **Discovered**: 2026-02-15
 
-### Security: OAuth provider lock
-- **Location**: `app/Http/Controllers/Auth/OAuthController.php`
-- **Severity**: N/A (fixed)
-- **Detail**: Once a user links to a provider (google/github), they cannot switch to a different one via OAuth. Prevents email-collision account hijacking.
-- **Discovered**: 2026-02-15
