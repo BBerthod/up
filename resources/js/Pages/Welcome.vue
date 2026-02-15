@@ -2,6 +2,8 @@
 import { Head, Link } from '@inertiajs/vue3'
 import { onMounted, ref } from 'vue'
 
+defineOptions({ layout: false })
+
 const visible = ref(false)
 
 onMounted(() => {
