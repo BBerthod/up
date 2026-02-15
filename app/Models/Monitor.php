@@ -46,6 +46,11 @@ class Monitor extends Model
         return $this->hasMany(MonitorIncident::class);
     }
 
+    public function lighthouseScores(): HasMany
+    {
+        return $this->hasMany(MonitorLighthouseScore::class);
+    }
+
     public function notificationChannels(): BelongsToMany
     {
         return $this->belongsToMany(NotificationChannel::class, 'monitor_notification_channel');
