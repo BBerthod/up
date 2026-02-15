@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CheckStatus;
 use App\Enums\MonitorMethod;
+use App\Enums\MonitorType;
 use App\Models\Traits\BelongsToTeam;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,10 +18,14 @@ class Monitor extends Model
 
     protected $fillable = [
         'name',
+        'type',
         'url',
         'method',
         'expected_status_code',
         'keyword',
+        'port',
+        'dns_record_type',
+        'dns_expected_value',
         'interval',
         'is_active',
         'last_checked_at',
@@ -29,9 +34,11 @@ class Monitor extends Model
     ];
 
     protected $casts = [
+        'type' => MonitorType::class,
         'method' => MonitorMethod::class,
         'is_active' => 'boolean',
         'last_checked_at' => 'datetime',
+        'port' => 'integer',
         'warning_threshold_ms' => 'integer',
         'critical_threshold_ms' => 'integer',
     ];
