@@ -76,10 +76,25 @@ class MonitorController extends Controller
             ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
             ->value('uptime') ?? 100);
 
+        $heatmapData = $monitor->checks()
+            ->where('checked_at', '>=', now()->subYear())
+            ->selectRaw('DATE(checked_at) as date, ROUND(AVG(response_time_ms)) as avg_ms')
+            ->groupByRaw('DATE(checked_at)')
+            ->orderBy('date')
+            ->pluck('avg_ms', 'date')
+            ->map(fn ($v) => (int) $v);
+
+        $lighthouseScore = $monitor->lighthouseScores()
+            ->latest('scored_at')
+            ->first(['performance', 'accessibility', 'best_practices', 'seo', 'scored_at']);
+
+        $badgeHash = base64_encode(pack('V', $monitor->id));
+
         return Inertia::render('Monitors/Show', [
             'monitor' => array_merge($monitor->toArray(), [
                 'notification_channels' => $monitor->notificationChannels()
                     ->get(['notification_channels.id', 'name', 'type']),
+                'badge_hash' => $badgeHash,
             ]),
             'checks' => $checks,
             'incidents' => $incidents,
@@ -88,6 +103,8 @@ class MonitorController extends Controller
                 'week' => $uptimeQuery(7),
                 'month' => $uptimeQuery(30),
             ],
+            'heatmapData' => $heatmapData,
+            'lighthouseScore' => $lighthouseScore,
         ]);
     }
 

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import LatencyHeatmap from '@/Components/LatencyHeatmap.vue'
+import LighthouseScores from '@/Components/LighthouseScores.vue'
 
 interface Check { id: number; status: 'up' | 'down'; response_time_ms: number; status_code: number; checked_at: string }
 interface Incident { id: number; started_at: string; resolved_at: string | null; cause: string }
-interface Channel { id: number; name: string; type: string }
 
 const props = defineProps<{
     monitor: any
     checks: Check[]
     incidents: Incident[]
     uptime: { day: number; week: number; month: number }
+    heatmapData: Record<string, number>
+    lighthouseScore: { performance: number; accessibility: number; best_practices: number; seo: number; scored_at: string } | null
 }>()
 
 const pauseForm = useForm({})
@@ -130,6 +133,24 @@ const uptimeColor = (v: number) => v > 99 ? 'text-emerald-400' : v > 95 ? 'text-
                 </table>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No incidents recorded</p>
+        </div>
+
+        <div class="glass p-6">
+            <h3 class="text-white font-medium mb-4">Latency Heatmap (12 months)</h3>
+            <LatencyHeatmap :data="heatmapData" />
+        </div>
+
+        <div class="glass p-6">
+            <h3 class="text-white font-medium mb-4">Lighthouse Scores</h3>
+            <LighthouseScores :scores="lighthouseScore" />
+        </div>
+
+        <div v-if="monitor.badge_hash" class="glass p-6">
+            <h3 class="text-white font-medium mb-4">Status Badge</h3>
+            <div class="flex items-center gap-4">
+                <img :src="`/badge/${monitor.badge_hash}.svg`" :alt="`${monitor.name} uptime badge`" />
+                <code class="text-sm text-slate-400 font-mono bg-white/5 px-3 py-2 rounded">![Uptime]({{ window.location.origin }}/badge/{{ monitor.badge_hash }}.svg)</code>
+            </div>
         </div>
 
         <div class="glass p-6">
