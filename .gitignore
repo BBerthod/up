@@ -27,4 +27,9 @@ Thumbs.db
 CLAUDE.md
 CLAUDE.local.md
 .claude/
+MEMORY.md
 docs/plans/
+
+# Example tests
+tests/Feature/ExampleTest.php
+tests/Unit/ExampleTest.php
