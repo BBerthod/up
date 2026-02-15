@@ -21,6 +21,7 @@ const typeColors: Record<string, string> = {
     webhook: 'bg-purple-500/20 text-purple-400',
     slack: 'bg-orange-500/20 text-orange-400',
     discord: 'bg-indigo-500/20 text-indigo-400',
+    telegram: 'bg-sky-500/20 text-sky-400',
     push: 'bg-green-500/20 text-green-400',
 }
 
