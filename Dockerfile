@@ -1,15 +1,4 @@
-# Stage 1: Build frontend assets
-FROM node:20-alpine AS assets
-
-WORKDIR /var/www/html
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY . .
-RUN npm run build
-
-# Stage 2: Install PHP dependencies
+# Stage 1: Install PHP dependencies
 FROM composer:2 AS php-deps
 
 WORKDIR /var/www/html
@@ -22,6 +11,18 @@ RUN composer install \
     --no-progress \
     --no-scripts \
     --ignore-platform-reqs
+
+# Stage 2: Build frontend assets
+FROM node:20-alpine AS assets
+
+WORKDIR /var/www/html
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+COPY --from=php-deps /var/www/html/vendor ./vendor
+RUN npm run build
 
 # Stage 3: Production image
 FROM php:8.4-fpm-alpine AS production
@@ -76,6 +77,6 @@ RUN mkdir -p /var/log/supervisor /var/log/php /var/log/php-fpm
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://127.0.0.1:8000/health || exit 1
+    CMD curl -f http://127.0.0.1:8000/up || exit 1
 
 CMD ["/usr/local/bin/start.sh"]
