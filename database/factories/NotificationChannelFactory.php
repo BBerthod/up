@@ -17,7 +17,7 @@ class NotificationChannelFactory extends Factory
             'team_id' => Team::factory(),
             'name' => 'Test Email',
             'type' => ChannelType::EMAIL,
-            'settings' => ['email' => fake()->email()],
+            'settings' => ['recipients' => fake()->email()],
             'is_active' => true,
         ];
     }

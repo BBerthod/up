@@ -86,7 +86,7 @@ class SendNotification implements ShouldQueue
 
     private function sendEmail(array $payload): void
     {
-        Mail::to($this->channel->settings['email'])
+        Mail::to($this->channel->settings['recipients'])
             ->send(new MonitorAlertMail($this->event, $payload));
     }
 

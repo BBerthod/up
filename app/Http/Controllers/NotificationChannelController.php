@@ -83,11 +83,25 @@ class NotificationChannelController extends Controller
 
     private function validateChannel(Request $request): array
     {
-        return $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', Rule::in(array_column(ChannelType::cases(), 'value'))],
-            'settings' => ['required', 'array'],
+            'settings' => ['present', 'array'],
             'is_active' => ['boolean'],
-        ]);
+        ];
+
+        $rules = array_merge($rules, match ($request->input('type')) {
+            'email' => ['settings.recipients' => ['required', 'string', 'max:1000']],
+            'webhook' => ['settings.url' => ['required', 'url', 'max:2000']],
+            'slack' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
+            'discord' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
+            'telegram' => [
+                'settings.bot_token' => ['required', 'string', 'max:255'],
+                'settings.chat_id' => ['required', 'string', 'max:255'],
+            ],
+            default => [],
+        });
+
+        return $request->validate($rules);
     }
 }

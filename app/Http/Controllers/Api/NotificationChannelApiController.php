@@ -31,12 +31,7 @@ class NotificationChannelApiController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', Rule::in(array_column(ChannelType::cases(), 'value'))],
-            'settings' => ['required', 'array'],
-            'is_active' => ['boolean'],
-        ]);
+        $validated = $this->validateChannel($request);
 
         $channel = NotificationChannel::create(array_merge($validated, [
             'team_id' => $request->user()->team_id,
@@ -47,12 +42,7 @@ class NotificationChannelApiController extends Controller
 
     public function update(Request $request, NotificationChannel $notificationChannel): NotificationChannelResource
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'type' => ['sometimes', 'required', Rule::in(array_column(ChannelType::cases(), 'value'))],
-            'settings' => ['sometimes', 'required', 'array'],
-            'is_active' => ['boolean'],
-        ]);
+        $validated = $this->validateChannel($request, isUpdate: true);
 
         $notificationChannel->update($validated);
 
@@ -64,5 +54,32 @@ class NotificationChannelApiController extends Controller
         $notificationChannel->delete();
 
         return response()->noContent();
+    }
+
+    private function validateChannel(Request $request, bool $isUpdate = false): array
+    {
+        $rules = [
+            'name' => [($isUpdate ? 'sometimes' : 'required'), 'string', 'max:255'],
+            'type' => [($isUpdate ? 'sometimes' : 'required'), Rule::in(array_column(ChannelType::cases(), 'value'))],
+            'settings' => [($isUpdate ? 'sometimes' : 'present'), 'array'],
+            'is_active' => ['boolean'],
+        ];
+
+        $type = $request->input('type');
+        if ($type) {
+            $rules = array_merge($rules, match ($type) {
+                'email' => ['settings.recipients' => ['required', 'string', 'max:1000']],
+                'webhook' => ['settings.url' => ['required', 'url', 'max:2000']],
+                'slack' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
+                'discord' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
+                'telegram' => [
+                    'settings.bot_token' => ['required', 'string', 'max:255'],
+                    'settings.chat_id' => ['required', 'string', 'max:255'],
+                ],
+                default => [],
+            });
+        }
+
+        return $request->validate($rules);
     }
 }
