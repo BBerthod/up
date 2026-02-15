@@ -49,6 +49,7 @@ class SendNotification implements ShouldQueue
             ChannelType::SLACK => $this->sendSlack(),
             ChannelType::DISCORD => $this->sendDiscord(),
             ChannelType::PUSH => $this->sendPush(),
+            ChannelType::TELEGRAM => $this->sendTelegram(),
         };
     }
 
@@ -86,7 +87,7 @@ class SendNotification implements ShouldQueue
 
     private function sendEmail(array $payload): void
     {
-        Mail::to($this->channel->settings['email'])
+        Mail::to($this->channel->settings['recipients'])
             ->send(new MonitorAlertMail($this->event, $payload));
     }
 
@@ -179,6 +180,29 @@ class SendNotification implements ShouldQueue
                 ]);
             }
         }
+    }
+
+    private function sendTelegram(): void
+    {
+        $statusEmoji = $this->event === 'down' ? "\u{1F534}" : "\u{1F7E2}";
+        $statusText = $this->event === 'down' ? 'Down' : 'Up';
+        $cause = ucfirst(str_replace('_', ' ', $this->incident->cause->value));
+
+        $text = "<b>{$statusEmoji} Monitor {$statusText}: {$this->monitor->name}</b>\n\n"
+            ."<b>URL:</b> {$this->monitor->url}\n"
+            ."<b>Status Code:</b> {$this->check->status_code}\n"
+            ."<b>Response Time:</b> {$this->check->response_time_ms}ms\n"
+            ."<b>Cause:</b> {$cause}";
+
+        Http::timeout(10)->post(
+            "https://api.telegram.org/bot{$this->channel->settings['bot_token']}/sendMessage",
+            [
+                'chat_id' => $this->channel->settings['chat_id'],
+                'text' => $text,
+                'parse_mode' => 'HTML',
+                'disable_web_page_preview' => true,
+            ]
+        );
     }
 
     private function sendDiscord(): void

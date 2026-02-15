@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0a0f1a">
 
     <title>{{ config('app.name', 'Up') }}</title>
+    <link rel="manifest" href="/manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

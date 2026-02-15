@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
 
 const page = usePage()
@@ -24,6 +24,12 @@ const navigation = computed(() => {
         items.push({ name: 'Users', href: '/admin/users', icon: 'users' })
     }
     return items
+})
+
+onMounted(() => {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+    }
 })
 
 const isActive = (href: string) => page.url.startsWith(href)

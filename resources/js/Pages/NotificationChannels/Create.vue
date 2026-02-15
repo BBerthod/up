@@ -11,17 +11,22 @@ const form = useForm({
 
 const types = [
     { value: 'email', label: 'Email' },
-    { value: 'webhook', label: 'Webhook' },
-    { value: 'slack', label: 'Slack' },
     { value: 'discord', label: 'Discord' },
+    { value: 'telegram', label: 'Telegram' },
+    { value: 'slack', label: 'Slack' },
+    { value: 'webhook', label: 'Webhook' },
     { value: 'push', label: 'Push' },
 ]
 
-const settingsFields: Record<string, { key: string; label: string; placeholder: string }[]> = {
+const settingsFields: Record<string, { key: string; label: string; placeholder: string; sensitive?: boolean }[]> = {
     email: [{ key: 'recipients', label: 'Recipients', placeholder: 'user@example.com, other@example.com' }],
-    webhook: [{ key: 'url', label: 'Webhook URL', placeholder: 'https://example.com/webhook' }],
-    slack: [{ key: 'webhook_url', label: 'Slack Webhook URL', placeholder: 'https://hooks.slack.com/services/...' }],
-    discord: [{ key: 'webhook_url', label: 'Discord Webhook URL', placeholder: 'https://discord.com/api/webhooks/...' }],
+    webhook: [{ key: 'url', label: 'Webhook URL', placeholder: 'https://example.com/webhook', sensitive: true }],
+    slack: [{ key: 'webhook_url', label: 'Slack Webhook URL', placeholder: 'https://hooks.slack.com/services/...', sensitive: true }],
+    discord: [{ key: 'webhook_url', label: 'Discord Webhook URL', placeholder: 'https://discord.com/api/webhooks/...', sensitive: true }],
+    telegram: [
+        { key: 'bot_token', label: 'Bot Token', placeholder: '123456:ABC-DEF...', sensitive: true },
+        { key: 'chat_id', label: 'Chat ID', placeholder: '-1001234567890' },
+    ],
     push: [],
 }
 
@@ -55,7 +60,7 @@ const submit = () => form.post(route('channels.store'))
 
             <div>
                 <label class="block text-sm font-medium text-white mb-2">Type</label>
-                <div class="grid grid-cols-5 gap-2">
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     <button v-for="t in types" :key="t.value" type="button" @click="form.type = t.value"
                         :class="['p-3 rounded-lg border text-center text-sm font-medium transition-colors',
                             form.type === t.value ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10']">
@@ -68,13 +73,14 @@ const submit = () => form.post(route('channels.store'))
             <div v-if="currentFields.length > 0" class="space-y-4">
                 <div v-for="field in currentFields" :key="field.key">
                     <label class="block text-sm font-medium text-white mb-2">{{ field.label }}</label>
-                    <input v-model="form.settings[field.key]" type="text" class="form-input w-full" :placeholder="field.placeholder" />
+                    <input v-model="form.settings[field.key]" :type="field.sensitive ? 'password' : 'text'" class="form-input w-full" :placeholder="field.placeholder" />
                 </div>
-                <p v-if="form.errors.settings" class="text-sm text-red-400 mt-1">{{ form.errors.settings }}</p>
             </div>
 
+            <p v-if="form.errors.settings" class="text-sm text-red-400">{{ form.errors.settings }}</p>
+
             <div v-if="form.type === 'push'" class="p-4 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-sm">
-                Push notifications are coming soon.
+                Push notifications will be sent to all team members who have enabled them in their browser. Subscribe via Settings to receive push alerts.
             </div>
 
             <div class="flex items-center gap-3">
