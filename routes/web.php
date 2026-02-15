@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\BadgeController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NotificationChannelController;
 use App\Http\Controllers\PublicStatusPageController;
 use App\Http\Controllers\StatusPageController;
+use App\Http\Controllers\TeamSettingsController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login');
+Route::redirect('/', '/dashboard');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
@@ -20,7 +23,12 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
-    Route::redirect('/dashboard', '/monitors');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('/settings', [TeamSettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings/team', [TeamSettingsController::class, 'updateTeam'])->name('settings.team.update');
+    Route::post('/settings/tokens', [TeamSettingsController::class, 'createToken'])->name('settings.tokens.store');
+    Route::delete('/settings/tokens/{tokenId}', [TeamSettingsController::class, 'deleteToken'])->name('settings.tokens.destroy');
 
     Route::resource('monitors', MonitorController::class);
     Route::post('/monitors/{monitor}/pause', [MonitorController::class, 'pause'])->name('monitors.pause');
@@ -32,5 +40,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('status-pages', StatusPageController::class)->except(['show']);
 });
 
-// Public status page (no auth)
+// Public routes (no auth)
 Route::get('/status/{slug}', [PublicStatusPageController::class, 'show'])->name('status.show');
+Route::get('/badge/{hash}.svg', BadgeController::class)->name('badge');
