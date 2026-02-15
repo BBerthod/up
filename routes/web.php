@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonitorController;
@@ -16,8 +17,8 @@ Route::redirect('/', '/dashboard');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
-    Route::get('/register', [RegisterController::class, 'show'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store']);
+    Route::get('/auth/{provider}/redirect', [OAuthController::class, 'redirectToProvider'])->name('oauth.redirect');
+    Route::get('/auth/{provider}/callback', [OAuthController::class, 'handleProviderCallback'])->name('oauth.callback');
 });
 
 Route::middleware('auth')->group(function () {
@@ -38,6 +39,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/channels/{channel}/test', [NotificationChannelController::class, 'test'])->name('channels.test');
 
     Route::resource('status-pages', StatusPageController::class)->except(['show']);
+
+    // Admin routes
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('users', AdminUserController::class);
+    });
 });
 
 // Public routes (no auth)
