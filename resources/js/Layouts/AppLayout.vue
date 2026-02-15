@@ -10,7 +10,7 @@ const userDropdownOpen = ref(false)
 const user = computed(() => (page.props as any).auth?.user)
 const team = computed(() => (page.props as any).auth?.team)
 
-const isAdmin = computed(() => (page.props as any).auth?.user?.is_admin)
+const isAdmin = computed(() => (page.props as any).auth?.user?.is_admin ?? false)
 
 const navigation = computed(() => {
     const items = [

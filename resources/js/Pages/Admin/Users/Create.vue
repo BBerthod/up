@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3'
 
+interface AssignableRole {
+    value: string
+    label: string
+}
+
+const props = defineProps<{
+    assignableRoles: AssignableRole[]
+}>()
+
 const form = useForm({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
+    role: 'member',
 })
 
 const submit = () => {
@@ -50,6 +60,14 @@ const submit = () => {
             <div>
                 <label for="password_confirmation" class="block text-sm font-medium text-slate-300 mb-1">Confirm Password</label>
                 <input id="password_confirmation" v-model="form.password_confirmation" type="password" class="form-input" placeholder="••••••••" required />
+            </div>
+
+            <div v-if="assignableRoles.length > 1">
+                <label for="role" class="block text-sm font-medium text-slate-300 mb-1">Role</label>
+                <select id="role" v-model="form.role" class="form-input">
+                    <option v-for="r in assignableRoles" :key="r.value" :value="r.value">{{ r.label }}</option>
+                </select>
+                <p v-if="form.errors.role" class="mt-2 text-sm text-red-400">{{ form.errors.role }}</p>
             </div>
 
             <div class="flex items-center justify-end gap-4 pt-4 border-t border-white/10">

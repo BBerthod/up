@@ -5,17 +5,27 @@ interface User {
     id: number
     name: string
     email: string
-    is_admin: boolean
+    role: 'super_admin' | 'admin' | 'member'
     team: { id: number; name: string } | null
 }
 
-const props = defineProps<{ user: User }>()
+interface AssignableRole {
+    value: string
+    label: string
+}
+
+const props = defineProps<{
+    user: User
+    assignableRoles: AssignableRole[]
+    canChangeRole: boolean
+}>()
 
 const form = useForm({
     name: props.user.name,
     email: props.user.email,
     password: '',
     password_confirmation: '',
+    role: props.user.role,
 })
 
 const submit = () => {
@@ -47,7 +57,8 @@ const submit = () => {
                 <p class="text-slate-400 text-sm">{{ user.email }}</p>
             </div>
             <div class="ml-auto">
-                <span v-if="user.is_admin" class="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-semibold border border-cyan-500/30">Admin</span>
+                <span v-if="user.role === 'super_admin'" class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold border border-amber-500/30">Super Admin</span>
+                <span v-else-if="user.role === 'admin'" class="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-semibold border border-cyan-500/30">Admin</span>
                 <span v-else class="px-2 py-1 rounded-lg bg-slate-700/30 text-slate-400 text-xs border border-white/5">Member</span>
             </div>
         </div>
@@ -75,6 +86,14 @@ const submit = () => {
             <div>
                 <label for="password_confirmation" class="block text-sm font-medium text-slate-300 mb-1">Confirm New Password</label>
                 <input id="password_confirmation" v-model="form.password_confirmation" type="password" class="form-input" placeholder="Confirm new password" />
+            </div>
+
+            <div v-if="canChangeRole && assignableRoles.length > 1">
+                <label for="role" class="block text-sm font-medium text-slate-300 mb-1">Role</label>
+                <select id="role" v-model="form.role" class="form-input">
+                    <option v-for="r in assignableRoles" :key="r.value" :value="r.value">{{ r.label }}</option>
+                </select>
+                <p v-if="form.errors.role" class="mt-2 text-sm text-red-400">{{ form.errors.role }}</p>
             </div>
 
             <div class="flex items-center justify-end gap-4 pt-4 border-t border-white/10">

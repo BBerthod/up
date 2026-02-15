@@ -5,7 +5,7 @@ interface User {
     id: number
     name: string
     email: string
-    is_admin: boolean
+    role: 'super_admin' | 'admin' | 'member'
     created_at: string
     team: { id: number; name: string } | null
 }
@@ -70,7 +70,8 @@ const deleteUser = (userId: number, userName: string) => {
                                 <span v-else class="text-slate-500 text-sm">No team</span>
                             </td>
                             <td class="px-6 py-4">
-                                <span v-if="user.is_admin" class="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-semibold border border-cyan-500/30">Admin</span>
+                                <span v-if="user.role === 'super_admin'" class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold border border-amber-500/30">Super Admin</span>
+                                <span v-else-if="user.role === 'admin'" class="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-semibold border border-cyan-500/30">Admin</span>
                                 <span v-else class="px-2 py-1 rounded-lg bg-slate-700/30 text-slate-400 text-xs border border-white/5">Member</span>
                             </td>
                             <td class="px-6 py-4 text-right">
