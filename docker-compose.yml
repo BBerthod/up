@@ -25,16 +25,24 @@ services:
       dockerfile: Dockerfile
     container_name: up-worker
     restart: unless-stopped
-    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+    command: php artisan queue:work redis --queue=monitors,notifications,default --sleep=3 --tries=3 --max-time=3600
     env_file:
       - .env
     volumes:
       - up-storage:/var/www/html/storage
     depends_on:
-      - app
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - up-network
     stop_signal: SIGTERM
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'queue:work' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   scheduler:
     build:
@@ -48,9 +56,17 @@ services:
     volumes:
       - up-storage:/var/www/html/storage
     depends_on:
-      - app
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - up-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'schedule:work' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   reverb:
     build:
@@ -69,6 +85,11 @@ services:
       - app
     networks:
       - up-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'reverb:start' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   postgres:
     image: postgres:16-alpine
