@@ -11,6 +11,7 @@ use App\Models\MonitorIncident;
 use App\Models\NotificationChannel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,6 +45,17 @@ class NotificationChannelController extends Controller
     {
         $validated = $this->validateChannel($request);
 
+        if ($validated['type'] === 'telegram') {
+            $validation = $this->validateTelegramChat(
+                $validated['settings']['bot_token'],
+                $validated['settings']['chat_id']
+            );
+
+            if (! $validation['valid']) {
+                return back()->withInput()->withErrors(['settings.chat_id' => $validation['error']]);
+            }
+        }
+
         NotificationChannel::create(array_merge($validated, [
             'team_id' => $request->user()->team_id,
         ]));
@@ -67,6 +79,17 @@ class NotificationChannelController extends Controller
     public function update(Request $request, NotificationChannel $channel): RedirectResponse
     {
         $validated = $this->validateChannel($request);
+
+        if ($validated['type'] === 'telegram') {
+            $validation = $this->validateTelegramChat(
+                $validated['settings']['bot_token'],
+                $validated['settings']['chat_id']
+            );
+
+            if (! $validation['valid']) {
+                return back()->withInput()->withErrors(['settings.chat_id' => $validation['error']]);
+            }
+        }
 
         $channel->update($validated);
 
@@ -109,6 +132,32 @@ class NotificationChannelController extends Controller
             return back()->with('success', "Test notification sent to {$channel->name}.");
         } catch (\Throwable $e) {
             return back()->with('error', "Test notification failed: {$e->getMessage()}");
+        }
+    }
+
+    private function validateTelegramChat(string $botToken, string $chatId): array
+    {
+        try {
+            $response = Http::timeout(10)
+                ->get("https://api.telegram.org/bot{$botToken}/getChat", [
+                    'chat_id' => $chatId,
+                ]);
+
+            $data = $response->json();
+
+            if (! ($data['ok'] ?? false)) {
+                return [
+                    'valid' => false,
+                    'error' => $data['description'] ?? 'Invalid chat ID.',
+                ];
+            }
+
+            return ['valid' => true, 'error' => null];
+        } catch (\Exception) {
+            return [
+                'valid' => false,
+                'error' => 'Connection to Telegram API failed. Please try again.',
+            ];
         }
     }
 

@@ -74,6 +74,7 @@ const submit = () => form.post(route('channels.store'))
                 <div v-for="field in currentFields" :key="field.key">
                     <label class="block text-sm font-medium text-white mb-2">{{ field.label }}</label>
                     <input v-model="form.settings[field.key]" :type="field.sensitive ? 'password' : 'text'" class="form-input w-full" :placeholder="field.placeholder" />
+                    <p v-if="form.errors[`settings.${field.key}`]" class="text-sm text-red-400 mt-1">{{ form.errors[`settings.${field.key}`] }}</p>
                 </div>
             </div>
 

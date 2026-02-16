@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 
 class NotificationChannelApiController extends Controller
@@ -33,6 +34,13 @@ class NotificationChannelApiController extends Controller
     {
         $validated = $this->validateChannel($request);
 
+        if (($validated['type'] ?? null) === 'telegram') {
+            $this->validateTelegramChat(
+                $validated['settings']['bot_token'],
+                $validated['settings']['chat_id']
+            );
+        }
+
         $channel = NotificationChannel::create(array_merge($validated, [
             'team_id' => $request->user()->team_id,
         ]));
@@ -44,6 +52,13 @@ class NotificationChannelApiController extends Controller
     {
         $validated = $this->validateChannel($request, isUpdate: true);
 
+        if (($validated['type'] ?? null) === 'telegram' && isset($validated['settings']['chat_id'])) {
+            $this->validateTelegramChat(
+                $validated['settings']['bot_token'],
+                $validated['settings']['chat_id']
+            );
+        }
+
         $notificationChannel->update($validated);
 
         return new NotificationChannelResource($notificationChannel);
@@ -54,6 +69,25 @@ class NotificationChannelApiController extends Controller
         $notificationChannel->delete();
 
         return response()->noContent();
+    }
+
+    private function validateTelegramChat(string $botToken, string $chatId): void
+    {
+        try {
+            $response = Http::timeout(10)
+                ->get("https://api.telegram.org/bot{$botToken}/getChat", [
+                    'chat_id' => $chatId,
+                ]);
+
+            $data = $response->json();
+
+            if (! ($data['ok'] ?? false)) {
+                $error = $data['description'] ?? 'Invalid chat ID.';
+                abort(422, $error);
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException) {
+            abort(422, 'Connection to Telegram API failed. Please try again.');
+        }
     }
 
     private function validateChannel(Request $request, bool $isUpdate = false): array
