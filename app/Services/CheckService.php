@@ -13,6 +13,7 @@ use App\Services\Checkers\DnsChecker;
 use App\Services\Checkers\HttpChecker;
 use App\Services\Checkers\PingChecker;
 use App\Services\Checkers\PortChecker;
+use Illuminate\Support\Facades\Cache;
 
 class CheckService
 {
@@ -27,9 +28,6 @@ class CheckService
         $checker = $this->resolveChecker($monitor->type ?? MonitorType::HTTP);
         $result = $checker->check($monitor);
 
-        $previousCheck = $monitor->checks()->latest('checked_at')->first();
-        $wasUp = $previousCheck === null || $previousCheck->status === CheckStatus::UP;
-
         $check = MonitorCheck::create([
             'monitor_id' => $monitor->id,
             'status' => $result->status,
@@ -42,28 +40,38 @@ class CheckService
 
         $monitor->update(['last_checked_at' => now()]);
 
-        $isUp = $result->status === CheckStatus::UP;
+        $lock = Cache::lock("monitor:check:{$monitor->id}", 30);
 
-        if ($wasUp && ! $isUp) {
-            $incident = MonitorIncident::create([
-                'monitor_id' => $monitor->id,
-                'started_at' => now(),
-                'cause' => $result->cause,
-            ]);
-            $this->notificationService->notifyDown($monitor, $incident, $check);
-        } elseif (! $wasUp && $isUp) {
-            $incident = $monitor->incidents()
-                ->whereNull('resolved_at')
-                ->latest('started_at')
-                ->first();
+        if ($lock->get()) {
+            try {
+                $previousCheck = $monitor->checks()->latest('checked_at')->skip(1)->first();
+                $wasUp = $previousCheck === null || $previousCheck->status === CheckStatus::UP;
+                $isUp = $result->status === CheckStatus::UP;
 
-            if ($incident) {
-                $incident->resolve();
-                $this->notificationService->notifyUp($monitor, $incident, $check);
+                if ($wasUp && ! $isUp) {
+                    $incident = MonitorIncident::create([
+                        'monitor_id' => $monitor->id,
+                        'started_at' => now(),
+                        'cause' => $result->cause,
+                    ]);
+                    $this->notificationService->notifyDown($monitor, $incident, $check);
+                } elseif (! $wasUp && $isUp) {
+                    $incident = $monitor->incidents()
+                        ->whereNull('resolved_at')
+                        ->latest('started_at')
+                        ->first();
+
+                    if ($incident) {
+                        $incident->resolve();
+                        $this->notificationService->notifyUp($monitor, $incident, $check);
+                    }
+                }
+
+                $this->checkThresholds($monitor, $check);
+            } finally {
+                $lock->release();
             }
         }
-
-        $this->checkThresholds($monitor, $check);
 
         return $check;
     }
