@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
-import { computed, ref } from 'vue'
+import SkeletonMonitorList from '@/Components/SkeletonMonitorList.vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import DataView from 'primevue/dataview'
 
@@ -31,6 +32,9 @@ const props = defineProps<{
     monitors: Monitor[]
     filters: { status: string | null }
 }>()
+
+const loaded = ref(false)
+onMounted(() => { loaded.value = true })
 
 const stats = computed(() => {
     const total = props.monitors.length
@@ -105,7 +109,8 @@ const filterOptions = [
         </div>
 
         <!-- Linear List -->
-        <DataView :value="monitors" :paginator="monitors.length > 20" :rows="20" class="bg-transparent">
+        <SkeletonMonitorList v-if="!loaded" />
+        <DataView v-else :value="monitors" :paginator="monitors.length > 20" :rows="20" class="bg-transparent">
             <template #list="slotProps">
                 <div class="flex flex-col">
                     <div v-for="(monitor, index) in slotProps.items" :key="index"

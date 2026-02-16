@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import PageHeader from '@/Components/PageHeader.vue'
 import GlassCard from '@/Components/GlassCard.vue'
 import EmptyState from '@/Components/EmptyState.vue'
+import SkeletonDashboard from '@/Components/SkeletonDashboard.vue'
 
 useRealtimeUpdates({
     onMonitorChecked: ['metrics'],
@@ -51,6 +52,9 @@ interface ChartPoint {
     hour: string
     avg_ms: number
 }
+
+const loaded = ref(false)
+onMounted(() => { loaded.value = true })
 
 const props = defineProps<{
     metrics: {
@@ -155,7 +159,8 @@ const chartXLabels = computed(() => {
         <PageHeader title="Overview" description="System status and metrics for the last 24 hours." />
 
         <!-- KPI Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-white/5 pb-12">
+        <SkeletonDashboard v-if="!loaded" />
+        <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-white/5 pb-12">
             <div class="space-y-1">
                 <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Monitors</span>
                 <div class="flex items-baseline gap-2">
