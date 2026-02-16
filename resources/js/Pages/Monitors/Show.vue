@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import LatencyHeatmap from '@/Components/LatencyHeatmap.vue'
+
+useRealtimeUpdates({
+    onMonitorChecked: ['checks', 'chartData', 'uptime', 'heatmapData', 'incidents'],
+    onLighthouseCompleted: ['lighthouseScore', 'lighthouseHistory'],
+})
 import LighthouseHistory from '@/Components/LighthouseHistory.vue'
 import LighthouseScores from '@/Components/LighthouseScores.vue'
 import ResponseTimeChart from '@/Components/ResponseTimeChart.vue'

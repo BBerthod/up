@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
+import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import DataView from 'primevue/dataview'
+
+useRealtimeUpdates({
+    onMonitorChecked: ['monitors'],
+})
 import SelectButton from 'primevue/selectbutton'
 import Button from 'primevue/button'
 

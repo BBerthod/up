@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
 import { ref, watch, computed } from 'vue'
+import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import Tag from 'primevue/tag'
+
+useRealtimeUpdates({
+    onMonitorChecked: ['incidents', 'activeCount'],
+})
 import Select from 'primevue/select'
 
 const props = defineProps<{

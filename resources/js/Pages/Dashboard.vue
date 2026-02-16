@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
+
+useRealtimeUpdates({
+    onMonitorChecked: ['metrics'],
+    onLighthouseCompleted: ['metrics'],
+})
 
 interface DownMonitor {
     id: number

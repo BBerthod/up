@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onUnmounted } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 
 const props = defineProps<{
@@ -21,15 +21,14 @@ const props = defineProps<{
 
 const auditing = ref(false)
 const auditMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
-let pollTimer: ReturnType<typeof setInterval> | null = null
-let pollTimeout: ReturnType<typeof setTimeout> | null = null
 
-const stopPolling = () => {
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
-    if (pollTimeout) { clearTimeout(pollTimeout); pollTimeout = null }
-}
-
-onUnmounted(stopPolling)
+watch(() => props.scores?.scored_at, (newVal, oldVal) => {
+    if (auditing.value && newVal && newVal !== oldVal) {
+        auditing.value = false
+        auditMessage.value = { type: 'success', text: 'Lighthouse audit completed!' }
+        setTimeout(() => { auditMessage.value = null }, 5000)
+    }
+})
 const categories = computed(() => {
     if (!props.scores) return []
     return [
@@ -71,34 +70,6 @@ const dashOffset = (v: number) => circumference - (v / 100) * circumference
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
-const startPolling = () => {
-    const initialScoredAt = props.scores?.scored_at ?? null
-    stopPolling()
-
-    pollTimer = setInterval(() => {
-        router.reload({
-            only: ['lighthouseScore'],
-            preserveScroll: true,
-            onSuccess: () => {
-                const currentScoredAt = props.scores?.scored_at ?? null
-                if (currentScoredAt && currentScoredAt !== initialScoredAt) {
-                    stopPolling()
-                    auditing.value = false
-                    auditMessage.value = { type: 'success', text: 'Lighthouse audit completed!' }
-                    setTimeout(() => { auditMessage.value = null }, 5000)
-                }
-            },
-        })
-    }, 5000)
-
-    pollTimeout = setTimeout(() => {
-        stopPolling()
-        auditing.value = false
-        auditMessage.value = { type: 'error', text: 'Audit is taking longer than expected. Results will appear shortly.' }
-        setTimeout(() => { auditMessage.value = null }, 5000)
-    }, 120000)
-}
-
 const runAudit = () => {
     auditing.value = true
     auditMessage.value = null
@@ -110,8 +81,6 @@ const runAudit = () => {
                 auditing.value = false
                 auditMessage.value = { type: 'error', text: flash.error }
                 setTimeout(() => { auditMessage.value = null }, 5000)
-            } else {
-                startPolling()
             }
         },
     })
