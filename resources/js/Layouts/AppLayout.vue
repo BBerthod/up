@@ -6,7 +6,7 @@ import Toast from 'primevue/toast'
 import Menu from 'primevue/menu'
 import Drawer from 'primevue/drawer'
 import Button from 'primevue/button'
-import { useFlashToast } from '@/composables/useFlashToast'
+import { useFlashToast } from '@/Composables/useFlashToast'
 
 const page = usePage()
 useFlashToast()
