@@ -42,7 +42,7 @@ const userMenuItems = [
     {
         label: 'My Profile',
         icon: 'pi pi-user',
-        command: () => router.get('/user/profile')
+        command: () => router.get(route('profile.edit'))
     },
     {
         label: 'Log Out',
@@ -70,7 +70,7 @@ onMounted(() => {
                             <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </div>
-                    <span class="text-lg font-bold text-white tracking-tight">Up</span>
+                    <span class="text-lg font-bold text-white tracking-tight">Up <span class="text-xs font-normal text-zinc-500">by Radiank</span></span>
                 </div>
             </template>
             <nav class="space-y-1 mt-4">
@@ -100,7 +100,7 @@ onMounted(() => {
                             <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </div>
-                    <span v-if="sidebarOpen" class="text-lg font-bold text-white tracking-tight">Up</span>
+                    <span v-if="sidebarOpen" class="text-lg font-bold text-white tracking-tight">Up <span class="text-xs font-normal text-zinc-500">by Radiank</span></span>
                 </Link>
             </div>
 
