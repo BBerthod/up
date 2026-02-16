@@ -13,21 +13,19 @@ class LighthouseService
 {
     public function audit(Monitor $monitor): MonitorLighthouseScore
     {
-        $queryParams = [
+        $query = http_build_query([
             'url' => $monitor->url,
-            'category' => ['performance', 'accessibility', 'best-practices', 'seo'],
             'strategy' => 'mobile',
-        ];
+        ]).'&category=performance&category=accessibility&category=best-practices&category=seo';
 
         $apiKey = config('services.google.pagespeed_api_key');
         if ($apiKey) {
-            $queryParams['key'] = $apiKey;
+            $query .= '&key='.$apiKey;
         }
 
         try {
             $response = Http::timeout(120)->get(
-                'https://www.googleapis.com/pagespeedonline/v5/runPagespeed',
-                $queryParams
+                'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?'.$query
             );
 
             if (! $response->successful()) {
