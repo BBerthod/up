@@ -10,7 +10,7 @@ interface Channel {
     name: string
     type: string
     is_active: boolean
-    settings: Record<string, unknown>
+    summary: string
 }
 
 const props = defineProps<{

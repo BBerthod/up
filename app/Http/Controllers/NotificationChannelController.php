@@ -28,7 +28,7 @@ class NotificationChannelController extends Controller
                 'name' => $channel->name,
                 'type' => $channel->type->value,
                 'is_active' => $channel->is_active,
-                'settings' => $channel->settings,
+                'summary' => $this->getSettingsSummary($channel->type, $channel->settings),
             ]);
 
         return Inertia::render('NotificationChannels/Index', [
@@ -159,6 +159,22 @@ class NotificationChannelController extends Controller
                 'error' => 'Connection to Telegram API failed. Please try again.',
             ];
         }
+    }
+
+    private function getSettingsSummary(ChannelType $type, array $settings): string
+    {
+        return match ($type) {
+            ChannelType::EMAIL => sprintf(
+                '%d recipient%s',
+                count($settings['recipients'] ?? []),
+                count($settings['recipients'] ?? []) !== 1 ? 's' : ''
+            ),
+            ChannelType::WEBHOOK,
+            ChannelType::SLACK,
+            ChannelType::DISCORD,
+            ChannelType::TELEGRAM,
+            ChannelType::PUSH => 'Configured',
+        };
     }
 
     private function validateChannel(Request $request): array
