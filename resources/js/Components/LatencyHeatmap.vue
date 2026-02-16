@@ -15,13 +15,13 @@ const weeks = computed(() => {
     const today = new Date()
     const start = new Date(today)
     start.setDate(start.getDate() - 364)
-    start.setDate(start.getDate() - start.getDay() + 1) // Align to Monday
+    start.setDate(start.getDate() - start.getDay() + 1)
 
     let currentWeek: { date: string; day: number; ms: number | null }[] = []
 
     for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
         const key = d.toISOString().slice(0, 10)
-        const dayOfWeek = (d.getDay() + 6) % 7 // Mon=0, Sun=6
+        const dayOfWeek = (d.getDay() + 6) % 7
 
         if (dayOfWeek === 0 && currentWeek.length > 0) {
             result.push(currentWeek)
@@ -71,38 +71,37 @@ const showTooltip = (e: MouseEvent, cell: { date: string; ms: number | null }) =
 const hideTooltip = () => { tooltip.value.show = false }
 
 const svgWidth = computed(() => weeks.value.length * (cellSize + gap) + 30)
+const svgHeight = computed(() => 7 * (cellSize + gap) + 24)
 </script>
 
 <template>
     <div class="relative">
-        <div class="overflow-x-auto">
-            <svg :width="svgWidth" :height="7 * (cellSize + gap) + 24">
-                <text v-for="m in months" :key="m.col" :x="m.col * (cellSize + gap) + 30" y="10" class="fill-slate-500 text-[10px]">{{ m.label }}</text>
-
-                <text y="30" x="0" class="fill-slate-500 text-[10px]">M</text>
-                <text y="58" x="0" class="fill-slate-500 text-[10px]">W</text>
-                <text y="86" x="0" class="fill-slate-500 text-[10px]">F</text>
-
-                <template v-for="(week, wi) in weeks" :key="wi">
-                    <rect v-for="cell in week" :key="cell.date"
-                        :x="wi * (cellSize + gap) + 30"
-                        :y="cell.day * (cellSize + gap) + 18"
-                        :width="cellSize" :height="cellSize" rx="2"
-                        :class="cellColor(cell.ms)"
-                        class="cursor-pointer transition-opacity hover:opacity-80"
-                        @mouseenter="showTooltip($event, cell)"
-                        @mouseleave="hideTooltip" />
-                </template>
-            </svg>
-        </div>
-
+        <svg
+            :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
+            preserveAspectRatio="xMidYMid meet"
+            class="w-full h-auto"
+        >
+            <text v-for="m in months" :key="m.col" :x="m.col * (cellSize + gap) + 30" y="10" class="fill-slate-500 text-[10px]">{{ m.label }}</text>
+            <text y="30" x="0" class="fill-slate-500 text-[10px]">M</text>
+            <text y="58" x="0" class="fill-slate-500 text-[10px]">W</text>
+            <text y="86" x="0" class="fill-slate-500 text-[10px]">F</text>
+            <template v-for="(week, wi) in weeks" :key="wi">
+                <rect v-for="cell in week" :key="cell.date"
+                    :x="wi * (cellSize + gap) + 30"
+                    :y="cell.day * (cellSize + gap) + 18"
+                    :width="cellSize" :height="cellSize" rx="2"
+                    :class="cellColor(cell.ms)"
+                    class="cursor-pointer transition-opacity hover:opacity-80"
+                    @mouseenter="showTooltip($event, cell)"
+                    @mouseleave="hideTooltip" />
+            </template>
+        </svg>
         <Teleport to="body">
             <div v-if="tooltip.show" class="fixed z-50 px-2 py-1 rounded text-xs text-white bg-slate-800 border border-white/10 pointer-events-none whitespace-nowrap"
                 :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }">
                 {{ tooltip.text }}
             </div>
         </Teleport>
-
         <div class="flex items-center gap-2 mt-3 text-xs text-slate-500">
             <span>Less</span>
             <div class="w-3 h-3 rounded-sm bg-white/5" />
