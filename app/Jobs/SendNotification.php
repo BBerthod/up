@@ -93,7 +93,7 @@ class SendNotification implements ShouldQueue
 
     private function sendWebhook(array $payload): void
     {
-        Http::timeout(10)->post($this->channel->settings['url'], $payload);
+        Http::timeout(10)->post($this->channel->settings['url'], $payload)->throw();
     }
 
     private function sendSlack(): void
@@ -125,7 +125,7 @@ class SendNotification implements ShouldQueue
                     ],
                 ],
             ]],
-        ]);
+        ])->throw();
     }
 
     private function sendPush(): void
@@ -194,7 +194,7 @@ class SendNotification implements ShouldQueue
             ."<b>Response Time:</b> {$this->check->response_time_ms}ms\n"
             ."<b>Cause:</b> {$cause}";
 
-        Http::timeout(10)->post(
+        $response = Http::timeout(10)->post(
             "https://api.telegram.org/bot{$this->channel->settings['bot_token']}/sendMessage",
             [
                 'chat_id' => $this->channel->settings['chat_id'],
@@ -203,6 +203,15 @@ class SendNotification implements ShouldQueue
                 'disable_web_page_preview' => true,
             ]
         );
+
+        if ($response->failed()) {
+            Log::error('Telegram API error', [
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
+        }
+
+        $response->throw();
     }
 
     private function sendDiscord(): void
@@ -224,6 +233,6 @@ class SendNotification implements ShouldQueue
                 'timestamp' => now()->toIso8601String(),
                 'footer' => ['text' => config('app.name')],
             ]],
-        ]);
+        ])->throw();
     }
 }
