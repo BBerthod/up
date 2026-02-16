@@ -169,14 +169,29 @@ function scaleX(timestamp: number): number {
     return paddingLeft + ((timestamp - minTs) / (maxTs - minTs)) * chartWidth
 }
 
+const smoothPath = (points: { x: number; y: number }[]): string => {
+    if (points.length === 0) return ''
+    if (points.length === 1) return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`
+
+    let d = `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`
+
+    for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1]
+        const curr = points[i]
+        const cpx = (prev.x + curr.x) / 2
+        d += ` C ${cpx.toFixed(2)},${prev.y.toFixed(2)} ${cpx.toFixed(2)},${curr.y.toFixed(2)} ${curr.x.toFixed(2)},${curr.y.toFixed(2)}`
+    }
+
+    return d
+}
+
 const pathD = computed(() => {
     if (normalizedData.value.length === 0) return ''
 
     const sortedData = [...normalizedData.value].sort((a, b) => a.x - b.x)
-    const points = sortedData.map((d) => `${scaleX(d.x).toFixed(2)},${scaleY(d.y).toFixed(2)}`)
+    const points = sortedData.map((d) => ({ x: scaleX(d.x), y: scaleY(d.y) }))
 
-    if (points.length === 1) return `M ${points[0]}`
-    return `M ${points.join(' L ')}`
+    return smoothPath(points)
 })
 
 const areaD = computed(() => {
@@ -184,17 +199,13 @@ const areaD = computed(() => {
 
     const sortedData = [...normalizedData.value].sort((a, b) => a.x - b.x)
     const bottomY = paddingTop + chartHeight
+    const points = sortedData.map((d) => ({ x: scaleX(d.x), y: scaleY(d.y) }))
 
-    const points = sortedData.map((d) => ({
-        x: scaleX(d.x).toFixed(2),
-        y: scaleY(d.y).toFixed(2),
-    }))
+    const curvePath = smoothPath(points)
+    const firstX = points[0].x.toFixed(2)
+    const lastX = points[points.length - 1].x.toFixed(2)
 
-    const firstX = points[0].x
-    const lastX = points[points.length - 1].x
-    const linePath = points.map((p) => `${p.x},${p.y}`).join(' L ')
-
-    return `M ${firstX},${bottomY} L ${linePath} L ${lastX},${bottomY} Z`
+    return `${curvePath} L ${lastX},${bottomY} L ${firstX},${bottomY} Z`
 })
 
 const tooltip = ref({
@@ -325,15 +336,26 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
                     stroke-linejoin="round"
                 />
 
+                <!-- Down status markers -->
                 <circle
-                    v-for="(point, index) in normalizedData"
-                    :key="'point-' + index"
+                    v-for="(point, index) in normalizedData.filter(p => p.status === 'down')"
+                    :key="'down-' + index"
                     :cx="scaleX(point.x)"
                     :cy="scaleY(point.y)"
-                    r="3"
-                    :fill="point.status === 'down' ? '#ef4444' : '#06b6d4'"
+                    r="4"
+                    fill="#ef4444"
                     stroke="#0f172a"
                     stroke-width="2"
+                />
+
+                <!-- Invisible hit areas for tooltip -->
+                <circle
+                    v-for="(point, index) in normalizedData"
+                    :key="'hit-' + index"
+                    :cx="scaleX(point.x)"
+                    :cy="scaleY(point.y)"
+                    :r="Math.max(6, 800 / normalizedData.length)"
+                    fill="transparent"
                     class="cursor-pointer"
                     @mouseenter="handleMouseEnter($event, point)"
                     @mousemove="handleMouseMove($event)"
