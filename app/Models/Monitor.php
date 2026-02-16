@@ -38,6 +38,7 @@ class Monitor extends Model
         'method' => MonitorMethod::class,
         'is_active' => 'boolean',
         'last_checked_at' => 'datetime',
+        'expected_status_code' => 'integer',
         'port' => 'integer',
         'warning_threshold_ms' => 'integer',
         'critical_threshold_ms' => 'integer',
