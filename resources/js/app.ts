@@ -2,6 +2,8 @@ import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 import { ZiggyVue } from 'ziggy-js'
+import PrimeVue from 'primevue/config'
+import MyPreset from './primevue-presets'
 import AppLayout from './Layouts/AppLayout.vue'
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
@@ -43,6 +45,14 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .use(PrimeVue, {
+                theme: {
+                    preset: MyPreset,
+                    options: {
+                        darkModeSelector: '.dark',
+                    }
+                }
+            })
             .mount(el)
     },
 

@@ -4,17 +4,17 @@ import Aura from '@primevue/themes/aura';
 const MyPreset = definePreset(Aura, {
     semantic: {
         primary: {
-            50: '{cyan.50}',
-            100: '{cyan.100}',
-            200: '{cyan.200}',
-            300: '{cyan.300}',
-            400: '{cyan.400}',
-            500: '{cyan.500}',
-            600: '{cyan.600}',
-            700: '{cyan.700}',
-            800: '{cyan.800}',
-            900: '{cyan.900}',
-            950: '{cyan.950}'
+            50: '{emerald.50}',
+            100: '{emerald.100}',
+            200: '{emerald.200}',
+            300: '{emerald.300}',
+            400: '{emerald.400}',
+            500: '{emerald.500}',
+            600: '{emerald.600}',
+            700: '{emerald.700}',
+            800: '{emerald.800}',
+            900: '{emerald.900}',
+            950: '{emerald.950}'
         }
     },
     components: {
@@ -24,12 +24,12 @@ const MyPreset = definePreset(Aura, {
                 dark: {
                     root: {
                         primary: {
-                            background: '#06b6d4',
-                            border: { color: '#06b6d4' },
+                            background: '#10b981',
+                            border: { color: '#10b981' },
                             color: '#ffffff',
                             hover: {
-                                background: '#0891b2',
-                                border: { color: '#0891b2' }
+                                background: '#059669',
+                                border: { color: '#059669' }
                             }
                         },
                         secondary: {
@@ -182,8 +182,8 @@ const MyPreset = definePreset(Aura, {
                             borderColor: 'rgba(255,255,255,0.10)'
                         },
                         focus: {
-                            borderColor: '#06b6d4',
-                            shadow: '0 0 0 2px rgba(6,182,212,0.2)'
+                            borderColor: '#10b981',
+                            shadow: '0 0 0 2px rgba(16,185,129,0.2)'
                         }
                     }
                 }
@@ -211,8 +211,8 @@ const MyPreset = definePreset(Aura, {
                         }
                     },
                     checked: {
-                        background: '#06b6d4',
-                        borderColor: '#06b6d4'
+                        background: '#10b981',
+                        borderColor: '#10b981'
                     }
                 }
             }
@@ -249,8 +249,8 @@ const MyPreset = definePreset(Aura, {
                             borderColor: 'rgba(255,255,255,0.10)'
                         },
                         focus: {
-                            borderColor: '#06b6d4',
-                            shadow: '0 0 0 2px rgba(6,182,212,0.2)'
+                            borderColor: '#10b981',
+                            shadow: '0 0 0 2px rgba(16,185,129,0.2)'
                         }
                     },
                     overlay: {
@@ -265,8 +265,8 @@ const MyPreset = definePreset(Aura, {
                             color: '#ececef'
                         },
                         selected: {
-                            background: 'rgba(6,182,212,0.15)',
-                            color: '#22d3ee'
+                            background: 'rgba(16,185,129,0.15)',
+                            color: '#34d399'
                         }
                     }
                 }
@@ -288,9 +288,9 @@ const MyPreset = definePreset(Aura, {
                         }
                     },
                     currentPage: {
-                        background: 'rgba(6,182,212,0.15)',
+                        background: 'rgba(16,185,129,0.15)',
                         borderColor: 'transparent',
-                        color: '#22d3ee'
+                        color: '#34d399'
                     }
                 }
             }
