@@ -117,7 +117,7 @@ class MonitorController extends Controller
             ],
             'heatmapData' => $heatmapData,
             'lighthouseScore' => $lighthouseScore,
-            'lighthouseHistory' => Inertia::lazy(fn () => $this->getLighthouseHistory($request, $monitor)),
+            'lighthouseHistory' => $this->getLighthouseHistory($request, $monitor),
             'chartData' => $chartData,
             'currentPeriod' => $period,
         ]);
