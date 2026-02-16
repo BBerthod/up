@@ -2,6 +2,7 @@
 import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import LatencyHeatmap from '@/Components/LatencyHeatmap.vue'
+import LighthouseHistory from '@/Components/LighthouseHistory.vue'
 import LighthouseScores from '@/Components/LighthouseScores.vue'
 import ResponseTimeChart from '@/Components/ResponseTimeChart.vue'
 
@@ -144,6 +145,10 @@ const handlePeriodChange = (period: string) => {
         <div class="glass p-6">
             <h3 class="text-white font-medium mb-4">Lighthouse Scores</h3>
             <LighthouseScores :scores="lighthouseScore" :monitor-id="monitor.id" :monitor-type="monitor.type" />
+        </div>
+
+        <div v-if="monitor.type === 'http'" class="glass p-6">
+            <LighthouseHistory :history="lighthouseHistory" :monitor-id="monitor.id" />
         </div>
 
         <div v-if="monitor.badge_hash" class="glass p-6">
