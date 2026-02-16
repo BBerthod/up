@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMonitorRequest;
 use App\Http\Requests\UpdateMonitorRequest;
+use App\Jobs\RunLighthouseAudit;
 use App\Models\Monitor;
 use App\Models\NotificationChannel;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -94,7 +96,7 @@ class MonitorController extends Controller
 
         $lighthouseScore = $monitor->lighthouseScores()
             ->latest('scored_at')
-            ->first(['performance', 'accessibility', 'best_practices', 'seo', 'scored_at']);
+            ->first(['performance', 'accessibility', 'best_practices', 'seo', 'lcp', 'fcp', 'cls', 'tbt', 'speed_index', 'scored_at']);
 
         $badgeHash = base64_encode(pack('V', $monitor->id));
 
@@ -115,6 +117,7 @@ class MonitorController extends Controller
             ],
             'heatmapData' => $heatmapData,
             'lighthouseScore' => $lighthouseScore,
+            'lighthouseHistory' => Inertia::lazy(fn () => $this->getLighthouseHistory($request, $monitor)),
             'chartData' => $chartData,
             'currentPeriod' => $period,
         ]);
@@ -184,6 +187,44 @@ class MonitorController extends Controller
         $monitor->update(['is_active' => true]);
 
         return back();
+    }
+
+    public function lighthouse(Monitor $monitor): RedirectResponse
+    {
+        if ($monitor->type->value !== 'http') {
+            abort(422, 'Lighthouse audits are only available for HTTP monitors.');
+        }
+
+        $cacheKey = "lighthouse_audit:{$monitor->id}";
+        if (Cache::has($cacheKey)) {
+            return back()->with('error', 'A Lighthouse audit was recently triggered. Please wait 5 minutes.');
+        }
+
+        Cache::put($cacheKey, true, now()->addMinutes(5));
+        RunLighthouseAudit::dispatch($monitor);
+
+        return back()->with('success', 'Lighthouse audit queued successfully.');
+    }
+
+    public function lighthouseHistory(Request $request, Monitor $monitor): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->getLighthouseHistory($request, $monitor));
+    }
+
+    private function getLighthouseHistory(Request $request, Monitor $monitor): array
+    {
+        $period = $request->query('lh_period', '30d');
+        $days = match ($period) {
+            '7d' => 7,
+            '90d' => 90,
+            default => 30,
+        };
+
+        return $monitor->lighthouseScores()
+            ->where('scored_at', '>=', now()->subDays($days))
+            ->orderBy('scored_at')
+            ->get(['performance', 'accessibility', 'best_practices', 'seo', 'lcp', 'fcp', 'cls', 'tbt', 'speed_index', 'scored_at'])
+            ->toArray();
     }
 
     private function getChartData(Monitor $monitor, string $period): array

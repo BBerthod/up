@@ -49,6 +49,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('monitors', MonitorController::class);
     Route::post('/monitors/{monitor}/pause', [MonitorController::class, 'pause'])->name('monitors.pause');
     Route::post('/monitors/{monitor}/resume', [MonitorController::class, 'resume'])->name('monitors.resume');
+    Route::post('/monitors/{monitor}/lighthouse', [MonitorController::class, 'lighthouse'])->name('monitors.lighthouse');
+    Route::get('/monitors/{monitor}/lighthouse-history', [MonitorController::class, 'lighthouseHistory'])->name('monitors.lighthouse-history');
 
     Route::resource('channels', NotificationChannelController::class)->except(['show']);
     Route::post('/channels/{channel}/test', [NotificationChannelController::class, 'test'])->name('channels.test');
