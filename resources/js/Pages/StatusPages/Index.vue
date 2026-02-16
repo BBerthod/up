@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import DataView from 'primevue/dataview'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
-import Message from 'primevue/message'
 import PageHeader from '@/Components/PageHeader.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
@@ -21,8 +20,6 @@ interface StatusPage {
 const props = defineProps<{
     statusPages: StatusPage[]
 }>()
-
-const flash = computed(() => usePage().props.flash as { success?: string } | undefined)
 
 const showDeleteDialog = ref(false)
 const pageToDelete = ref<StatusPage | null>(null)
@@ -52,8 +49,6 @@ const statusPageUrl = (slug: string) => `/status/${slug}`
                 </Link>
             </template>
         </PageHeader>
-
-        <Message v-if="flash?.success" severity="success" class="mb-6">{{ flash.success }}</Message>
 
         <DataView :value="statusPages" :layout="'list'" :paginator="statusPages.length > 10" :rows="10" class="glass overflow-hidden rounded-xl">
             <template #list="slotProps">

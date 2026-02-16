@@ -3,6 +3,7 @@ import { createInertiaApp } from '@inertiajs/vue3'
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 import { ZiggyVue } from 'ziggy-js'
 import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
 import MyPreset from './primevue-presets'
 import AppLayout from './Layouts/AppLayout.vue'
 import Echo from 'laravel-echo'
@@ -45,6 +46,7 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .use(ToastService)
             .use(PrimeVue, {
                 theme: {
                     preset: MyPreset,

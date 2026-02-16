@@ -5,7 +5,6 @@ import PageHeader from '@/Components/PageHeader.vue'
 
 const page = usePage()
 const user = computed(() => (page.props as any).auth?.user)
-const flash = computed(() => (page.props as any).flash)
 
 const profileForm = useForm({
     name: user.value?.name ?? '',
@@ -38,10 +37,6 @@ const updatePassword = () => {
 
     <div class="max-w-2xl mx-auto space-y-8">
         <PageHeader title="My Profile" description="Manage your account settings" />
-
-        <div v-if="flash?.success" class="p-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm">
-            {{ flash.success }}
-        </div>
 
         <!-- Profile Information -->
         <form @submit.prevent="updateProfile" class="glass-intense p-8 space-y-6">

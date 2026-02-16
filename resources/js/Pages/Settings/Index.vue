@@ -56,10 +56,6 @@ const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = 
     <div class="space-y-6">
         <PageHeader title="Settings" />
 
-        <div v-if="flash?.success" class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
-            {{ flash.success }}
-        </div>
-
         <div v-if="newToken" class="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <div class="flex items-center justify-between mb-2">
                 <p class="text-amber-400 text-sm font-medium">Copy this token now. It won't be shown again.</p>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import PageHeader from '@/Components/PageHeader.vue'
 import EmptyState from '@/Components/EmptyState.vue'
@@ -16,8 +16,6 @@ interface Channel {
 const props = defineProps<{
     channels: Channel[]
 }>()
-
-const flash = computed(() => usePage().props.flash as { success?: string; error?: string } | undefined)
 
 const typeColors: Record<string, string> = {
     email: 'bg-blue-500/20 text-blue-400',
@@ -58,13 +56,6 @@ const testChannel = (channel: Channel) => {
                 </Link>
             </template>
         </PageHeader>
-
-        <div v-if="flash?.success" class="p-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm">
-            {{ flash.success }}
-        </div>
-        <div v-if="flash?.error" class="p-4 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">
-            {{ flash.error }}
-        </div>
 
         <div v-if="channels.length > 0" class="space-y-4">
             <div v-for="channel in channels" :key="channel.id" class="glass p-4">

@@ -2,11 +2,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
 
+import Toast from 'primevue/toast'
 import Menu from 'primevue/menu'
 import Drawer from 'primevue/drawer'
 import Button from 'primevue/button'
+import { useFlashToast } from '@/composables/useFlashToast'
 
 const page = usePage()
+useFlashToast()
 const sidebarOpen = ref(true)
 const mobileMenuOpen = ref(false)
 const userMenu = ref()
@@ -60,6 +63,7 @@ onMounted(() => {
 </script>
 
 <template>
+    <Toast position="top-right" />
     <div class="min-h-screen bg-[#09090b] text-[#ececef] font-sans selection:bg-emerald-500/30 selection:text-emerald-400">
         <!-- Mobile overlay -->
         <Drawer v-model:visible="mobileMenuOpen" header="Menu" class="lg:hidden border-r border-white/5 bg-[#09090b]">
