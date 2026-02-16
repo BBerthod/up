@@ -20,6 +20,17 @@ class HttpChecker implements MonitorChecker
         $status = CheckStatus::UP;
         $cause = null;
 
+        if ($this->isPrivateUrl($monitor->url)) {
+            return new CheckResult(
+                status: CheckStatus::DOWN,
+                responseTimeMs: 0,
+                statusCode: null,
+                sslExpiresAt: null,
+                errorMessage: 'URL targets a private or reserved IP address',
+                cause: IncidentCause::ERROR,
+            );
+        }
+
         try {
             $response = $this->makeHttpRequest($monitor);
             $statusCode = $response->status();
@@ -58,6 +69,49 @@ class HttpChecker implements MonitorChecker
             errorMessage: $errorMessage,
             cause: $cause,
         );
+    }
+
+    private function isPrivateUrl(string $url): bool
+    {
+        $scheme = strtolower(parse_url($url, PHP_URL_SCHEME) ?? '');
+        if (in_array($scheme, ['file', 'gopher', 'dict'], true)) {
+            return true;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+        if ($host === null) {
+            return true;
+        }
+
+        $ip = gethostbyname($host);
+        if ($ip === $host) {
+            return false;
+        }
+
+        $ipLong = ip2long($ip);
+        if ($ipLong === false) {
+            return false;
+        }
+
+        $privateRanges = [
+            ['127.0.0.0', '255.0.0.0'],
+            ['10.0.0.0', '255.0.0.0'],
+            ['172.16.0.0', '255.240.0.0'],
+            ['192.168.0.0', '255.255.0.0'],
+            ['169.254.0.0', '255.255.0.0'],
+            ['0.0.0.0', '255.0.0.0'],
+        ];
+
+        foreach ($privateRanges as [$network, $mask]) {
+            $networkLong = ip2long($network);
+            $maskLong = ip2long($mask);
+
+            if (($ipLong & $maskLong) === ($networkLong & $maskLong)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function makeHttpRequest(Monitor $monitor)
