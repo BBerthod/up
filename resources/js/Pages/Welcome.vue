@@ -53,7 +53,7 @@ onMounted(() => {
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Link
                         :href="route('login')"
-                        class="w-full sm:w-auto px-8 py-3 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20 text-center"
+                        class="btn-primary w-full sm:w-auto px-8 py-3 text-center"
                     >
                         Sign in
                     </Link>

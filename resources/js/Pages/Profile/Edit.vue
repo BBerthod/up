@@ -62,7 +62,7 @@ const updatePassword = () => {
             </div>
 
             <div class="flex justify-end">
-                <button type="submit" :disabled="profileForm.processing" class="py-3 px-6 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50">
+                <button type="submit" :disabled="profileForm.processing" class="btn-primary py-3 px-6 disabled:opacity-50">
                     {{ profileForm.processing ? 'Saving...' : 'Save Changes' }}
                 </button>
             </div>
@@ -108,7 +108,7 @@ const updatePassword = () => {
             </div>
 
             <div class="flex justify-end">
-                <button type="submit" :disabled="passwordForm.processing" class="py-3 px-6 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50">
+                <button type="submit" :disabled="passwordForm.processing" class="btn-primary py-3 px-6 disabled:opacity-50">
                     {{ passwordForm.processing ? 'Updating...' : 'Update Password' }}
                 </button>
             </div>

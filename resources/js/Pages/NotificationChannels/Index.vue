@@ -42,7 +42,7 @@ const testChannel = (channel: Channel) => {
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-white">Notification Channels</h1>
-            <Link :href="route('channels.create')" title="Create a new notification channel" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
+            <Link :href="route('channels.create')" title="Create a new notification channel" class="btn-primary py-3 px-4">
                 Add Channel
             </Link>
         </div>
@@ -77,7 +77,7 @@ const testChannel = (channel: Channel) => {
             <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
             <h3 class="text-lg font-medium text-white mb-2">No notification channels yet</h3>
             <p class="text-slate-400 mb-6">Set up channels to receive alerts when monitors go down.</p>
-            <Link :href="route('channels.create')" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20 inline-block">Create Your First Channel</Link>
+            <Link :href="route('channels.create')" class="btn-primary py-3 px-4 inline-block">Create Your First Channel</Link>
         </div>
     </div>
 </template>

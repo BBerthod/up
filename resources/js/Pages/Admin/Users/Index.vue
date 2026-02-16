@@ -51,7 +51,7 @@ const confirmDelete = () => {
                 <h1 class="text-2xl font-bold text-white">Users</h1>
                 <p class="text-slate-400 mt-1">Manage platform users and permissions</p>
             </div>
-            <Link :href="route('admin.users.create')" class="py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20">
+            <Link :href="route('admin.users.create')" class="btn-primary py-3 px-4">
                 Add User
             </Link>
         </div>

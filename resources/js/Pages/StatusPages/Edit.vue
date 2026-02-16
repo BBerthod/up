@@ -114,7 +114,7 @@ const submit = () => form.put(route('status-pages.update', props.statusPage.id))
                 </div>
             </div>
 
-            <button type="submit" :disabled="form.processing" class="w-full py-3 px-4 rounded-lg text-white font-semibold bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50">
+            <button type="submit" :disabled="form.processing" class="btn-primary w-full py-3 px-4 disabled:opacity-50">
                 {{ form.processing ? 'Updating...' : 'Update Status Page' }}
             </button>
         </form>
