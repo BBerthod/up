@@ -120,7 +120,7 @@ onMounted(() => {
 
             <!-- Collapse button -->
             <div class="p-4 border-t border-white/5">
-                <button @click="sidebarOpen = !sidebarOpen" class="hidden lg:flex items-center justify-center w-full p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
+                <button @click="sidebarOpen = !sidebarOpen" :aria-label="sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'" class="hidden lg:flex items-center justify-center w-full p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
                     <svg :class="['w-4 h-4 transition-transform', !sidebarOpen && 'rotate-180']" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
             </div>
@@ -133,7 +133,7 @@ onMounted(() => {
                 <div class="flex items-center justify-between h-full px-6 lg:px-8">
                     <!-- Breadcrumbs or Page Title could go here -->
                     <div class="flex items-center gap-4">
-                        <button @click="mobileMenuOpen = true" class="lg:hidden p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/5">
+                        <button @click="mobileMenuOpen = true" class="lg:hidden p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/5" aria-label="Open navigation menu" :aria-expanded="mobileMenuOpen">
                             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                         </button>
                     </div>
