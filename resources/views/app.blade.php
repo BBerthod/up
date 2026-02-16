@@ -6,7 +6,21 @@
     <meta name="theme-color" content="#09090b">
 
     <title>{{ config('app.name', 'Up by Radiank') }}</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="description" content="Open-source uptime monitoring platform. Monitor your websites, APIs, and services with real-time alerts.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ config('app.name', 'Up by Radiank') }}">
+    <meta property="og:description" content="Open-source uptime monitoring platform. Monitor your websites, APIs, and services with real-time alerts.">
+    <meta property="og:url" content="{{ config('app.url') }}">
+    <meta property="og:image" content="{{ config('app.url') }}/icons/icon-512.png">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ config('app.name', 'Up by Radiank') }}">
+    <meta name="twitter:description" content="Open-source uptime monitoring platform. Monitor your websites, APIs, and services with real-time alerts.">
+
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link rel="manifest" href="/manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
