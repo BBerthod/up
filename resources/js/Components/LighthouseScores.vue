@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 
 const props = defineProps<{
     scores: {
@@ -20,6 +20,7 @@ const props = defineProps<{
 }>()
 
 const auditing = ref(false)
+const auditMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
 
 const categories = computed(() => {
     if (!props.scores) return []
@@ -64,9 +65,21 @@ const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { mont
 
 const runAudit = () => {
     auditing.value = true
+    auditMessage.value = null
     router.post(route('monitors.lighthouse', props.monitorId), {}, {
         preserveScroll: true,
-        onFinish: () => { auditing.value = false },
+        onFinish: () => {
+            auditing.value = false
+            const flash = (usePage().props as any).flash
+            if (flash?.success) {
+                auditMessage.value = { type: 'success', text: flash.success }
+            } else if (flash?.error) {
+                auditMessage.value = { type: 'error', text: flash.error }
+            }
+            if (auditMessage.value) {
+                setTimeout(() => { auditMessage.value = null }, 5000)
+            }
+        },
     })
 }
 </script>
@@ -106,28 +119,40 @@ const runAudit = () => {
             </div>
         </div>
 
-        <div v-if="monitorType === 'http'" class="pt-4 flex justify-center">
-            <button @click="runAudit" :disabled="auditing"
-                class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-                <svg v-if="auditing" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                {{ auditing ? 'Running...' : 'Run Audit' }}
-            </button>
+        <div v-if="monitorType === 'http'" class="pt-4 space-y-3">
+            <div v-if="auditMessage" class="p-3 rounded-lg text-sm text-center transition-all"
+                :class="auditMessage.type === 'success' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/20 border border-red-500/30 text-red-400'">
+                {{ auditMessage.text }}
+            </div>
+            <div class="flex justify-center">
+                <button @click="runAudit" :disabled="auditing"
+                    class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                    <svg v-if="auditing" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{ auditing ? 'Running...' : 'Run Audit' }}
+                </button>
+            </div>
         </div>
     </div>
     <div v-else class="text-center py-8">
         <p class="text-slate-500">No Lighthouse data yet</p>
-        <div v-if="monitorType === 'http'" class="pt-4 flex justify-center">
-            <button @click="runAudit" :disabled="auditing"
-                class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-                <svg v-if="auditing" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                {{ auditing ? 'Running...' : 'Run Audit' }}
-            </button>
+        <div v-if="monitorType === 'http'" class="pt-4 space-y-3">
+            <div v-if="auditMessage" class="p-3 rounded-lg text-sm text-center transition-all"
+                :class="auditMessage.type === 'success' ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/20 border border-red-500/30 text-red-400'">
+                {{ auditMessage.text }}
+            </div>
+            <div class="flex justify-center">
+                <button @click="runAudit" :disabled="auditing"
+                    class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                    <svg v-if="auditing" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {{ auditing ? 'Running...' : 'Run Audit' }}
+                </button>
+            </div>
         </div>
     </div>
 </template>
