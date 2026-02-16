@@ -122,13 +122,16 @@ const filterOptions = [
                             <div class="relative flex items-center justify-center w-4 h-4 shrink-0">
                                 <template v-if="!monitor.is_active">
                                     <div class="w-2.5 h-2.5 rounded-full border-2 border-zinc-600 bg-transparent" />
+                                    <span class="sr-only">Status: Paused</span>
                                 </template>
                                 <template v-else-if="monitor.latest_check?.status === 'up'">
                                      <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                                     <span class="sr-only">Status: Up</span>
                                 </template>
                                 <template v-else>
                                      <span class="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-25 animate-ping"></span>
                                      <div class="relative w-2.5 h-2.5 rounded-full bg-red-500" />
+                                     <span class="sr-only">Status: Down</span>
                                 </template>
                             </div>
 

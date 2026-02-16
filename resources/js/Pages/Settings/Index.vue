@@ -59,7 +59,7 @@ const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = 
         <div v-if="newToken" class="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <div class="flex items-center justify-between mb-2">
                 <p class="text-amber-400 text-sm font-medium">Copy this token now. It won't be shown again.</p>
-                <button @click="dismissToken" class="text-slate-500 hover:text-slate-300 transition-colors">&times;</button>
+                <button @click="dismissToken" class="text-slate-500 hover:text-slate-300 transition-colors" aria-label="Dismiss token">&times;</button>
             </div>
             <div class="flex items-center gap-2">
                 <input :value="newToken" readonly class="form-input w-full font-mono text-sm bg-white/5" />
