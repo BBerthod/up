@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import BackLink from '@/Components/BackLink.vue'
+import PageHeader from '@/Components/PageHeader.vue'
 import { computed } from 'vue'
 
 interface Monitor { id: number; name: string; url: string }
@@ -37,15 +39,8 @@ const submit = () => form.put(route('status-pages.update', props.statusPage.id))
     <Head :title="'Edit ' + statusPage.name" />
 
     <div class="max-w-2xl mx-auto space-y-6">
-        <Link :href="route('status-pages.index')" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-            Back to Status Pages
-        </Link>
-
-        <div>
-            <h1 class="text-2xl font-bold text-white">Edit Status Page</h1>
-            <p class="text-slate-400 mt-1">Update settings for {{ statusPage.name }}.</p>
-        </div>
+        <BackLink :href="route('status-pages.index')" label="Back to Status Pages" />
+        <PageHeader title="Edit Status Page" :description="`Update settings for ${statusPage.name}.`" />
 
         <form @submit.prevent="submit" class="glass p-6 space-y-6">
             <div>

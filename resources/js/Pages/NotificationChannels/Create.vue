@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import BackLink from '@/Components/BackLink.vue'
+import PageHeader from '@/Components/PageHeader.vue'
 import { computed, watch } from 'vue'
 
 const form = useForm({
@@ -41,15 +43,8 @@ const submit = () => form.post(route('channels.store'))
     <Head title="Create Channel" />
 
     <div class="max-w-2xl mx-auto space-y-6">
-        <Link :href="route('channels.index')" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-            Back to Channels
-        </Link>
-
-        <div>
-            <h1 class="text-2xl font-bold text-white">Create Notification Channel</h1>
-            <p class="text-slate-400 mt-1">Set up a new channel to receive alerts.</p>
-        </div>
+        <BackLink :href="route('channels.index')" label="Back to Channels" />
+        <PageHeader title="Create Notification Channel" description="Set up a new channel to receive alerts." />
 
         <form @submit.prevent="submit" class="glass p-6 space-y-6">
             <div>

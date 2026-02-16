@@ -2,6 +2,9 @@
 import { Head, Link } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
+import PageHeader from '@/Components/PageHeader.vue'
+import GlassCard from '@/Components/GlassCard.vue'
+import EmptyState from '@/Components/EmptyState.vue'
 
 useRealtimeUpdates({
     onMonitorChecked: ['metrics'],
@@ -149,11 +152,7 @@ const chartXLabels = computed(() => {
     <Head title="Dashboard" />
 
     <div class="space-y-12">
-        <!-- Header Section -->
-        <div>
-             <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Overview</h1>
-             <p class="text-zinc-500">System status and metrics for the last 24 hours.</p>
-        </div>
+        <PageHeader title="Overview" description="System status and metrics for the last 24 hours." />
 
         <!-- KPI Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-white/5 pb-12">
@@ -224,13 +223,7 @@ const chartXLabels = computed(() => {
                     </div>
                 </div>
 
-                <div v-else class="flex flex-col items-center justify-center py-12 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.02]">
-                    <div class="p-3 mb-4 rounded-full bg-emerald-500/10">
-                        <svg class="w-6 h-6 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    </div>
-                    <h4 class="text-white font-medium">All Systems Operational</h4>
-                    <p class="text-sm text-zinc-500 mt-1 max-w-sm">Every monitored endpoint is responding correctly. No incidents reported.</p>
-                </div>
+                <EmptyState v-else title="All Systems Operational" description="Every monitored endpoint is responding correctly. No incidents reported." icon="check" icon-color="emerald" />
             </div>
 
             <!-- Checks Today -->
@@ -260,8 +253,7 @@ const chartXLabels = computed(() => {
         </div>
 
         <!-- Response Time Chart (24h) -->
-        <div class="glass p-6">
-            <h3 class="text-lg font-medium text-white mb-4">Response Time (24h)</h3>
+        <GlassCard title="Response Time (24h)">
             <div v-if="metrics.response_time_chart.length > 0">
                 <svg :viewBox="`0 0 ${chartViewBox.w} ${chartViewBox.h}`" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
                     <defs>
@@ -278,10 +270,10 @@ const chartXLabels = computed(() => {
                 </svg>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No data yet</p>
-        </div>
+        </GlassCard>
 
         <!-- Monitors Overview -->
-        <div class="glass p-6">
+        <GlassCard>
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-white">All Monitors</h3>
                 <span class="text-sm text-slate-400">{{ metrics.monitors_overview.length }} active</span>
@@ -320,7 +312,7 @@ const chartXLabels = computed(() => {
                 </table>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No active monitors</p>
-        </div>
+        </GlassCard>
 
         <!-- Recent Incidents + Lighthouse -->
         <div class="grid lg:grid-cols-12 gap-8">

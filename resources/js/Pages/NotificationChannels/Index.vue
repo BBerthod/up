@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import PageHeader from '@/Components/PageHeader.vue'
+import EmptyState from '@/Components/EmptyState.vue'
+import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 
 interface Channel {
     id: number
@@ -25,9 +28,17 @@ const typeColors: Record<string, string> = {
     push: 'bg-green-500/20 text-green-400',
 }
 
+const showDeleteDialog = ref(false)
+const channelToDelete = ref<Channel | null>(null)
+
 const deleteChannel = (channel: Channel) => {
-    if (confirm(`Delete "${channel.name}"?`)) {
-        router.delete(route('channels.destroy', channel.id))
+    channelToDelete.value = channel
+    showDeleteDialog.value = true
+}
+
+const confirmDelete = () => {
+    if (channelToDelete.value) {
+        router.delete(route('channels.destroy', channelToDelete.value.id))
     }
 }
 
@@ -40,12 +51,13 @@ const testChannel = (channel: Channel) => {
     <Head title="Notification Channels" />
 
     <div class="space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-white">Notification Channels</h1>
-            <Link :href="route('channels.create')" title="Create a new notification channel" class="btn-primary py-3 px-4">
-                Add Channel
-            </Link>
-        </div>
+        <PageHeader title="Notification Channels" description="Manage how you receive alerts when monitors go down.">
+            <template #actions>
+                <Link :href="route('channels.create')" class="btn-primary py-3 px-4">
+                    Add Channel
+                </Link>
+            </template>
+        </PageHeader>
 
         <div v-if="flash?.success" class="p-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm">
             {{ flash.success }}
@@ -65,19 +77,33 @@ const testChannel = (channel: Channel) => {
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button @click="testChannel(channel)" title="Send a test notification" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Test</button>
-                        <Link :href="route('channels.edit', channel.id)" title="Edit channel settings" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                        <button @click="deleteChannel(channel)" title="Delete this channel" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
+                        <button @click="testChannel(channel)" aria-label="Send a test notification" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Test</button>
+                        <Link :href="route('channels.edit', channel.id)" aria-label="Edit channel settings" class="px-3 py-1.5 rounded-lg text-sm text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
+                        <button @click="deleteChannel(channel)" aria-label="Delete this channel" class="px-3 py-1.5 rounded-lg text-sm text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div v-else class="glass p-12 text-center">
-            <svg class="w-16 h-16 mx-auto mb-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-            <h3 class="text-lg font-medium text-white mb-2">No notification channels yet</h3>
-            <p class="text-slate-400 mb-6">Set up channels to receive alerts when monitors go down.</p>
-            <Link :href="route('channels.create')" class="btn-primary py-3 px-4 inline-block">Create Your First Channel</Link>
-        </div>
+        <EmptyState
+            v-else
+            title="No notification channels yet"
+            description="Set up channels to receive alerts when monitors go down."
+            icon="bell"
+            icon-color="cyan"
+        >
+            <template #action>
+                <Link :href="route('channels.create')" class="btn-primary py-3 px-4 inline-block">Create Your First Channel</Link>
+            </template>
+        </EmptyState>
     </div>
+
+    <ConfirmDialog
+        v-model:show="showDeleteDialog"
+        title="Delete Channel"
+        :message="`Are you sure you want to delete '${channelToDelete?.name}'? This action cannot be undone.`"
+        confirm-label="Delete"
+        variant="danger"
+        @confirm="confirmDelete"
+    />
 </template>

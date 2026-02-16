@@ -3,14 +3,19 @@ import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import LatencyHeatmap from '@/Components/LatencyHeatmap.vue'
+import LighthouseHistory from '@/Components/LighthouseHistory.vue'
+import LighthouseScores from '@/Components/LighthouseScores.vue'
+import ResponseTimeChart from '@/Components/ResponseTimeChart.vue'
+import BackLink from '@/Components/BackLink.vue'
+import GlassCard from '@/Components/GlassCard.vue'
+import StatusBadge from '@/Components/StatusBadge.vue'
+import ConfirmDialog from '@/Components/ConfirmDialog.vue'
+import CopyButton from '@/Components/CopyButton.vue'
 
 useRealtimeUpdates({
     onMonitorChecked: ['checks', 'chartData', 'uptime', 'heatmapData', 'incidents'],
     onLighthouseCompleted: ['lighthouseScore', 'lighthouseHistory'],
 })
-import LighthouseHistory from '@/Components/LighthouseHistory.vue'
-import LighthouseScores from '@/Components/LighthouseScores.vue'
-import ResponseTimeChart from '@/Components/ResponseTimeChart.vue'
 
 interface Check { id: number; status: 'up' | 'down'; response_time_ms: number; status_code: number; checked_at: string }
 interface Incident { id: number; started_at: string; resolved_at: string | null; cause: string }
@@ -32,6 +37,12 @@ const pauseForm = useForm({})
 
 const showChannelModal = ref(false)
 const selectedChannel = ref<{ id: number; name: string; type: string } | null>(null)
+const showDeleteDialog = ref(false)
+
+const monitorStatus = computed((): 'up' | 'down' | 'paused' => {
+    if (!props.monitor.is_active) return 'paused'
+    return props.checks[0]?.status === 'up' ? 'up' : 'down'
+})
 
 const togglePause = () => {
     if (props.monitor.is_active) {
@@ -41,10 +52,8 @@ const togglePause = () => {
     }
 }
 
-const deleteMonitor = () => {
-    if (confirm('Are you sure you want to delete this monitor?')) {
-        router.delete(route('monitors.destroy', props.monitor.id))
-    }
+const confirmDelete = () => {
+    router.delete(route('monitors.destroy', props.monitor.id))
 }
 
 const formatDate = (d: string) => new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -59,8 +68,6 @@ const avgMs = computed(() => {
     if (!props.checks.length) return 0
     return Math.round(props.checks.reduce((s, c) => s + c.response_time_ms, 0) / props.checks.length)
 })
-
-const maxMs = computed(() => Math.max(...props.checks.map(c => c.response_time_ms), 1))
 
 const activeIncidents = computed(() => props.incidents.filter(i => !i.resolved_at).length)
 
@@ -84,6 +91,8 @@ const closeChannelModal = () => {
     selectedChannel.value = null
 }
 
+const badgeMarkdown = computed(() => `![Uptime](${baseUrl.value}/badge/${props.monitor.badge_hash}.svg)`)
+
 const channelIcons: Record<string, string> = {
     email: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>',
     slack: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 4l4 4-4 4M6 10h.01M17 14h.01"/>',
@@ -98,59 +107,52 @@ const channelIcons: Record<string, string> = {
     <Head :title="monitor.name" />
 
     <div class="space-y-6">
-        <Link :href="route('monitors.index')" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-            Back to Monitors
-        </Link>
+        <BackLink :href="route('monitors.index')" label="Back to Monitors" />
 
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl font-bold text-white">{{ monitor.name }}</h1>
-                    <span v-if="monitor.is_active && checks[0]?.status === 'up'" class="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">UP</span>
-                    <span v-else-if="monitor.is_active && checks[0]?.status === 'down'" class="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">DOWN</span>
-                    <span v-else class="px-3 py-1 rounded-full text-xs font-medium bg-slate-500/20 text-slate-400">PAUSED</span>
+                    <StatusBadge :status="monitorStatus" size="md" />
                 </div>
-                <p class="text-slate-400 mt-1">{{ monitor.url }}</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <p class="text-slate-400">{{ monitor.url }}</p>
+                    <CopyButton :text="monitor.url" />
+                </div>
                 <div v-if="monitor.notification_channels?.length" class="flex flex-wrap items-center gap-2 mt-2">
-                    <button
-                        v-for="ch in monitor.notification_channels"
-                        :key="ch.id"
-                        @click="openChannelModal(ch)"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer"
-                    >
+                    <button v-for="ch in monitor.notification_channels" :key="ch.id" @click="openChannelModal(ch)" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer" :aria-label="`View ${ch.name} channel details`">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-html="channelIcons[ch.type] || channelIcons.webhook" />
                         <span>{{ ch.name }}</span>
                     </button>
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <Link :href="route('monitors.edit', monitor.id)" title="Edit monitor settings" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                <button @click="togglePause" :title="monitor.is_active ? 'Pause monitoring' : 'Resume monitoring'" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
-                <button @click="deleteMonitor" title="Permanently delete this monitor" class="px-4 py-2 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
+                <Link :href="route('monitors.edit', monitor.id)" aria-label="Edit monitor settings" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
+                <button @click="togglePause" :aria-label="monitor.is_active ? 'Pause monitoring' : 'Resume monitoring'" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
+                <button @click="showDeleteDialog = true" aria-label="Delete this monitor" class="px-4 py-2 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
             </div>
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="glass p-4" title="Current monitor status">
+            <div class="glass p-4">
                 <p class="text-slate-400 text-sm mb-1">Status</p>
                 <div class="flex items-center gap-2">
                     <div :class="['status-dot', checks[0]?.status === 'up' ? 'online' : 'offline']" />
                     <span class="text-lg font-semibold text-white">{{ checks[0]?.status?.toUpperCase() || 'UNKNOWN' }}</span>
                 </div>
             </div>
-            <div class="glass p-4" title="Uptime percentage over 24 hours and 7 days">
+            <div class="glass p-4">
                 <p class="text-slate-400 text-sm mb-1">Uptime</p>
                 <div class="flex items-center gap-3 font-mono text-sm">
                     <span :class="uptimeColor(uptime.day)">24h: {{ uptime.day.toFixed(1) }}%</span>
                     <span :class="uptimeColor(uptime.week)">7d: {{ uptime.week.toFixed(1) }}%</span>
                 </div>
             </div>
-            <div class="glass p-4" title="Average response time from last 50 checks">
+            <div class="glass p-4">
                 <p class="text-slate-400 text-sm mb-1">Avg Response</p>
                 <p class="text-lg font-semibold text-white font-mono">{{ avgMs }}<span class="text-sm text-slate-400">ms</span></p>
             </div>
-            <div class="glass p-4" title="Number of currently unresolved incidents">
+            <div class="glass p-4">
                 <p class="text-slate-400 text-sm mb-1">Active Incidents</p>
                 <p class="text-lg font-semibold font-mono" :class="activeIncidents > 0 ? 'text-red-400' : 'text-emerald-400'">{{ activeIncidents }}</p>
             </div>
@@ -158,22 +160,19 @@ const channelIcons: Record<string, string> = {
 
         <ResponseTimeChart :chart-data="chartData" :current-period="currentPeriod" :monitor-id="monitor.id" @period-change="handlePeriodChange" />
 
-        <div class="glass p-6">
-            <h3 class="text-white font-medium mb-4">Latency Heatmap (12 months)</h3>
+        <GlassCard title="Latency Heatmap (12 months)">
             <LatencyHeatmap :data="heatmapData" />
-        </div>
+        </GlassCard>
 
-        <div class="glass p-6">
-            <h3 class="text-white font-medium mb-4">Lighthouse Scores</h3>
+        <GlassCard title="Lighthouse Scores">
             <LighthouseScores :scores="lighthouseScore" :monitor-id="monitor.id" :monitor-type="monitor.type" />
-        </div>
+        </GlassCard>
 
-        <div v-if="monitor.type === 'http'" class="glass p-6">
+        <GlassCard v-if="monitor.type === 'http'">
             <LighthouseHistory :history="lighthouseHistory ?? null" :monitor-id="monitor.id" />
-        </div>
+        </GlassCard>
 
-        <div class="glass p-6">
-            <h3 class="text-white font-medium mb-4">Incident History</h3>
+        <GlassCard title="Incident History">
             <div v-if="incidents.length > 0" class="overflow-x-auto">
                 <table class="w-full">
                     <thead><tr class="text-left text-slate-400 text-sm border-b border-white/10"><th class="pb-3 font-medium">Cause</th><th class="pb-3 font-medium">Started</th><th class="pb-3 font-medium">Resolved</th><th class="pb-3 font-medium">Duration</th></tr></thead>
@@ -188,34 +187,45 @@ const channelIcons: Record<string, string> = {
                 </table>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No incidents recorded</p>
-        </div>
+        </GlassCard>
 
-        <div v-if="monitor.badge_hash" class="glass p-6">
-            <h3 class="text-white font-medium mb-4">Status Badge</h3>
+        <GlassCard v-if="monitor.badge_hash" title="Status Badge">
             <div class="flex items-center gap-4">
                 <img :src="`/badge/${monitor.badge_hash}.svg`" :alt="`${monitor.name} uptime badge`" />
-                <code class="text-sm text-slate-400 font-mono bg-white/5 px-3 py-2 rounded">![Uptime]({{ baseUrl }}/badge/{{ monitor.badge_hash }}.svg)</code>
+                <code class="text-sm text-slate-400 font-mono bg-white/5 px-3 py-2 rounded">{{ badgeMarkdown }}</code>
+                <CopyButton :text="badgeMarkdown" />
             </div>
-        </div>
+        </GlassCard>
     </div>
 
+    <ConfirmDialog
+        v-model:show="showDeleteDialog"
+        title="Delete Monitor"
+        :message="`Are you sure you want to delete '${monitor.name}'? This action cannot be undone.`"
+        confirm-label="Delete"
+        variant="danger"
+        @confirm="confirmDelete"
+    />
+
     <Teleport to="body">
-        <div v-if="showChannelModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeChannelModal">
-            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeChannelModal"></div>
-            <div class="relative bg-slate-900 border border-white/10 rounded-xl p-6 w-full max-w-sm shadow-2xl">
-                <button @click="closeChannelModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-                <div v-if="selectedChannel" class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-html="channelIcons[selectedChannel.type] || channelIcons.webhook" />
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-white">{{ selectedChannel.name }}</h3>
-                        <p class="text-sm text-slate-400 uppercase">{{ selectedChannel.type }}</p>
+        <Transition name="fade">
+            <div v-if="showChannelModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeChannelModal">
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeChannelModal" />
+                <div class="relative bg-[var(--color-surface-0)] border border-white/10 rounded-xl p-6 w-full max-w-sm shadow-2xl">
+                    <button @click="closeChannelModal" aria-label="Close dialog" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                    <div v-if="selectedChannel" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-html="channelIcons[selectedChannel.type] || channelIcons.webhook" />
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">{{ selectedChannel.name }}</h3>
+                            <p class="text-sm text-slate-400 uppercase">{{ selectedChannel.type }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </Transition>
     </Teleport>
 </template>

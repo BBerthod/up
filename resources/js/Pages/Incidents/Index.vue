@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
+import PageHeader from '@/Components/PageHeader.vue'
 import { ref, watch, computed } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import Tag from 'primevue/tag'
@@ -79,17 +80,13 @@ const typeLabels: Record<string, string> = {
     <Head title="Incidents" />
 
     <div class="space-y-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-             <div>
-                 <h1 class="text-2xl font-bold text-white tracking-tight">Incidents</h1>
-                 <p class="text-zinc-500">History of downtime and alerts.</p>
-            </div>
-            <div class="flex gap-2">
+        <PageHeader title="Incidents" description="History of downtime and alerts.">
+            <template #actions>
                 <a :href="exportUrl('csv')" class="px-3 py-2 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5">
                     Export CSV
                 </a>
-            </div>
-        </div>
+            </template>
+        </PageHeader>
 
         <!-- Linear Filters -->
         <div class="flex flex-wrap items-center gap-3 pb-6 border-b border-white/5">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
+import PageHeader from '@/Components/PageHeader.vue'
 import { computed, ref } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import DataView from 'primevue/dataview'
@@ -72,15 +73,13 @@ const filterOptions = [
 
     <div class="space-y-8">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                 <h1 class="text-2xl font-bold text-white tracking-tight">Monitors</h1>
-                 <p class="text-zinc-500">Manage your uptime checks and settings.</p>
-            </div>
-            <Link :href="route('monitors.create')">
-                <Button label="New Monitor" icon="pi pi-plus" class="!bg-white !text-black !border-white hover:!bg-zinc-200 font-medium" />
-            </Link>
-        </div>
+        <PageHeader title="Monitors" description="Manage your uptime checks and settings.">
+            <template #actions>
+                <Link :href="route('monitors.create')">
+                    <Button label="New Monitor" icon="pi pi-plus" class="!bg-white !text-black !border-white hover:!bg-zinc-200 font-medium" />
+                </Link>
+            </template>
+        </PageHeader>
 
         <!-- Filters & Stats Row -->
         <div class="flex flex-col md:flex-row gap-6 items-end md:items-center justify-between border-b border-white/5 pb-6">

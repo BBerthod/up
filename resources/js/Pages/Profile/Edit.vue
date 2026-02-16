@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
+import PageHeader from '@/Components/PageHeader.vue'
 
 const page = usePage()
 const user = computed(() => (page.props as any).auth?.user)
@@ -36,10 +37,7 @@ const updatePassword = () => {
     <Head title="My Profile" />
 
     <div class="max-w-2xl mx-auto space-y-8">
-        <div>
-            <h1 class="text-2xl font-bold text-white">My Profile</h1>
-            <p class="text-slate-400 mt-1">Manage your account settings</p>
-        </div>
+        <PageHeader title="My Profile" description="Manage your account settings" />
 
         <div v-if="flash?.success" class="p-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm">
             {{ flash.success }}

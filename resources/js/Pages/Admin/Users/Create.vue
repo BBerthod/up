@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import BackLink from '@/Components/BackLink.vue'
+import PageHeader from '@/Components/PageHeader.vue'
 
 interface AssignableRole {
     value: string
@@ -32,15 +34,9 @@ const submit = () => {
 <template>
     <Head title="Create User" />
 
-    <div class="max-w-2xl mx-auto">
-        <div class="mb-8">
-            <Link :href="route('admin.users.index')" class="inline-flex items-center text-slate-400 hover:text-cyan-400 transition-colors mb-4">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                Back to Users
-            </Link>
-            <h1 class="text-2xl font-bold text-white">Create User</h1>
-            <p class="text-slate-400 mt-1">Add a new user to the platform</p>
-        </div>
+    <div class="max-w-2xl mx-auto space-y-6">
+        <BackLink :href="route('admin.users.index')" label="Back to Users" />
+        <PageHeader title="Create User" description="Add a new user to the platform" />
 
         <form @submit.prevent="submit" class="glass-intense p-8 space-y-6">
             <div>

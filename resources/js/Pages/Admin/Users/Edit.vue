@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import BackLink from '@/Components/BackLink.vue'
+import PageHeader from '@/Components/PageHeader.vue'
 
 interface User {
     id: number
@@ -42,15 +44,9 @@ const submit = () => {
 <template>
     <Head :title="'Edit ' + user.name" />
 
-    <div class="max-w-2xl mx-auto">
-        <div class="mb-8">
-            <Link :href="route('admin.users.index')" class="inline-flex items-center text-slate-400 hover:text-cyan-400 transition-colors mb-4">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                Back to Users
-            </Link>
-            <h1 class="text-2xl font-bold text-white">Edit User</h1>
-            <p class="text-slate-400 mt-1">Update user information</p>
-        </div>
+    <div class="max-w-2xl mx-auto space-y-6">
+        <BackLink :href="route('admin.users.index')" label="Back to Users" />
+        <PageHeader title="Edit User" description="Update user information" />
 
         <div class="glass p-4 mb-6 flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center border border-white/10">
