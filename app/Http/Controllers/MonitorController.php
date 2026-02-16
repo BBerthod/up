@@ -6,6 +6,7 @@ use App\Http\Requests\StoreMonitorRequest;
 use App\Http\Requests\UpdateMonitorRequest;
 use App\Jobs\RunLighthouseAudit;
 use App\Models\Monitor;
+use App\Models\MonitorCheck;
 use App\Models\NotificationChannel;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,12 @@ class MonitorController extends Controller
 
         $query = Monitor::query()
             ->with(['checks' => fn ($q) => $q->latest('checked_at')->limit(1)])
-            ->withCount(['incidents as active_incidents_count' => fn ($q) => $q->whereNull('resolved_at')]);
+            ->withCount(['incidents as active_incidents_count' => fn ($q) => $q->whereNull('resolved_at')])
+            ->addSelect([
+                'uptime_24h' => MonitorCheck::selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1)")
+                    ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
+                    ->where('checked_at', '>=', now()->subDay()),
+            ]);
 
         if ($status === 'paused') {
             $query->inactive();
@@ -30,11 +36,6 @@ class MonitorController extends Controller
 
         $monitors = $query->latest()->get()->map(function ($monitor) {
             $latestCheck = $monitor->checks->first();
-
-            $uptime24h = $monitor->checks()
-                ->where('checked_at', '>=', now()->subDay())
-                ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
-                ->value('uptime');
 
             return [
                 'id' => $monitor->id,
@@ -46,7 +47,7 @@ class MonitorController extends Controller
                     'response_time_ms' => $latestCheck->response_time_ms,
                     'checked_at' => $latestCheck->checked_at?->toIso8601String(),
                 ] : null,
-                'uptime_24h' => $uptime24h !== null ? (float) $uptime24h : null,
+                'uptime_24h' => $monitor->uptime_24h !== null ? (float) $monitor->uptime_24h : null,
                 'active_incidents_count' => $monitor->active_incidents_count,
             ];
         });

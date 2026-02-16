@@ -78,33 +78,31 @@ class MetricsService
             ]);
 
         $monitorsOverview = Monitor::active()
-            ->get(['id', 'name', 'type', 'last_checked_at'])
+            ->addSelect([
+                'uptime_24h' => MonitorCheck::selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1), 100)")
+                    ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
+                    ->where('checked_at', '>=', now()->subDay()),
+                'uptime_7d' => MonitorCheck::selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1), 100)")
+                    ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
+                    ->where('checked_at', '>=', now()->subDays(7)),
+                'last_response_ms' => MonitorCheck::selectRaw('COALESCE(response_time_ms, 0)')
+                    ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
+                    ->latest('checked_at')
+                    ->limit(1),
+            ])
+            ->get()
             ->map(function ($m) use ($latestChecks) {
                 $latestCheck = $latestChecks->firstWhere('monitor_id', $m->id);
                 $status = $latestCheck ? $latestCheck->status->value : 'unknown';
-
-                $uptime24h = (float) (MonitorCheck::where('monitor_id', $m->id)
-                    ->where('checked_at', '>=', now()->subDay())
-                    ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
-                    ->value('uptime') ?? 100);
-
-                $uptime7d = (float) (MonitorCheck::where('monitor_id', $m->id)
-                    ->where('checked_at', '>=', now()->subDays(7))
-                    ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
-                    ->value('uptime') ?? 100);
-
-                $lastResponseMs = MonitorCheck::where('monitor_id', $m->id)
-                    ->orderByDesc('checked_at')
-                    ->value('response_time_ms') ?? 0;
 
                 return [
                     'id' => $m->id,
                     'name' => $m->name,
                     'type' => $m->type->value,
                     'status' => $status,
-                    'uptime_24h' => $uptime24h,
-                    'uptime_7d' => $uptime7d,
-                    'last_response_ms' => (int) $lastResponseMs,
+                    'uptime_24h' => (float) $m->uptime_24h,
+                    'uptime_7d' => (float) $m->uptime_7d,
+                    'last_response_ms' => (int) $m->last_response_ms,
                 ];
             });
 
