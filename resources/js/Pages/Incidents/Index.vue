@@ -36,6 +36,15 @@ const applyFilters = () => {
 
 watch(filters, applyFilters, { deep: true })
 
+const toggleSort = (column: string) => {
+    if (filters.value.sort === column) {
+        filters.value.dir = filters.value.dir === 'asc' ? 'desc' : 'asc'
+    } else {
+        filters.value.sort = column
+        filters.value.dir = 'desc'
+    }
+}
+
 const statusOptions = [
     { label: 'Active', value: 'active' },
     { label: 'Resolved', value: 'resolved' },
@@ -104,10 +113,22 @@ const typeLabels: Record<string, string> = {
         <!-- Linear List Header -->
         <div class="hidden md:grid grid-cols-12 gap-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider px-4">
             <div class="col-span-1">Status</div>
-            <div class="col-span-4">Monitor</div>
-            <div class="col-span-2">Cause</div>
-            <div class="col-span-3">Started</div>
-            <div class="col-span-2 text-right">Duration</div>
+            <div @click="toggleSort('monitor_name')" class="col-span-4 flex items-center gap-1 cursor-pointer select-none" :class="filters.sort === 'monitor_name' ? 'text-white' : 'hover:text-zinc-300'">
+                Monitor
+                <span v-if="filters.sort === 'monitor_name'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
+            </div>
+            <div @click="toggleSort('cause')" class="col-span-2 flex items-center gap-1 cursor-pointer select-none" :class="filters.sort === 'cause' ? 'text-white' : 'hover:text-zinc-300'">
+                Cause
+                <span v-if="filters.sort === 'cause'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
+            </div>
+            <div @click="toggleSort('started_at')" class="col-span-3 flex items-center gap-1 cursor-pointer select-none" :class="filters.sort === 'started_at' ? 'text-white' : 'hover:text-zinc-300'">
+                Started
+                <span v-if="filters.sort === 'started_at'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
+            </div>
+            <div @click="toggleSort('duration')" class="col-span-2 flex items-center justify-end gap-1 cursor-pointer select-none" :class="filters.sort === 'duration' ? 'text-white' : 'hover:text-zinc-300'">
+                Duration
+                <span v-if="filters.sort === 'duration'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
+            </div>
         </div>
 
         <!-- List Items -->
@@ -119,8 +140,11 @@ const typeLabels: Record<string, string> = {
                      <div v-if="!incident.resolved_at" class="relative flex h-2.5 w-2.5">
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                           <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                          <span class="sr-only">Status: Active</span>
                     </div>
-                    <div v-else class="h-2.5 w-2.5 rounded-full bg-emerald-500/50"></div>
+                    <div v-else class="h-2.5 w-2.5 rounded-full bg-emerald-500/50">
+                          <span class="sr-only">Status: Resolved</span>
+                    </div>
                     <span class="md:hidden text-sm font-medium text-white">{{ incident.resolved_at ? 'Resolved' : 'Active' }}</span>
                 </div>
 
