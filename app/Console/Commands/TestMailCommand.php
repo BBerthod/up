@@ -80,7 +80,7 @@ final class TestMailCommand extends Command
                 ->subject("SMTP Test #{$testNumber} - {$config['name']}")
             );
 
-            $this->info("  SUCCESS");
+            $this->info('  SUCCESS');
             $this->results[] = ['test' => "#{$testNumber}", 'config' => $config['name'], 'success' => true, 'error' => null];
         } catch (\Throwable $e) {
             $errorMsg = $e->getMessage();
