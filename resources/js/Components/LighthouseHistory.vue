@@ -154,10 +154,10 @@ const formatTableDate = (dateStr: string) => new Date(dateStr).toLocaleDateStrin
                     <path :d="generatePath('seo')" fill="none" :stroke="lineColors.seo" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 
                     <g v-for="(point, i) in chartData" :key="'pt-' + i">
-                        <circle :cx="getX(i)" :cy="getY(point.performance)" r="6" fill="transparent" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
-                        <circle :cx="getX(i)" :cy="getY(point.accessibility)" r="6" fill="transparent" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
-                        <circle :cx="getX(i)" :cy="getY(point.best_practices)" r="6" fill="transparent" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
-                        <circle :cx="getX(i)" :cy="getY(point.seo)" r="6" fill="transparent" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
+                        <circle :cx="getX(i)" :cy="getY(point.performance)" r="3" :fill="lineColors.performance" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
+                        <circle :cx="getX(i)" :cy="getY(point.accessibility)" r="3" :fill="lineColors.accessibility" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
+                        <circle :cx="getX(i)" :cy="getY(point.best_practices)" r="3" :fill="lineColors.best_practices" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
+                        <circle :cx="getX(i)" :cy="getY(point.seo)" r="3" :fill="lineColors.seo" class="cursor-pointer" @mouseenter="showTooltip($event, i)" @mouseleave="hideTooltip" />
                     </g>
                 </svg>
             </div>
