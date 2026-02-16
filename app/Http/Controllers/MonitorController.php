@@ -98,7 +98,7 @@ class MonitorController extends Controller
             ->latest('scored_at')
             ->first(['performance', 'accessibility', 'best_practices', 'seo', 'lcp', 'fcp', 'cls', 'tbt', 'speed_index', 'scored_at']);
 
-        $badgeHash = base64_encode(pack('V', $monitor->id));
+        $badgeHash = rtrim(strtr(base64_encode(pack('V', $monitor->id)), '+/', '-_'), '=');
 
         $chartData = $this->getChartData($monitor, $period);
 

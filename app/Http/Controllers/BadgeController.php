@@ -9,7 +9,7 @@ class BadgeController extends Controller
 {
     public function __invoke(string $hash): Response
     {
-        $decoded = @unpack('V', base64_decode($hash));
+        $decoded = @unpack('V', base64_decode(strtr($hash, '-_', '+/')));
         if (! $decoded || ! isset($decoded[1])) {
             abort(404);
         }
