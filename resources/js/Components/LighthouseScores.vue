@@ -65,6 +65,7 @@ const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { mont
 const runAudit = () => {
     auditing.value = true
     router.post(route('monitors.lighthouse', props.monitorId), {}, {
+        preserveScroll: true,
         onFinish: () => { auditing.value = false },
     })
 }
