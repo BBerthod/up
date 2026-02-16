@@ -151,4 +151,4 @@ curl -X POST http://localhost:8000/api/monitors \
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE)
