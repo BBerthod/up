@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
 import { ref, watch, computed } from 'vue'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import Select from 'primevue/select'
 
@@ -44,7 +42,7 @@ const monitorOptions = computed(() =>
 )
 
 const formatDuration = (startedAt: string, resolvedAt: string | null) => {
-    if (!resolvedAt) return 'Ongoing'
+    if (!resolvedAt) return '-'
     const seconds = Math.floor((new Date(resolvedAt).getTime() - new Date(startedAt).getTime()) / 1000)
     if (seconds < 60) return `${seconds}s`
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
@@ -54,7 +52,7 @@ const formatDuration = (startedAt: string, resolvedAt: string | null) => {
 }
 
 const formatDate = (date: string) => {
-    return new Date(date).toLocaleString()
+    return new Date(date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
 const exportUrl = (format: string) => {
@@ -75,92 +73,95 @@ const typeLabels: Record<string, string> = {
 <template>
     <Head title="Incidents" />
 
-    <div class="space-y-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <h1 class="text-2xl font-bold text-white">Incidents</h1>
-                <Tag v-if="activeCount > 0" severity="danger" :value="`${activeCount} active`" rounded class="bg-red-500/20 text-red-400 border border-red-500/30" />
+    <div class="space-y-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+             <div>
+                 <h1 class="text-2xl font-bold text-white tracking-tight">Incidents</h1>
+                 <p class="text-zinc-500">History of downtime and alerts.</p>
             </div>
             <div class="flex gap-2">
-                <a :href="exportUrl('csv')" class="btn-secondary text-sm">
+                <a :href="exportUrl('csv')" class="px-3 py-2 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5">
                     Export CSV
-                </a>
-                <a :href="exportUrl('json')" class="btn-secondary text-sm">
-                    Export JSON
                 </a>
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="flex flex-wrap gap-3">
-            <Select v-model="filters.status" :options="statusOptions" optionLabel="label" optionValue="value" placeholder="All Status" showClear class="w-36" />
+        <!-- Linear Filters -->
+        <div class="flex flex-wrap items-center gap-3 pb-6 border-b border-white/5">
+            <Select v-model="filters.status" :options="statusOptions" optionLabel="label" optionValue="value" placeholder="Status" showClear class="w-32 !bg-transparent !border-white/10" />
+            <Select v-model="filters.cause" :options="causeOptions" optionLabel="label" optionValue="value" placeholder="Cause" showClear class="w-40 !bg-transparent !border-white/10" />
+            <Select v-model="filters.monitor_id" :options="monitorOptions" optionLabel="label" optionValue="value" placeholder="Monitor" showClear class="w-48 !bg-transparent !border-white/10" />
 
-            <Select v-model="filters.cause" :options="causeOptions" optionLabel="label" optionValue="value" placeholder="All Causes" showClear class="w-44" />
+            <div class="h-4 w-px bg-white/10 mx-2 hidden md:block"></div>
 
-            <Select v-model="filters.monitor_id" :options="monitorOptions" optionLabel="label" optionValue="value" placeholder="All Monitors" showClear class="w-48" />
-
-            <input v-model="filters.from" type="date" class="form-input text-sm w-40" placeholder="From" />
-            <input v-model="filters.to" type="date" class="form-input text-sm w-40" placeholder="To" />
+            <input v-model="filters.from" type="date" class="bg-transparent border border-white/10 rounded-md px-3 py-2 text-sm text-zinc-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-colors" placeholder="From" />
+            <span class="text-zinc-600">-</span>
+            <input v-model="filters.to" type="date" class="bg-transparent border border-white/10 rounded-md px-3 py-2 text-sm text-zinc-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-colors" placeholder="To" />
         </div>
 
-        <!-- DataTable -->
-         <DataTable :value="incidents.data" tableStyle="min-width: 50rem" class="glass overflow-hidden rounded-xl">
-             <template #empty>
-                 <div class="p-8 text-center text-text-muted">No incidents found</div>
-             </template>
+        <!-- Linear List Header -->
+        <div class="hidden md:grid grid-cols-12 gap-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider px-4">
+            <div class="col-span-1">Status</div>
+            <div class="col-span-4">Monitor</div>
+            <div class="col-span-2">Cause</div>
+            <div class="col-span-3">Started</div>
+            <div class="col-span-2 text-right">Duration</div>
+        </div>
 
-            <Column field="status" header="Status">
-                <template #body="slotProps">
-                     <Tag :severity="slotProps.data.resolved_at ? 'success' : 'danger'" :value="slotProps.data.resolved_at ? 'Resolved' : 'Active'" rounded :class="slotProps.data.resolved_at ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'">
-                         <template #icon>
-                             <span :class="['w-1.5 h-1.5 rounded-full mr-2', slotProps.data.resolved_at ? 'bg-emerald-400' : 'bg-red-400 animate-pulse']"></span>
-                         </template>
-                     </Tag>
-                </template>
-            </Column>
+        <!-- List Items -->
+        <div class="space-y-1">
+             <div v-for="incident in incidents.data" :key="incident.id" class="group grid grid-cols-1 md:grid-cols-12 gap-4 items-center py-3 px-4 rounded-lg bg-transparent hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
 
-            <Column field="monitor_name" header="Monitor" sortable>
-                <template #body="slotProps">
-                    <Link :href="route('monitors.show', slotProps.data.monitor_id)" class="text-white hover:text-cyan-400 transition-colors font-medium">
-                        {{ slotProps.data.monitor_name }}
+                <!-- Status -->
+                <div class="col-span-1 flex items-center gap-2">
+                     <div v-if="!incident.resolved_at" class="relative flex h-2.5 w-2.5">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </div>
+                    <div v-else class="h-2.5 w-2.5 rounded-full bg-emerald-500/50"></div>
+                    <span class="md:hidden text-sm font-medium text-white">{{ incident.resolved_at ? 'Resolved' : 'Active' }}</span>
+                </div>
+
+                <!-- Monitor -->
+                <div class="col-span-4 min-w-0">
+                    <Link :href="route('monitors.show', incident.monitor_id)" class="block text-sm font-medium text-white hover:text-emerald-400 transition-colors truncate">
+                        {{ incident.monitor_name }}
                     </Link>
-                    <span class="ml-2 text-xs text-text-muted uppercase">{{ typeLabels[slotProps.data.monitor_type] || slotProps.data.monitor_type }}</span>
-                </template>
-            </Column>
+                    <span class="text-[10px] text-zinc-600 font-mono">{{ typeLabels[incident.monitor_type] || incident.monitor_type }}</span>
+                </div>
 
-            <Column field="cause" header="Cause">
-                <template #body="slotProps">
-                    <span class="text-xs px-2 py-0.5 rounded bg-[rgba(255,255,255,0.08)] text-text-secondary">{{ slotProps.data.cause?.replace('_', ' ') }}</span>
-                </template>
-            </Column>
+                <!-- Cause -->
+                <div class="col-span-2">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded textxs font-medium bg-white/5 text-zinc-400 border border-white/5">
+                        {{ incident.cause?.replace('_', ' ') }}
+                    </span>
+                </div>
 
-            <Column field="started_at" header="Started" sortable>
-                 <template #body="slotProps">
-                    <span class="text-sm text-text-secondary">{{ formatDate(slotProps.data.started_at) }}</span>
-                </template>
-            </Column>
+                <!-- Time -->
+                <div class="col-span-3 font-mono text-sm text-zinc-400">
+                    {{ formatDate(incident.started_at) }}
+                </div>
 
-            <Column field="resolved_at" header="Resolved" sortable>
-                <template #body="slotProps">
-                    <span class="text-sm text-text-secondary">{{ slotProps.data.resolved_at ? formatDate(slotProps.data.resolved_at) : '---' }}</span>
-                </template>
-            </Column>
+                <!-- Duration -->
+                <div class="col-span-2 text-right font-mono text-sm" :class="incident.resolved_at ? 'text-zinc-500' : 'text-zinc-300'">
+                    {{ formatDuration(incident.started_at, incident.resolved_at) }}
+                </div>
+            </div>
 
-            <Column header="Duration">
-                <template #body="slotProps">
-                    <span class="text-sm text-text-secondary">{{ formatDuration(slotProps.data.started_at, slotProps.data.resolved_at) }}</span>
-                </template>
-            </Column>
-        </DataTable>
+             <!-- Empty State -->
+            <div v-if="incidents.data.length === 0" class="py-12 text-center">
+                 <p class="text-zinc-500">No incidents found matching current filters.</p>
+            </div>
+        </div>
 
         <!-- Pagination -->
-        <div v-if="incidents.last_page > 1" class="flex justify-center gap-1">
+        <div v-if="incidents.last_page > 1" class="flex justify-center gap-2 pt-8">
              <template v-for="link in incidents.links" :key="link.label">
                 <Link v-if="link.url" :href="link.url"
-                    :class="['px-3 py-1.5 text-sm rounded-lg transition-colors',
-                        link.active ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-text-muted hover:text-white hover:bg-[rgba(255,255,255,0.08)]']"
+                    :class="['px-3 py-1.5 text-xs font-medium rounded-md transition-colors font-mono',
+                        link.active ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5']"
                     v-html="link.label" />
-                <span v-else class="px-3 py-1.5 text-sm text-text-muted" v-html="link.label" />
+                <span v-else class="px-3 py-1.5 text-xs font-medium text-zinc-700 font-mono" v-html="link.label" />
             </template>
         </div>
     </div>
