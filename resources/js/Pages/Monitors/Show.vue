@@ -120,6 +120,20 @@ const handlePeriodChange = (period: string) => {
         <ResponseTimeChart :chart-data="chartData" :current-period="currentPeriod" :monitor-id="monitor.id" @period-change="handlePeriodChange" />
 
         <div class="glass p-6">
+            <h3 class="text-white font-medium mb-4">Latency Heatmap (12 months)</h3>
+            <LatencyHeatmap :data="heatmapData" />
+        </div>
+
+        <div class="glass p-6">
+            <h3 class="text-white font-medium mb-4">Lighthouse Scores</h3>
+            <LighthouseScores :scores="lighthouseScore" :monitor-id="monitor.id" :monitor-type="monitor.type" />
+        </div>
+
+        <div v-if="monitor.type === 'http'" class="glass p-6">
+            <LighthouseHistory :history="lighthouseHistory ?? null" :monitor-id="monitor.id" />
+        </div>
+
+        <div class="glass p-6">
             <h3 class="text-white font-medium mb-4">Incident History</h3>
             <div v-if="incidents.length > 0" class="overflow-x-auto">
                 <table class="w-full">
@@ -135,20 +149,6 @@ const handlePeriodChange = (period: string) => {
                 </table>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No incidents recorded</p>
-        </div>
-
-        <div class="glass p-6">
-            <h3 class="text-white font-medium mb-4">Latency Heatmap (12 months)</h3>
-            <LatencyHeatmap :data="heatmapData" />
-        </div>
-
-        <div class="glass p-6">
-            <h3 class="text-white font-medium mb-4">Lighthouse Scores</h3>
-            <LighthouseScores :scores="lighthouseScore" :monitor-id="monitor.id" :monitor-type="monitor.type" />
-        </div>
-
-        <div v-if="monitor.type === 'http'" class="glass p-6">
-            <LighthouseHistory :history="lighthouseHistory ?? null" :monitor-id="monitor.id" />
         </div>
 
         <div v-if="monitor.badge_hash" class="glass p-6">
