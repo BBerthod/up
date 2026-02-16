@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { router } from '@inertiajs/vue3'
 
 const props = defineProps<{
     scores: {
@@ -8,8 +9,17 @@ const props = defineProps<{
         best_practices: number
         seo: number
         scored_at: string
+        lcp: number | null
+        fcp: number | null
+        cls: number | null
+        tbt: number | null
+        speed_index: number | null
     } | null
+    monitorId: number
+    monitorType: string
 }>()
+
+const auditing = ref(false)
 
 const categories = computed(() => {
     if (!props.scores) return []
@@ -21,12 +31,43 @@ const categories = computed(() => {
     ]
 })
 
+const webVitals = computed(() => {
+    if (!props.scores) return []
+    return [
+        { label: 'LCP', value: props.scores.lcp, unit: 'ms', thresholds: { good: 2500, poor: 4000 } },
+        { label: 'FCP', value: props.scores.fcp, unit: 'ms', thresholds: { good: 1800, poor: 3000 } },
+        { label: 'CLS', value: props.scores.cls, unit: '', thresholds: { good: 0.1, poor: 0.25 } },
+        { label: 'TBT', value: props.scores.tbt, unit: 'ms', thresholds: { good: 200, poor: 600 } },
+        { label: 'Speed Index', value: props.scores.speed_index, unit: 'ms', thresholds: { good: 3400, poor: 5800 } },
+    ]
+})
+
 const scoreColor = (v: number) => v >= 90 ? '#0cce6b' : v >= 50 ? '#ffa400' : '#ff4e42'
+
+const vitalColor = (value: number | null, thresholds: { good: number; poor: number }) => {
+    if (value === null) return '#64748b'
+    if (value < thresholds.good) return '#0cce6b'
+    if (value < thresholds.poor) return '#ffa400'
+    return '#ff4e42'
+}
+
+const formatValue = (value: number | null, unit: string) => {
+    if (value === null) return '—'
+    if (unit === '') return value.toFixed(4)
+    return `${Math.round(value)}${unit}`
+}
 
 const circumference = 2 * Math.PI * 40
 const dashOffset = (v: number) => circumference - (v / 100) * circumference
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+const runAudit = () => {
+    auditing.value = true
+    router.post(route('monitors.lighthouse', props.monitorId), {}, {
+        onFinish: () => { auditing.value = false },
+    })
+}
 </script>
 
 <template>
@@ -50,8 +91,42 @@ const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { mont
             </div>
         </div>
         <p class="text-xs text-slate-500 text-center">Last audit: {{ formatDate(scores.scored_at) }}</p>
+
+        <div class="pt-4 border-t border-white/10">
+            <h4 class="text-sm font-medium text-slate-300 mb-3">Core Web Vitals</h4>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div v-for="vital in webVitals" :key="vital.label" class="bg-white/5 rounded-lg p-3 flex flex-col items-center">
+                    <span class="text-xs text-slate-400 mb-1">{{ vital.label }}</span>
+                    <span class="font-mono font-semibold text-sm px-2 py-0.5 rounded"
+                        :style="{ backgroundColor: vitalColor(vital.value, vital.thresholds) + '20', color: vitalColor(vital.value, vital.thresholds) }">
+                        {{ formatValue(vital.value, vital.unit) }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="monitorType === 'http'" class="pt-4 flex justify-center">
+            <button @click="runAudit" :disabled="auditing"
+                class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                <svg v-if="auditing" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ auditing ? 'Running...' : 'Run Audit' }}
+            </button>
+        </div>
     </div>
     <div v-else class="text-center py-8">
         <p class="text-slate-500">No Lighthouse data yet</p>
+        <div v-if="monitorType === 'http'" class="pt-4 flex justify-center">
+            <button @click="runAudit" :disabled="auditing"
+                class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                <svg v-if="auditing" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ auditing ? 'Running...' : 'Run Audit' }}
+            </button>
+        </div>
     </div>
 </template>

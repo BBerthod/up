@@ -14,7 +14,8 @@ const props = defineProps<{
     incidents: Incident[]
     uptime: { day: number; week: number; month: number }
     heatmapData: Record<string, number>
-    lighthouseScore: { performance: number; accessibility: number; best_practices: number; seo: number; scored_at: string } | null
+    lighthouseScore: { performance: number; accessibility: number; best_practices: number; seo: number; lcp: number | null; fcp: number | null; cls: number | null; tbt: number | null; speed_index: number | null; scored_at: string } | null
+    lighthouseHistory: Array<any> | null
     chartData: Array<any>
     currentPeriod: string
 }>()
@@ -142,7 +143,7 @@ const handlePeriodChange = (period: string) => {
 
         <div class="glass p-6">
             <h3 class="text-white font-medium mb-4">Lighthouse Scores</h3>
-            <LighthouseScores :scores="lighthouseScore" />
+            <LighthouseScores :scores="lighthouseScore" :monitor-id="monitor.id" :monitor-type="monitor.type" />
         </div>
 
         <div v-if="monitor.badge_hash" class="glass p-6">
