@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\LighthouseAuditCompleted;
 use App\Models\Monitor;
 use App\Services\LighthouseService;
 use Illuminate\Bus\Queueable;
@@ -27,7 +28,9 @@ class RunLighthouseAudit implements ShouldQueue
 
     public function handle(LighthouseService $lighthouseService): void
     {
-        $lighthouseService->audit($this->monitor);
+        $score = $lighthouseService->audit($this->monitor);
+
+        LighthouseAuditCompleted::dispatch($this->monitor, $score);
     }
 
     public function failed(Throwable $e): void
