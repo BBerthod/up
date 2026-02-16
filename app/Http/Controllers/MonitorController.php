@@ -82,18 +82,28 @@ class MonitorController extends Controller
             ->limit(20)
             ->get(['id', 'started_at', 'resolved_at', 'cause']);
 
-        $uptimeQuery = fn ($days) => (float) ($monitor->checks()
-            ->where('checked_at', '>=', now()->subDays($days))
-            ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
-            ->value('uptime') ?? 100);
+        $uptimeData = Cache::remember("monitor:{$monitor->id}:uptime", 300, function () use ($monitor) {
+            $calc = fn ($days) => (float) ($monitor->checks()
+                ->where('checked_at', '>=', now()->subDays($days))
+                ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
+                ->value('uptime') ?? 100);
 
-        $heatmapData = $monitor->checks()
-            ->where('checked_at', '>=', now()->subYear())
-            ->selectRaw('DATE(checked_at) as date, ROUND(AVG(response_time_ms)) as avg_ms')
-            ->groupByRaw('DATE(checked_at)')
-            ->orderBy('date')
-            ->pluck('avg_ms', 'date')
-            ->map(fn ($v) => (int) $v);
+            return [
+                'day' => $calc(1),
+                'week' => $calc(7),
+                'month' => $calc(30),
+            ];
+        });
+
+        $heatmapData = Cache::remember("monitor:{$monitor->id}:heatmap", 300, function () use ($monitor) {
+            return $monitor->checks()
+                ->where('checked_at', '>=', now()->subYear())
+                ->selectRaw('DATE(checked_at) as date, ROUND(AVG(response_time_ms)) as avg_ms')
+                ->groupByRaw('DATE(checked_at)')
+                ->orderBy('date')
+                ->pluck('avg_ms', 'date')
+                ->map(fn ($v) => (int) $v);
+        });
 
         $lighthouseScore = $monitor->lighthouseScores()
             ->latest('scored_at')
@@ -111,11 +121,7 @@ class MonitorController extends Controller
             ]),
             'checks' => $checks,
             'incidents' => $incidents,
-            'uptime' => [
-                'day' => $uptimeQuery(1),
-                'week' => $uptimeQuery(7),
-                'month' => $uptimeQuery(30),
-            ],
+            'uptime' => $uptimeData,
             'heatmapData' => $heatmapData,
             'lighthouseScore' => $lighthouseScore,
             'lighthouseHistory' => $this->getLighthouseHistory($request, $monitor),
