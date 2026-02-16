@@ -15,6 +15,11 @@ class MonitorLighthouseScore extends Model
         'accessibility',
         'best_practices',
         'seo',
+        'lcp',
+        'fcp',
+        'cls',
+        'tbt',
+        'speed_index',
         'scored_at',
     ];
 
@@ -23,6 +28,11 @@ class MonitorLighthouseScore extends Model
         'accessibility' => 'integer',
         'best_practices' => 'integer',
         'seo' => 'integer',
+        'lcp' => 'float',
+        'fcp' => 'float',
+        'cls' => 'float',
+        'tbt' => 'float',
+        'speed_index' => 'float',
         'scored_at' => 'datetime',
     ];
 
