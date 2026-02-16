@@ -108,12 +108,19 @@ class MonitorApiController extends Controller
 
     public function checks(Request $request, Monitor $monitor): AnonymousResourceCollection
     {
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'status' => ['nullable', 'in:up,down'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
         $query = $monitor->checks()
-            ->when($request->filled('from'), fn ($q) => $q->where('checked_at', '>=', Carbon::parse($request->from)))
-            ->when($request->filled('to'), fn ($q) => $q->where('checked_at', '<=', Carbon::parse($request->to)->endOfDay()))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($validated['from'] ?? null, fn ($q) => $q->where('checked_at', '>=', Carbon::parse($validated['from'])))
+            ->when($validated['to'] ?? null, fn ($q) => $q->where('checked_at', '<=', Carbon::parse($validated['to'])->endOfDay()))
+            ->when($validated['status'] ?? null, fn ($q) => $q->where('status', $validated['status']))
             ->latest('checked_at');
 
-        return MonitorCheckResource::collection($query->paginate($request->integer('per_page', 50)));
+        return MonitorCheckResource::collection($query->paginate($validated['per_page'] ?? 50));
     }
 }
