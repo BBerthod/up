@@ -20,7 +20,7 @@ defineProps<{ title?: string }>()
                         <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
-                <span class="text-3xl font-bold text-white">Up</span>
+                <span class="text-3xl font-bold text-white">Up <span class="text-lg font-normal text-slate-400">by Radiank</span></span>
             </Link>
 
             <h1 v-if="title" class="text-center text-xl font-semibold text-gray-300 mb-6">{{ title }}</h1>

@@ -30,7 +30,7 @@ if (import.meta.env.VITE_REVERB_APP_KEY) {
 }
 
 createInertiaApp({
-    title: (title) => title ? `${title} - Up` : 'Up',
+    title: (title) => title ? `${title} - Up by Radiank` : 'Up by Radiank',
 
     resolve: async (name) => {
         const page = await resolvePageComponent(
