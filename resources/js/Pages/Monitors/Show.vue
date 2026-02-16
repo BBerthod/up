@@ -16,7 +16,7 @@ const props = defineProps<{
     uptime: { day: number; week: number; month: number }
     heatmapData: Record<string, number>
     lighthouseScore: { performance: number; accessibility: number; best_practices: number; seo: number; lcp: number | null; fcp: number | null; cls: number | null; tbt: number | null; speed_index: number | null; scored_at: string } | null
-    lighthouseHistory: Array<any> | null
+    lighthouseHistory?: Array<any> | null
     chartData: Array<any>
     currentPeriod: string
 }>()
@@ -148,7 +148,7 @@ const handlePeriodChange = (period: string) => {
         </div>
 
         <div v-if="monitor.type === 'http'" class="glass p-6">
-            <LighthouseHistory :history="lighthouseHistory" :monitor-id="monitor.id" />
+            <LighthouseHistory :history="lighthouseHistory ?? null" :monitor-id="monitor.id" />
         </div>
 
         <div v-if="monitor.badge_hash" class="glass p-6">
