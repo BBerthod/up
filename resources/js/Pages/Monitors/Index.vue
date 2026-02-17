@@ -115,7 +115,12 @@ const filterOptions = [
                 <div class="flex flex-col">
                     <div v-for="(monitor, index) in slotProps.items" :key="index"
                         class="group flex items-center justify-between py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors -mx-4 px-4 sm:mx-0 sm:px-2 rounded-lg cursor-pointer"
-                         @click="router.visit(route('monitors.show', monitor.id))">
+                        tabindex="0"
+                        role="button"
+                        @click="router.visit(route('monitors.show', monitor.id))"
+                        @keydown.enter="router.visit(route('monitors.show', monitor.id))"
+                        @keydown.space.prevent="router.visit(route('monitors.show', monitor.id))"
+                        :aria-label="`View ${monitor.name} monitor details`">
 
                         <div class="flex items-center gap-4 min-w-0">
                              <!-- Status Dot -->

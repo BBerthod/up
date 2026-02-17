@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, ref, toRef } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
+import { useFocusTrap } from '@/Composables/useFocusTrap'
 import LatencyHeatmap from '@/Components/LatencyHeatmap.vue'
 import LighthouseHistory from '@/Components/LighthouseHistory.vue'
 import LighthouseScores from '@/Components/LighthouseScores.vue'
@@ -36,8 +37,11 @@ const baseUrl = computed(() => typeof window !== 'undefined' ? window.location.o
 const pauseForm = useForm({})
 
 const showChannelModal = ref(false)
+const channelModalRef = ref<HTMLElement | null>(null)
 const selectedChannel = ref<{ id: number; name: string; type: string } | null>(null)
 const showDeleteDialog = ref(false)
+
+useFocusTrap(channelModalRef, showChannelModal)
 
 const monitorStatus = computed((): 'up' | 'down' | 'paused' => {
     if (!props.monitor.is_active) return 'paused'
@@ -211,7 +215,7 @@ const channelIcons: Record<string, string> = {
         <Transition name="fade">
             <div v-if="showChannelModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeChannelModal">
                 <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeChannelModal" />
-                <div class="relative bg-[var(--color-surface-0)] border border-white/10 rounded-xl p-6 w-full max-w-sm shadow-2xl">
+                <div ref="channelModalRef" class="relative bg-[var(--color-surface-0)] border border-white/10 rounded-xl p-6 w-full max-w-sm shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="channel-modal-title">
                     <button @click="closeChannelModal" aria-label="Close dialog" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -220,7 +224,7 @@ const channelIcons: Record<string, string> = {
                             <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-html="channelIcons[selectedChannel.type] || channelIcons.webhook" />
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-white">{{ selectedChannel.name }}</h3>
+                            <h3 id="channel-modal-title" class="text-lg font-semibold text-white">{{ selectedChannel.name }}</h3>
                             <p class="text-sm text-slate-400 uppercase">{{ selectedChannel.type }}</p>
                         </div>
                     </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, watch, computed, toRef } from 'vue'
+import { useFocusTrap } from '@/Composables/useFocusTrap'
 
 const props = withDefaults(defineProps<{
     show: boolean
@@ -18,7 +19,10 @@ const emit = defineEmits<{
     'update:show': [value: boolean]
 }>()
 
-const confirmButton = ref<HTMLButtonElement | null>(null)
+const dialogRef = ref<HTMLElement | null>(null)
+const showRef = toRef(props, 'show')
+
+useFocusTrap(dialogRef, showRef)
 
 const handleConfirm = () => {
     emit('confirm')
@@ -52,15 +56,13 @@ const variantConfig = computed(() => {
     return configs[props.variant]
 })
 
-watch(() => props.show, async (val) => {
+watch(() => props.show, (val) => {
     if (val) {
-        await nextTick()
-        confirmButton.value?.focus()
+        document.addEventListener('keydown', handleKeydown)
+    } else {
+        document.removeEventListener('keydown', handleKeydown)
     }
 })
-
-onMounted(() => document.addEventListener('keydown', handleKeydown))
-onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
 </script>
 
 <template>
@@ -86,9 +88,12 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
                 >
                     <div
                         v-if="show"
+                        ref="dialogRef"
                         class="relative bg-[var(--color-surface-0)] border border-white/10 rounded-xl p-6 w-full max-w-sm shadow-2xl"
                         role="alertdialog"
                         aria-modal="true"
+                        :aria-labelledby="`dialog-title-${Date.now()}`"
+                        :aria-describedby="`dialog-desc-${Date.now()}`"
                     >
                         <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full" :class="variantConfig.iconBg">
                             <svg v-if="variant === 'danger'" class="w-6 h-6" :class="variantConfig.iconText" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -7,6 +7,7 @@ import Menu from 'primevue/menu'
 import Drawer from 'primevue/drawer'
 import Button from 'primevue/button'
 import { useFlashToast } from '@/Composables/useFlashToast'
+import { useAuth } from '@/Composables/useAuth'
 
 const page = usePage()
 useFlashToast()
@@ -15,10 +16,7 @@ const mobileMenuOpen = ref(false)
 const userMenu = ref()
 const userDropdownOpen = ref(false)
 
-const user = computed(() => (page.props as any).auth?.user)
-const team = computed(() => (page.props as any).auth?.team)
-
-const isAdmin = computed(() => (page.props as any).auth?.user?.is_admin ?? false)
+const { user, team, isAdmin } = useAuth()
 
 const navigation = computed(() => {
     const items = [

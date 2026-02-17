@@ -113,19 +113,19 @@ const typeLabels: Record<string, string> = {
         <!-- Linear List Header -->
         <div class="hidden md:grid grid-cols-12 gap-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider px-4">
             <div class="col-span-1">Status</div>
-            <div @click="toggleSort('monitor_name')" class="col-span-4 flex items-center gap-1 cursor-pointer select-none" :class="filters.sort === 'monitor_name' ? 'text-white' : 'hover:text-zinc-300'">
+            <div @click="toggleSort('monitor_name')" @keydown.enter="toggleSort('monitor_name')" @keydown.space.prevent="toggleSort('monitor_name')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'monitor_name' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-4 flex items-center gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'monitor_name' ? 'text-white' : 'hover:text-zinc-300'">
                 Monitor
                 <span v-if="filters.sort === 'monitor_name'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
             </div>
-            <div @click="toggleSort('cause')" class="col-span-2 flex items-center gap-1 cursor-pointer select-none" :class="filters.sort === 'cause' ? 'text-white' : 'hover:text-zinc-300'">
+            <div @click="toggleSort('cause')" @keydown.enter="toggleSort('cause')" @keydown.space.prevent="toggleSort('cause')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'cause' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-2 flex items-center gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'cause' ? 'text-white' : 'hover:text-zinc-300'">
                 Cause
                 <span v-if="filters.sort === 'cause'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
             </div>
-            <div @click="toggleSort('started_at')" class="col-span-3 flex items-center gap-1 cursor-pointer select-none" :class="filters.sort === 'started_at' ? 'text-white' : 'hover:text-zinc-300'">
+            <div @click="toggleSort('started_at')" @keydown.enter="toggleSort('started_at')" @keydown.space.prevent="toggleSort('started_at')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'started_at' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-3 flex items-center gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'started_at' ? 'text-white' : 'hover:text-zinc-300'">
                 Started
                 <span v-if="filters.sort === 'started_at'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
             </div>
-            <div @click="toggleSort('duration')" class="col-span-2 flex items-center justify-end gap-1 cursor-pointer select-none" :class="filters.sort === 'duration' ? 'text-white' : 'hover:text-zinc-300'">
+            <div @click="toggleSort('duration')" @keydown.enter="toggleSort('duration')" @keydown.space.prevent="toggleSort('duration')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'duration' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-2 flex items-center justify-end gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'duration' ? 'text-white' : 'hover:text-zinc-300'">
                 Duration
                 <span v-if="filters.sort === 'duration'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
             </div>
