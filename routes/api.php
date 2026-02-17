@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\MonitorApiController;
 use App\Http\Controllers\Api\NotificationChannelApiController;
+use App\Http\Controllers\Api\SearchApiController;
 use App\Http\Controllers\Api\StatusPageApiController;
 use App\Http\Controllers\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,7 @@ Route::get('/status-pages/public/{slug}', [StatusPageApiController::class, 'publ
 
 // Authenticated API routes
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/search', SearchApiController::class)->name('api.search');
     Route::apiResource('monitors', MonitorApiController::class)->names('api.monitors');
     Route::post('/monitors/{monitor}/pause', [MonitorApiController::class, 'pause'])->name('api.monitors.pause');
     Route::post('/monitors/{monitor}/resume', [MonitorApiController::class, 'resume'])->name('api.monitors.resume');

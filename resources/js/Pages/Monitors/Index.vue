@@ -2,8 +2,10 @@
 import { Head, Link, router } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
 import SkeletonMonitorList from '@/Components/SkeletonMonitorList.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
+import { usePageLoading } from '@/Composables/usePageLoading'
+import { useSimplePersistentFilter } from '@/Composables/usePersistentFilters'
 import DataView from 'primevue/dataview'
 
 useRealtimeUpdates({
@@ -33,8 +35,7 @@ const props = defineProps<{
     filters: { status: string | null }
 }>()
 
-const loaded = ref(false)
-onMounted(() => { loaded.value = true })
+const { isLoading } = usePageLoading()
 
 const stats = computed(() => {
     const total = props.monitors.length
@@ -58,18 +59,18 @@ const relativeTime = (dateStr: string | null): string => {
     return `${Math.floor(hours / 24)}d`
 }
 
-const filterMonitors = (status: string | null) => {
-    router.get(route('monitors.index'), status ? { status } : {}, { preserveState: true })
-}
-
-const activeFilter = ref(props.filters.status || 'all')
-
 const filterOptions = [
     { key: 'all', label: 'All' },
     { key: 'up', label: 'Up' },
     { key: 'down', label: 'Down' },
     { key: 'paused', label: 'Paused' }
 ]
+
+const { value: activeFilter } = useSimplePersistentFilter(
+    'monitors_status',
+    props.filters.status || 'all',
+    'monitors.index'
+)
 </script>
 
 <template>
@@ -88,7 +89,7 @@ const filterOptions = [
         <!-- Filters & Stats Row -->
         <div class="flex flex-col md:flex-row gap-6 items-end md:items-center justify-between border-b border-white/5 pb-6">
             <div class="flex items-center gap-2">
-                 <SelectButton v-model="activeFilter" :options="filterOptions" optionLabel="label" optionValue="key" @change="filterMonitors(activeFilter)" :allowEmpty="false" class="w-full md:w-auto" />
+                 <SelectButton v-model="activeFilter" :options="filterOptions" optionLabel="label" optionValue="key" :allowEmpty="false" class="w-full md:w-auto" />
             </div>
             <div class="flex items-center gap-6 text-sm">
                 <div class="flex items-center gap-2">
@@ -109,7 +110,7 @@ const filterOptions = [
         </div>
 
         <!-- Linear List -->
-        <SkeletonMonitorList v-if="!loaded" />
+        <SkeletonMonitorList v-if="isLoading" />
         <DataView v-else :value="monitors" :paginator="monitors.length > 20" :rows="20" class="bg-transparent">
             <template #list="slotProps">
                 <div class="flex flex-col">

@@ -4,6 +4,8 @@ import { computed, ref } from 'vue'
 import PageHeader from '@/Components/PageHeader.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
+import SkeletonChannelList from '@/Components/SkeletonChannelList.vue'
+import { usePageLoading } from '@/Composables/usePageLoading'
 
 interface Channel {
     id: number
@@ -16,6 +18,8 @@ interface Channel {
 const props = defineProps<{
     channels: Channel[]
 }>()
+
+const { isLoading } = usePageLoading()
 
 const typeColors: Record<string, string> = {
     email: 'bg-blue-500/20 text-blue-400',
@@ -48,7 +52,9 @@ const testChannel = (channel: Channel) => {
 <template>
     <Head title="Notification Channels" />
 
-    <div class="space-y-6">
+    <SkeletonChannelList v-if="isLoading" />
+
+    <div v-else class="space-y-6">
         <PageHeader title="Notification Channels" description="Manage how you receive alerts when monitors go down.">
             <template #actions>
                 <Link :href="route('channels.create')" class="btn-primary py-3 px-4">

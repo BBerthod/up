@@ -3,6 +3,7 @@ import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { computed, ref, toRef } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import { useFocusTrap } from '@/Composables/useFocusTrap'
+import { usePageLoading } from '@/Composables/usePageLoading'
 import LatencyHeatmap from '@/Components/LatencyHeatmap.vue'
 import LighthouseHistory from '@/Components/LighthouseHistory.vue'
 import LighthouseScores from '@/Components/LighthouseScores.vue'
@@ -12,11 +13,14 @@ import GlassCard from '@/Components/GlassCard.vue'
 import StatusBadge from '@/Components/StatusBadge.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 import CopyButton from '@/Components/CopyButton.vue'
+import SkeletonMonitorShow from '@/Components/SkeletonMonitorShow.vue'
 
 useRealtimeUpdates({
     onMonitorChecked: ['monitor', 'checks', 'chartData', 'uptime', 'heatmapData', 'incidents'],
     onLighthouseCompleted: ['lighthouseScore', 'lighthouseHistory'],
 })
+
+const { isLoading } = usePageLoading()
 
 interface Check { id: number; status: 'up' | 'down'; response_time_ms: number; status_code: number; checked_at: string }
 interface Incident { id: number; started_at: string; resolved_at: string | null; cause: string }
@@ -110,7 +114,9 @@ const channelIcons: Record<string, string> = {
 <template>
     <Head :title="monitor.name" />
 
-    <div class="space-y-6">
+    <SkeletonMonitorShow v-if="isLoading" />
+
+    <div v-else class="space-y-6">
         <BackLink :href="route('monitors.index')" label="Back to Monitors" />
 
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

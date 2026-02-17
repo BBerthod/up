@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
-import { ref, watch, computed } from 'vue'
+import SkeletonIncidentList from '@/Components/SkeletonIncidentList.vue'
+import { computed } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
+import { usePersistentFilters } from '@/Composables/usePersistentFilters'
+import { usePageLoading } from '@/Composables/usePageLoading'
 import Tag from 'primevue/tag'
 
 useRealtimeUpdates({
     onMonitorChecked: ['incidents', 'activeCount'],
 })
 import Select from 'primevue/select'
+
+const { isLoading } = usePageLoading()
 
 const props = defineProps<{
     incidents: any
@@ -18,23 +23,29 @@ const props = defineProps<{
     filters: Record<string, string>
 }>()
 
-const filters = ref({
-    status: props.filters.status || '',
-    cause: props.filters.cause || '',
-    monitor_id: props.filters.monitor_id || '',
-    from: props.filters.from || '',
-    to: props.filters.to || '',
-    sort: props.filters.sort || 'started_at',
-    dir: props.filters.dir || 'desc',
-})
-
-const applyFilters = () => {
-    const params: Record<string, string> = {}
-    Object.entries(filters.value).forEach(([k, v]) => { if (v) params[k] = v })
-    router.get(route('incidents.index'), params, { preserveState: true })
+interface IncidentFilters {
+    status: string
+    cause: string
+    monitor_id: string
+    from: string
+    to: string
+    sort: string
+    dir: string
 }
 
-watch(filters, applyFilters, { deep: true })
+const { filters, clearFilters } = usePersistentFilters<IncidentFilters>(
+    'incidents',
+    {
+        status: props.filters.status || '',
+        cause: props.filters.cause || '',
+        monitor_id: props.filters.monitor_id || '',
+        from: props.filters.from || '',
+        to: props.filters.to || '',
+        sort: props.filters.sort || 'started_at',
+        dir: props.filters.dir || 'desc',
+    },
+    'incidents.index'
+)
 
 const toggleSort = (column: string) => {
     if (filters.value.sort === column) {
@@ -88,7 +99,9 @@ const typeLabels: Record<string, string> = {
 <template>
     <Head title="Incidents" />
 
-    <div class="space-y-8">
+    <SkeletonIncidentList v-if="isLoading" />
+
+    <div v-else class="space-y-8">
         <PageHeader title="Incidents" description="History of downtime and alerts.">
             <template #actions>
                 <a :href="exportUrl('csv')" class="px-3 py-2 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5">

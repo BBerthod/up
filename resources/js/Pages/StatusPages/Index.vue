@@ -8,6 +8,8 @@ import PageHeader from '@/Components/PageHeader.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 import CopyButton from '@/Components/CopyButton.vue'
+import SkeletonStatusPageList from '@/Components/SkeletonStatusPageList.vue'
+import { usePageLoading } from '@/Composables/usePageLoading'
 
 interface StatusPage {
     id: number
@@ -20,6 +22,8 @@ interface StatusPage {
 const props = defineProps<{
     statusPages: StatusPage[]
 }>()
+
+const { isLoading } = usePageLoading()
 
 const showDeleteDialog = ref(false)
 const pageToDelete = ref<StatusPage | null>(null)
@@ -41,7 +45,9 @@ const statusPageUrl = (slug: string) => `/status/${slug}`
 <template>
     <Head title="Status Pages" />
 
-    <div class="space-y-6">
+    <SkeletonStatusPageList v-if="isLoading" />
+
+    <div v-else class="space-y-6">
         <PageHeader title="Status Pages" description="Create public pages to share uptime status with your users.">
             <template #actions>
                 <Link :href="route('status-pages.create')">

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
+import { usePageLoading } from '@/Composables/usePageLoading'
 import PageHeader from '@/Components/PageHeader.vue'
 import GlassCard from '@/Components/GlassCard.vue'
 import EmptyState from '@/Components/EmptyState.vue'
@@ -67,8 +68,7 @@ interface ChartPoint {
     avg_ms: number
 }
 
-const loaded = ref(false)
-onMounted(() => { loaded.value = true })
+const { isLoading } = usePageLoading()
 
 const props = defineProps<{
     metrics: {
@@ -169,6 +169,128 @@ const chartXLabels = computed(() => {
     }
     return labels
 })
+
+interface ChartTooltipData {
+    x: number
+    y: number
+    hour: string
+    avg_ms: number
+}
+
+const chartTooltip = ref({
+    show: false,
+    x: 0,
+    y: 0,
+    svgX: 0,
+    svgY: 0,
+    data: null as ChartTooltipData | null,
+})
+
+const chartSvgRef = ref<SVGSVGElement | null>(null)
+const isTouchDevice = ref(false)
+const touchTimeout = ref<number | null>(null)
+
+onMounted(() => {
+    isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    document.addEventListener('click', handleDocumentClick)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleDocumentClick)
+    if (touchTimeout.value) clearTimeout(touchTimeout.value)
+})
+
+function handleDocumentClick(event: MouseEvent | TouchEvent) {
+    if (chartTooltip.value.show && chartSvgRef.value && !chartSvgRef.value.contains(event.target as Node)) {
+        hideChartTooltip()
+    }
+}
+
+function getChartTooltipPosition(event: MouseEvent | TouchEvent) {
+    const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
+    const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
+
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+
+    let x = clientX + 16
+    let y = clientY - 20
+
+    if (x + 200 > vw) x = clientX - 200
+    if (y < 10) y = clientY + 20
+    if (y + 120 > vh) y = vh - 130
+
+    return { x, y }
+}
+
+function showChartTooltip(event: MouseEvent | TouchEvent, point: { x: number; y: number; hour: string }) {
+    const pos = getChartTooltipPosition(event)
+    chartTooltip.value = {
+        show: true,
+        x: pos.x,
+        y: pos.y,
+        svgX: point.x,
+        svgY: scaleY(point.y),
+        data: { x: point.x, y: point.y, hour: point.hour, avg_ms: point.y },
+    }
+}
+
+function updateChartTooltipPosition(event: MouseEvent | TouchEvent) {
+    const pos = getChartTooltipPosition(event)
+    chartTooltip.value.x = pos.x
+    chartTooltip.value.y = pos.y
+}
+
+function hideChartTooltip() {
+    chartTooltip.value.show = false
+    chartTooltip.value.data = null
+}
+
+function handleChartMouseEnter(event: MouseEvent, point: { x: number; y: number; hour: string }) {
+    showChartTooltip(event, point)
+}
+
+function handleChartMouseMove(event: MouseEvent, point: { x: number; y: number; hour: string }) {
+    if (chartTooltip.value.data?.hour !== point.hour) {
+        showChartTooltip(event, point)
+    }
+    updateChartTooltipPosition(event)
+}
+
+function handleChartMouseLeave() {
+    if (!isTouchDevice.value) {
+        hideChartTooltip()
+    }
+}
+
+function handleChartTouchStart(event: TouchEvent, point: { x: number; y: number; hour: string }) {
+    event.preventDefault()
+    if (touchTimeout.value) clearTimeout(touchTimeout.value)
+    showChartTooltip(event, point)
+}
+
+function handleChartTouchMove(event: TouchEvent, point: { x: number; y: number; hour: string }) {
+    event.preventDefault()
+    if (touchTimeout.value) clearTimeout(touchTimeout.value)
+    if (chartTooltip.value.data?.hour !== point.hour) {
+        showChartTooltip(event, point)
+    }
+    updateChartTooltipPosition(event)
+}
+
+function handleChartTouchEnd() {
+    touchTimeout.value = window.setTimeout(hideChartTooltip, 2000)
+}
+
+function formatChartTooltipDate(hour: string): string {
+    const date = new Date(hour)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const month = months[date.getMonth()]
+    const day = date.getDate()
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${month} ${day}, ${hours}:${minutes}`
+}
 </script>
 
 <template>
@@ -183,7 +305,7 @@ const chartXLabels = computed(() => {
         </div>
 
         <!-- KPI Grid -->
-        <SkeletonDashboard v-if="!loaded" />
+        <SkeletonDashboard v-if="isLoading" />
         <div v-else :key="flashKey" class="grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-white/5 pb-12 transition-opacity duration-300" :class="{ 'opacity-80': isRefreshing }">
             <div class="space-y-1">
                 <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Monitors</span>
@@ -288,10 +410,15 @@ const chartXLabels = computed(() => {
                 <span v-if="isRefreshing" class="text-xs text-emerald-400 animate-pulse">Updating...</span>
             </div>
             <div v-if="metrics.response_time_chart.length > 0" :key="'chart-' + flashKey" class="transition-opacity duration-300" :class="{ 'opacity-70': isRefreshing }">
-                <svg :viewBox="`0 0 ${chartViewBox.w} ${chartViewBox.h}`" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+                <svg ref="chartSvgRef" :viewBox="`0 0 ${chartViewBox.w} ${chartViewBox.h}`" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
                     <defs>
                         <linearGradient id="dashAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stop-color="#10b981" stop-opacity="0.2" />
+                            <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+                        </linearGradient>
+                        <linearGradient id="dashVerticalLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#10b981" stop-opacity="0.6" />
+                            <stop offset="50%" stop-color="#10b981" stop-opacity="0.3" />
                             <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
                         </linearGradient>
                     </defs>
@@ -300,10 +427,82 @@ const chartXLabels = computed(() => {
                     <text v-for="label in chartXLabels" :key="'xl-' + label.label" :x="label.x" :y="chartViewBox.h - 5" text-anchor="middle" style="font-size: 10px; fill: #64748b">{{ label.label }}</text>
                     <path :d="chartAreaD" fill="url(#dashAreaGrad)" />
                     <path :d="chartPathD" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+
+                    <line
+                        v-if="chartTooltip.show && chartTooltip.data"
+                        :x1="chartTooltip.svgX"
+                        :y1="chartPad.t"
+                        :x2="chartTooltip.svgX"
+                        :y2="chartViewBox.h - chartPad.b"
+                        stroke="url(#dashVerticalLineGrad)"
+                        stroke-width="1"
+                        stroke-dasharray="4 2"
+                        class="transition-opacity duration-150"
+                    />
+
+                    <circle
+                        v-if="chartTooltip.show && chartTooltip.data"
+                        :cx="chartTooltip.svgX"
+                        :cy="chartTooltip.svgY"
+                        r="6"
+                        fill="#10b981"
+                        stroke="rgba(255,255,255,0.3)"
+                        stroke-width="2"
+                        class="transition-opacity duration-150"
+                    />
+
+                    <rect
+                        v-for="(point, index) in chartPoints"
+                        :key="'hit-' + index"
+                        :x="point.x - Math.max(8, chartW / chartPoints.length / 2)"
+                        :y="chartPad.t"
+                        :width="Math.max(16, chartW / chartPoints.length)"
+                        :height="chartH"
+                        fill="transparent"
+                        class="cursor-pointer"
+                        @mouseenter="handleChartMouseEnter($event, point)"
+                        @mousemove="handleChartMouseMove($event, point)"
+                        @mouseleave="handleChartMouseLeave"
+                        @touchstart.passive="handleChartTouchStart($event, point)"
+                        @touchmove.passive="handleChartTouchMove($event, point)"
+                        @touchend="handleChartTouchEnd"
+                    />
                 </svg>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No data yet</p>
         </GlassCard>
+
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition ease-out duration-150"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="transition ease-in duration-100"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+            >
+                <div
+                    v-if="chartTooltip.show && chartTooltip.data"
+                    class="fixed z-50 px-4 py-3 rounded-xl pointer-events-none shadow-2xl min-w-[160px]"
+                    :style="{
+                        left: `${chartTooltip.x}px`,
+                        top: `${chartTooltip.y}px`,
+                        background: 'linear-gradient(135deg, rgba(26, 26, 29, 0.95) 0%, rgba(17, 17, 19, 0.98) 100%)',
+                        backdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                    }"
+                >
+                    <div class="text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase">
+                        {{ formatChartTooltipDate(chartTooltip.data.hour) }}
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <span class="text-xs text-slate-500">Response</span>
+                        <span class="text-sm font-semibold font-mono text-white">{{ Math.round(chartTooltip.data.avg_ms) }}<span class="text-slate-500 text-xs ml-0.5">ms</span></span>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
 
         <!-- Monitors Overview -->
         <GlassCard>

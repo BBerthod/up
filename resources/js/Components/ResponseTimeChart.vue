@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
     chartData: Array<{
@@ -49,31 +49,30 @@ interface NormalizedDataPoint {
 const normalizedData = computed<NormalizedDataPoint[]>(() => {
     if (!props.chartData || props.chartData.length === 0) return []
 
-    return props.chartData
-        .map((item) => {
-            if (item.date !== undefined && item.avg_ms !== undefined) {
-                return {
-                    x: new Date(item.date).getTime(),
-                    y: item.avg_ms,
-                    min_ms: item.min_ms,
-                    max_ms: item.max_ms,
-                    uptime_percent: item.uptime_percent,
-                    date: item.date,
-                    isAggregated: true,
-                }
-            } else if (item.checked_at !== undefined && item.response_time_ms !== undefined) {
-                return {
-                    x: new Date(item.checked_at).getTime(),
-                    y: item.response_time_ms,
-                    status: item.status,
-                    status_code: item.status_code,
-                    checked_at: item.checked_at,
-                    isAggregated: false,
-                }
-            }
-            return null
-        })
-        .filter((item): item is NormalizedDataPoint => item !== null)
+    const result: NormalizedDataPoint[] = []
+    for (const item of props.chartData) {
+        if (item.date !== undefined && item.avg_ms !== undefined) {
+            result.push({
+                x: new Date(item.date).getTime(),
+                y: item.avg_ms,
+                min_ms: item.min_ms,
+                max_ms: item.max_ms,
+                uptime_percent: item.uptime_percent,
+                date: item.date,
+                isAggregated: true,
+            })
+        } else if (item.checked_at !== undefined && item.response_time_ms !== undefined) {
+            result.push({
+                x: new Date(item.checked_at).getTime(),
+                y: item.response_time_ms,
+                status: item.status,
+                status_code: item.status_code,
+                checked_at: item.checked_at,
+                isAggregated: false,
+            })
+        }
+    }
+    return result
 })
 
 const stats = computed(() => {
@@ -212,25 +211,105 @@ const tooltip = ref({
     show: false,
     x: 0,
     y: 0,
+    svgX: 0,
+    svgY: 0,
     data: null as NormalizedDataPoint | null,
 })
 
-function handleMouseEnter(event: MouseEvent, data: NormalizedDataPoint) {
+const svgRef = ref<SVGSVGElement | null>(null)
+const isTouchDevice = ref(false)
+const touchTimeout = ref<number | null>(null)
+
+onMounted(() => {
+    isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    document.addEventListener('click', handleDocumentClick)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleDocumentClick)
+    if (touchTimeout.value) clearTimeout(touchTimeout.value)
+})
+
+function handleDocumentClick(event: MouseEvent | TouchEvent) {
+    if (tooltip.value.show && svgRef.value && !svgRef.value.contains(event.target as Node)) {
+        hideTooltip()
+    }
+}
+
+function getTooltipPosition(event: MouseEvent | TouchEvent) {
+    const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
+    const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
+
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+
+    let x = clientX + 16
+    let y = clientY - 20
+
+    if (x + 220 > vw) x = clientX - 220
+    if (y < 10) y = clientY + 20
+    if (y + 160 > vh) y = vh - 170
+
+    return { x, y }
+}
+
+function showTooltip(event: MouseEvent | TouchEvent, data: NormalizedDataPoint) {
+    const pos = getTooltipPosition(event)
     tooltip.value = {
         show: true,
-        x: event.clientX + 12,
-        y: event.clientY - 10,
+        x: pos.x,
+        y: pos.y,
+        svgX: scaleX(data.x),
+        svgY: scaleY(data.y),
         data,
     }
 }
 
-function handleMouseMove(event: MouseEvent) {
-    tooltip.value.x = event.clientX + 12
-    tooltip.value.y = event.clientY - 10
+function updateTooltipPosition(event: MouseEvent | TouchEvent) {
+    const pos = getTooltipPosition(event)
+    tooltip.value.x = pos.x
+    tooltip.value.y = pos.y
+}
+
+function hideTooltip() {
+    tooltip.value.show = false
+    tooltip.value.data = null
+}
+
+function handleMouseEnter(event: MouseEvent, data: NormalizedDataPoint) {
+    showTooltip(event, data)
+}
+
+function handleMouseMove(event: MouseEvent, data: NormalizedDataPoint) {
+    if (tooltip.value.data?.x !== data.x) {
+        showTooltip(event, data)
+    }
+    updateTooltipPosition(event)
 }
 
 function handleMouseLeave() {
-    tooltip.value.show = false
+    if (!isTouchDevice.value) {
+        hideTooltip()
+    }
+}
+
+function handleTouchStart(event: TouchEvent, data: NormalizedDataPoint) {
+    event.preventDefault()
+    if (touchTimeout.value) clearTimeout(touchTimeout.value)
+    showTooltip(event, data)
+}
+
+function handleTouchMove(event: TouchEvent, data: NormalizedDataPoint) {
+    event.preventDefault()
+    if (touchTimeout.value) clearTimeout(touchTimeout.value)
+    if (tooltip.value.data?.x !== data.x) {
+        showTooltip(event, data)
+    }
+    updateTooltipPosition(event)
+}
+
+function handleTouchEnd() {
+    touchTimeout.value = window.setTimeout(hideTooltip, 2000)
 }
 
 function formatTooltipDate(data: NormalizedDataPoint): string {
@@ -244,6 +323,12 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
     const hours = String(date.getHours()).padStart(2, '0')
     const minutes = String(date.getMinutes()).padStart(2, '0')
     return `${month} ${day}, ${year} ${hours}:${minutes}`
+}
+
+function getStatusColor(status?: 'up' | 'down'): string {
+    if (status === 'up') return '#10b981'
+    if (status === 'down') return '#ef4444'
+    return '#10b981'
 }
 </script>
 
@@ -274,6 +359,7 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
         <div class="relative">
             <svg
                 v-if="normalizedData.length > 0"
+                ref="svgRef"
                 viewBox="0 0 800 300"
                 preserveAspectRatio="xMidYMid meet"
                 class="w-full h-auto"
@@ -281,6 +367,11 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
                 <defs>
                     <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" stop-color="#10b981" stop-opacity="0.3" />
+                        <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="verticalLineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.6" />
+                        <stop offset="50%" stop-color="#10b981" stop-opacity="0.3" />
                         <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
                     </linearGradient>
                 </defs>
@@ -336,7 +427,6 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
                     stroke-linejoin="round"
                 />
 
-                <!-- Down status markers -->
                 <circle
                     v-for="(point, index) in normalizedData.filter(p => p.status === 'down')"
                     :key="'down-' + index"
@@ -348,18 +438,44 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
                     stroke-width="2"
                 />
 
-                <!-- Invisible hit areas for tooltip -->
+                <line
+                    v-if="tooltip.show && tooltip.data"
+                    :x1="tooltip.svgX"
+                    :y1="paddingTop"
+                    :x2="tooltip.svgX"
+                    :y2="viewBoxHeight - paddingBottom"
+                    stroke="url(#verticalLineGradient)"
+                    stroke-width="1"
+                    stroke-dasharray="4 2"
+                    class="transition-opacity duration-150"
+                />
+
                 <circle
+                    v-if="tooltip.show && tooltip.data"
+                    :cx="tooltip.svgX"
+                    :cy="tooltip.svgY"
+                    r="6"
+                    :fill="getStatusColor(tooltip.data.status)"
+                    stroke="rgba(255,255,255,0.3)"
+                    stroke-width="2"
+                    class="transition-opacity duration-150"
+                />
+
+                <rect
                     v-for="(point, index) in normalizedData"
                     :key="'hit-' + index"
-                    :cx="scaleX(point.x)"
-                    :cy="scaleY(point.y)"
-                    :r="Math.max(6, 800 / normalizedData.length)"
+                    :x="scaleX(point.x) - Math.max(8, 800 / normalizedData.length / 2)"
+                    :y="paddingTop"
+                    :width="Math.max(16, 800 / normalizedData.length)"
+                    :height="chartHeight"
                     fill="transparent"
                     class="cursor-pointer"
                     @mouseenter="handleMouseEnter($event, point)"
-                    @mousemove="handleMouseMove($event)"
+                    @mousemove="handleMouseMove($event, point)"
                     @mouseleave="handleMouseLeave"
+                    @touchstart.passive="handleTouchStart($event, point)"
+                    @touchmove.passive="handleTouchMove($event, point)"
+                    @touchend="handleTouchEnd"
                 />
             </svg>
 
@@ -370,26 +486,68 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
     </div>
 
     <Teleport to="body">
-        <div
-            v-if="tooltip.show && tooltip.data"
-            class="fixed z-50 px-3 py-2 rounded-lg text-xs text-white bg-slate-800 border border-white/10 pointer-events-none whitespace-nowrap shadow-xl"
-            :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
+        <Transition
+            enter-active-class="transition ease-out duration-150"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-100"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
         >
-            <template v-if="tooltip.data.isAggregated">
-                <div class="font-medium text-slate-200 mb-1">{{ formatTooltipDate(tooltip.data) }}</div>
-                <div class="text-slate-400">Avg: {{ Math.round(tooltip.data.y) }}ms</div>
-                <div v-if="tooltip.data.min_ms !== undefined" class="text-slate-400">Min: {{ tooltip.data.min_ms }}ms</div>
-                <div v-if="tooltip.data.max_ms !== undefined" class="text-slate-400">Max: {{ tooltip.data.max_ms }}ms</div>
-                <div v-if="tooltip.data.uptime_percent !== undefined" class="text-slate-400">Uptime: {{ Number(tooltip.data.uptime_percent).toFixed(1) }}%</div>
-            </template>
-            <template v-else>
-                <div class="font-medium text-slate-200 mb-1">{{ formatTooltipDate(tooltip.data) }}</div>
-                <div class="text-slate-400">Response: {{ Math.round(tooltip.data.y) }}ms</div>
-                <div v-if="tooltip.data.status_code" class="text-slate-400">Status: {{ tooltip.data.status_code }}</div>
-                <div v-if="tooltip.data.status" :class="tooltip.data.status === 'down' ? 'text-red-400' : 'text-emerald-400'">
-                    {{ tooltip.data.status === 'up' ? 'Up' : 'Down' }}
+            <div
+                v-if="tooltip.show && tooltip.data"
+                class="fixed z-50 px-4 py-3 rounded-xl pointer-events-none shadow-2xl min-w-[180px]"
+                :style="{
+                    left: `${tooltip.x}px`,
+                    top: `${tooltip.y}px`,
+                    background: 'linear-gradient(135deg, rgba(26, 26, 29, 0.95) 0%, rgba(17, 17, 19, 0.98) 100%)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                }"
+            >
+                <div class="text-xs font-medium text-slate-400 mb-2 tracking-wide uppercase">
+                    {{ formatTooltipDate(tooltip.data) }}
                 </div>
-            </template>
-        </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between gap-4">
+                        <span class="text-xs text-slate-500">Response</span>
+                        <span class="text-sm font-semibold font-mono text-white">{{ Math.round(tooltip.data.y) }}<span class="text-slate-500 text-xs ml-0.5">ms</span></span>
+                    </div>
+
+                    <template v-if="tooltip.data.isAggregated">
+                        <div v-if="tooltip.data.min_ms !== undefined" class="flex items-center justify-between gap-4">
+                            <span class="text-xs text-slate-500">Min</span>
+                            <span class="text-xs font-mono text-slate-300">{{ tooltip.data.min_ms }}ms</span>
+                        </div>
+                        <div v-if="tooltip.data.max_ms !== undefined" class="flex items-center justify-between gap-4">
+                            <span class="text-xs text-slate-500">Max</span>
+                            <span class="text-xs font-mono text-slate-300">{{ tooltip.data.max_ms }}ms</span>
+                        </div>
+                        <div v-if="tooltip.data.uptime_percent !== undefined" class="flex items-center justify-between gap-4">
+                            <span class="text-xs text-slate-500">Uptime</span>
+                            <span class="text-xs font-mono text-emerald-400">{{ Number(tooltip.data.uptime_percent).toFixed(1) }}%</span>
+                        </div>
+                    </template>
+
+                    <template v-else>
+                        <div v-if="tooltip.data.status_code" class="flex items-center justify-between gap-4">
+                            <span class="text-xs text-slate-500">Status</span>
+                            <span class="text-xs font-mono text-slate-300">{{ tooltip.data.status_code }}</span>
+                        </div>
+                        <div v-if="tooltip.data.status" class="flex items-center justify-between gap-4">
+                            <span class="text-xs text-slate-500">State</span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full" :class="tooltip.data.status === 'up' ? 'bg-emerald-400' : 'bg-red-400'"></span>
+                                <span :class="tooltip.data.status === 'up' ? 'text-emerald-400' : 'text-red-400'" class="text-xs font-medium">
+                                    {{ tooltip.data.status === 'up' ? 'Up' : 'Down' }}
+                                </span>
+                            </span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </Transition>
     </Teleport>
 </template>

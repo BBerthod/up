@@ -151,7 +151,7 @@ class SendNotification implements ShouldQueue
         $payload = json_encode([
             'title' => "[Up] {$this->monitor->name} is {$statusText}",
             'body' => "URL: {$this->monitor->url} - Cause: ".ucfirst(str_replace('_', ' ', $this->incident->cause->value)),
-            'data' => ['url' => "/monitors/{$this->monitor->id}"],
+            'data' => ['url' => config('app.url')."/monitors/{$this->monitor->id}"],
         ]);
 
         $userIds = $this->channel->team->users()->pluck('id');

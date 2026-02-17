@@ -8,6 +8,7 @@ import Drawer from 'primevue/drawer'
 import Button from 'primevue/button'
 import { useFlashToast } from '@/Composables/useFlashToast'
 import { useAuth } from '@/Composables/useAuth'
+import GlobalSearch from '@/Components/GlobalSearch.vue'
 
 const page = usePage()
 useFlashToast()
@@ -61,7 +62,24 @@ onMounted(() => {
 </script>
 
 <template>
-    <Toast position="top-right" />
+    <GlobalSearch />
+    <Toast position="top-right">
+        <template #message="slotProps">
+            <div class="flex items-start justify-between gap-3 w-full">
+                <div class="flex flex-col gap-1 flex-1 min-w-0">
+                    <span class="font-semibold text-sm">{{ slotProps.message.summary }}</span>
+                    <span class="text-sm opacity-90">{{ slotProps.message.detail }}</span>
+                </div>
+                <button
+                    v-if="slotProps.message.data?.link && slotProps.message.data?.linkText"
+                    @click="router.visit(slotProps.message.data.link)"
+                    class="shrink-0 px-3 py-1.5 text-xs font-medium rounded-md bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                    {{ slotProps.message.data.linkText }}
+                </button>
+            </div>
+        </template>
+    </Toast>
     <div class="min-h-screen bg-[#09090b] text-[#ececef] font-sans selection:bg-emerald-500/30 selection:text-emerald-400">
         <!-- Mobile overlay -->
         <Drawer v-model:visible="mobileMenuOpen" header="Menu" class="lg:hidden border-r border-white/5 bg-[#09090b]">
@@ -137,6 +155,16 @@ onMounted(() => {
                     <div class="flex items-center gap-4">
                         <button @click="mobileMenuOpen = true" class="lg:hidden p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/5" aria-label="Open navigation menu" :aria-expanded="mobileMenuOpen">
                             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                        </button>
+
+                        <button class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-400 bg-white/5 border border-white/5 rounded-lg hover:bg-white/10 hover:border-white/10 transition-colors" aria-label="Open search">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <span class="hidden md:inline">Search...</span>
+                            <kbd class="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 bg-white/5 rounded border border-white/10">
+                                <span class="text-xs">⌘</span>K
+                            </kbd>
                         </button>
                     </div>
 
