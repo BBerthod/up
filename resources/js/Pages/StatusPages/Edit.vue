@@ -74,7 +74,7 @@ const submit = () => form.put(route('status-pages.update', props.statusPage.id))
                 <div class="flex items-end pb-1">
                     <div class="flex items-center gap-3">
                         <button type="button" @click="form.is_active = !form.is_active"
-                            :class="['relative inline-flex h-6 w-11 rounded-full transition-colors', form.is_active ? 'bg-cyan-500' : 'bg-slate-600']">
+                            :class="['relative inline-flex h-6 w-11 rounded-full transition-colors', form.is_active ? 'bg-emerald-500' : 'bg-slate-600']">
                             <span :class="['inline-block h-5 w-5 transform rounded-full bg-white shadow transition', form.is_active ? 'translate-x-5' : 'translate-x-0']" />
                         </button>
                         <span class="text-sm text-slate-300">Active</span>
@@ -87,12 +87,12 @@ const submit = () => form.put(route('status-pages.update', props.statusPage.id))
                 <div v-if="monitors.length > 0" class="space-y-2">
                     <div v-for="m in monitors" :key="m.id" @click="toggleMonitor(m.id)"
                         :class="['flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border',
-                            form.monitors.includes(m.id) ? 'bg-cyan-500/20 border-cyan-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10']">
+                            form.monitors.includes(m.id) ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10']">
                         <div class="flex-1">
                             <p class="text-white text-sm font-medium">{{ m.name }}</p>
                             <p class="text-slate-500 text-xs">{{ m.url }}</p>
                         </div>
-                        <div :class="['w-5 h-5 rounded border-2 flex items-center justify-center', form.monitors.includes(m.id) ? 'bg-cyan-500 border-cyan-500' : 'border-slate-500']">
+                        <div :class="['w-5 h-5 rounded border-2 flex items-center justify-center', form.monitors.includes(m.id) ? 'bg-emerald-500 border-emerald-500' : 'border-slate-500']">
                             <svg v-if="form.monitors.includes(m.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
                         </div>
                     </div>

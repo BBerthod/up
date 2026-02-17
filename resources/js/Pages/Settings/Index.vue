@@ -124,12 +124,12 @@ const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = 
         <GlassCard title="Push Notifications">
             <p v-if="!isSupported" class="text-slate-500">Push notifications are not supported in this browser.</p>
             <template v-else>
-                <div class="flex items-center justify-between p-4 rounded-lg border transition-colors" :class="isSubscribed ? 'bg-cyan-500/20 border-cyan-500/30' : 'bg-white/5 border-white/10'">
+                <div class="flex items-center justify-between p-4 rounded-lg border transition-colors" :class="isSubscribed ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10'">
                     <div class="flex items-center gap-3">
-                        <div class="w-2.5 h-2.5 rounded-full" :class="isSubscribed ? 'bg-cyan-400' : 'bg-slate-500'" />
+                        <div class="w-2.5 h-2.5 rounded-full" :class="isSubscribed ? 'bg-emerald-400' : 'bg-slate-500'" />
                         <span class="text-white text-sm">{{ isSubscribed ? 'Enabled' : 'Disabled' }}</span>
                     </div>
-                    <button @click="isSubscribed ? unsubscribe() : subscribe()" :disabled="isLoading" class="text-sm px-3 py-1.5 rounded transition-colors disabled:opacity-50" :class="isSubscribed ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30' : 'bg-white/10 text-white hover:bg-white/20'">
+                    <button @click="isSubscribed ? unsubscribe() : subscribe()" :disabled="isLoading" class="text-sm px-3 py-1.5 rounded transition-colors disabled:opacity-50" :class="isSubscribed ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-white/10 text-white hover:bg-white/20'">
                         <span v-if="isLoading" class="flex items-center gap-2">
                             <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                             {{ isSubscribed ? 'Disabling...' : 'Enabling...' }}

@@ -79,7 +79,7 @@ const xLabelIndices = computed(() => {
 })
 
 const lineColors = {
-    performance: '#06b6d4',
+    performance: '#10b981',
     accessibility: '#8b5cf6',
     best_practices: '#f59e0b',
     seo: '#10b981',
@@ -128,7 +128,7 @@ const formatTableDate = (dateStr: string) => new Date(dateStr).toLocaleDateStrin
                 <button v-for="period in ['7d', '30d', '90d']" :key="period" @click="setPeriod(period)"
                     :class="['px-3 py-1.5 text-sm font-medium rounded-full border transition-colors',
                         currentPeriod === period
-                            ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                             : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-white']">
                     {{ period }}
                 </button>

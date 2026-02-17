@@ -61,7 +61,7 @@ const statusPageUrl = (slug: string) => `/status/${slug}`
                             </div>
                             <div class="flex items-center gap-3 mt-1.5">
                                 <div class="flex items-center gap-1.5">
-                                    <code class="text-xs text-cyan-400 bg-white/5 px-2 py-0.5 rounded font-mono">{{ statusPageUrl(sp.slug) }}</code>
+                                    <code class="text-xs text-emerald-400 bg-white/5 px-2 py-0.5 rounded font-mono">{{ statusPageUrl(sp.slug) }}</code>
                                     <CopyButton :text="statusPageUrl(sp.slug)" />
                                 </div>
                                 <span class="text-xs text-text-muted">{{ sp.monitors_count }} monitor{{ sp.monitors_count !== 1 ? 's' : '' }}</span>
@@ -84,7 +84,7 @@ const statusPageUrl = (slug: string) => `/status/${slug}`
                     title="No status pages yet"
                     description="Create a public status page to share uptime with your users."
                     icon="globe"
-                    icon-color="cyan"
+                    icon-color="emerald"
                 >
                     <template #action>
                         <Link :href="route('status-pages.create')">

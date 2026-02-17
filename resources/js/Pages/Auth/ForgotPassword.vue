@@ -41,6 +41,6 @@ const submit = () => {
     </form>
 
     <div class="mt-6 text-center">
-        <Link :href="route('login')" class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Back to login</Link>
+        <Link :href="route('login')" class="text-sm text-emerald-400 hover:text-emerald-300 transition-colors">Back to login</Link>
     </div>
 </template>

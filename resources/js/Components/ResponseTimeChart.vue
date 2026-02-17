@@ -258,7 +258,7 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
                     :class="[
                         'px-3 py-1.5 text-sm font-medium rounded-full border transition-colors',
                         currentPeriod === period
-                            ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                             : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-white',
                     ]"
                 >
@@ -280,8 +280,8 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
             >
                 <defs>
                     <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3" />
-                        <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.3" />
+                        <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
                     </linearGradient>
                 </defs>
 
@@ -329,7 +329,7 @@ function formatTooltipDate(data: NormalizedDataPoint): string {
 
                 <path
                     :d="pathD"
-                    stroke="#06b6d4"
+                    stroke="#10b981"
                     stroke-width="2"
                     fill="none"
                     stroke-linecap="round"

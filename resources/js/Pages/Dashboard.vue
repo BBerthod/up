@@ -263,15 +263,15 @@ const chartXLabels = computed(() => {
                 <svg :viewBox="`0 0 ${chartViewBox.w} ${chartViewBox.h}`" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
                     <defs>
                         <linearGradient id="dashAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.2" />
-                            <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
+                            <stop offset="0%" stop-color="#10b981" stop-opacity="0.2" />
+                            <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
                         </linearGradient>
                     </defs>
                     <line v-for="tick in chartYTicks" :key="'g-' + tick" :x1="chartPad.l" :x2="chartViewBox.w - chartPad.r" :y1="scaleY(tick)" :y2="scaleY(tick)" stroke="white" stroke-opacity="0.05" stroke-dasharray="4 4" />
                     <text v-for="tick in chartYTicks" :key="'yt-' + tick" :x="chartPad.l - 8" :y="scaleY(tick) + 4" text-anchor="end" style="font-size: 10px; fill: #64748b">{{ tick }}ms</text>
                     <text v-for="label in chartXLabels" :key="'xl-' + label.label" :x="label.x" :y="chartViewBox.h - 5" text-anchor="middle" style="font-size: 10px; fill: #64748b">{{ label.label }}</text>
                     <path :d="chartAreaD" fill="url(#dashAreaGrad)" />
-                    <path :d="chartPathD" stroke="#06b6d4" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    <path :d="chartPathD" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No data yet</p>
@@ -298,7 +298,7 @@ const chartXLabels = computed(() => {
                     <tbody>
                         <tr v-for="m in metrics.monitors_overview" :key="m.id" class="border-b border-white/5 hover:bg-white/5 transition-colors">
                             <td class="py-3">
-                                <Link :href="route('monitors.show', m.id)" class="text-white hover:text-cyan-400 transition-colors font-medium">{{ m.name }}</Link>
+                                <Link :href="route('monitors.show', m.id)" class="text-white hover:text-emerald-400 transition-colors font-medium">{{ m.name }}</Link>
                             </td>
                             <td class="py-3 text-center">
                                 <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-slate-300 uppercase">{{ m.type }}</span>
@@ -334,7 +334,7 @@ const chartXLabels = computed(() => {
                             <div class="flex items-center gap-3">
                                 <span class="w-2 h-2 rounded-full" :class="incident.resolved_at ? 'bg-emerald-400' : 'bg-red-400'"></span>
                                 <div>
-                                    <Link :href="route('monitors.show', incident.monitor_id)" class="text-white text-sm font-medium hover:text-cyan-400 transition-colors">{{ incident.monitor_name }}</Link>
+                                    <Link :href="route('monitors.show', incident.monitor_id)" class="text-white text-sm font-medium hover:text-emerald-400 transition-colors">{{ incident.monitor_name }}</Link>
                                     <span class="ml-2 px-2 py-0.5 rounded-full text-xs bg-white/10 text-slate-400">{{ incident.cause.replace(/_/g, ' ') }}</span>
                                 </div>
                             </div>
@@ -355,7 +355,7 @@ const chartXLabels = computed(() => {
                     <h3 class="text-lg font-medium text-white mb-4">Lighthouse Scores</h3>
                     <div v-if="metrics.lighthouse_overview.length > 0" class="space-y-4">
                         <div v-for="lh in metrics.lighthouse_overview" :key="lh.monitor_id" class="p-3 rounded-lg bg-white/[0.03] border border-white/5">
-                            <Link :href="route('monitors.show', lh.monitor_id)" class="text-sm text-white font-medium hover:text-cyan-400 transition-colors block mb-2">{{ lh.monitor_name }}</Link>
+                            <Link :href="route('monitors.show', lh.monitor_id)" class="text-sm text-white font-medium hover:text-emerald-400 transition-colors block mb-2">{{ lh.monitor_name }}</Link>
                             <div class="grid grid-cols-4 gap-2 text-center">
                                 <div>
                                     <span class="text-lg font-bold font-mono" :style="{ color: scoreColor(lh.performance) }">{{ lh.performance }}</span>

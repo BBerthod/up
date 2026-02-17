@@ -1,5 +1,5 @@
 <x-mail::message>
-# Monitor {{ $event === 'down' ? 'Down' : 'Up' }}: {{ $payload['monitor']['name'] }}
+# [Up] {{ $payload['monitor']['name'] }} is {{ $event === 'down' ? 'Down' : 'Up' }}
 
 **URL:** {{ $payload['monitor']['url'] }}
 

@@ -58,7 +58,7 @@ const submit = () => form.post(route('channels.store'))
                 <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     <button v-for="t in types" :key="t.value" type="button" @click="form.type = t.value"
                         :class="['p-3 rounded-lg border text-center text-sm font-medium transition-colors',
-                            form.type === t.value ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10']">
+                            form.type === t.value ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10']">
                         {{ t.label }}
                     </button>
                 </div>
@@ -81,7 +81,7 @@ const submit = () => form.post(route('channels.store'))
 
             <div class="flex items-center gap-3">
                 <button type="button" @click="form.is_active = !form.is_active"
-                    :class="['relative inline-flex h-6 w-11 rounded-full transition-colors', form.is_active ? 'bg-cyan-500' : 'bg-slate-600']">
+                    :class="['relative inline-flex h-6 w-11 rounded-full transition-colors', form.is_active ? 'bg-emerald-500' : 'bg-slate-600']">
                     <span :class="['inline-block h-5 w-5 transform rounded-full bg-white shadow transition', form.is_active ? 'translate-x-5' : 'translate-x-0']" />
                 </button>
                 <span class="text-sm text-slate-300">Active</span>

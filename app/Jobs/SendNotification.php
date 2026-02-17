@@ -107,7 +107,7 @@ class SendNotification implements ShouldQueue
                 'blocks' => [
                     [
                         'type' => 'header',
-                        'text' => ['type' => 'plain_text', 'text' => "Monitor {$statusText}: {$this->monitor->name}", 'emoji' => true],
+                        'text' => ['type' => 'plain_text', 'text' => "[Up] {$this->monitor->name} is {$statusText}", 'emoji' => true],
                     ],
                     [
                         'type' => 'section',
@@ -149,7 +149,7 @@ class SendNotification implements ShouldQueue
         $statusText = $this->event === 'down' ? 'Down' : 'Up';
 
         $payload = json_encode([
-            'title' => "Monitor {$statusText}: {$this->monitor->name}",
+            'title' => "[Up] {$this->monitor->name} is {$statusText}",
             'body' => "URL: {$this->monitor->url} - Cause: ".ucfirst(str_replace('_', ' ', $this->incident->cause->value)),
             'data' => ['url' => "/monitors/{$this->monitor->id}"],
         ]);
@@ -188,7 +188,7 @@ class SendNotification implements ShouldQueue
         $statusText = $this->event === 'down' ? 'Down' : 'Up';
         $cause = ucfirst(str_replace('_', ' ', $this->incident->cause->value));
 
-        $text = "<b>{$statusEmoji} Monitor {$statusText}: {$this->monitor->name}</b>\n\n"
+        $text = "<b>{$statusEmoji} [Up] {$this->monitor->name} is {$statusText}</b>\n\n"
             ."<b>URL:</b> {$this->monitor->url}\n"
             ."<b>Status Code:</b> {$this->check->status_code}\n"
             ."<b>Response Time:</b> {$this->check->response_time_ms}ms\n"
@@ -221,7 +221,7 @@ class SendNotification implements ShouldQueue
 
         Http::timeout(10)->post($this->channel->settings['webhook_url'], [
             'embeds' => [[
-                'title' => "Monitor {$statusText}: {$this->monitor->name}",
+                'title' => "[Up] {$this->monitor->name} is {$statusText}",
                 'url' => $this->monitor->url,
                 'color' => $color,
                 'fields' => [

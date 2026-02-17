@@ -55,7 +55,7 @@ const submit = () => {
             <label for="password" class="text-sm font-medium text-slate-300">Password</label>
             <Password id="password" v-model="form.password" required autocomplete="current-password" :feedback="false" toggleMask placeholder="••••••••" inputClass="w-full" class="w-full" :invalid="!!form.errors.password" />
             <small v-if="form.errors.password" class="text-red-400">{{ form.errors.password }}</small>
-            <Link :href="route('password.request')" class="inline-block mt-1 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">Forgot password?</Link>
+            <Link :href="route('password.request')" class="inline-block mt-1 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">Forgot password?</Link>
         </div>
 
         <div class="flex items-center gap-2">

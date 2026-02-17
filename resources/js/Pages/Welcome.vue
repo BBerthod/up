@@ -14,13 +14,13 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Open-source uptime monitoring" />
+    <Head title="Up by Radiank" />
 
     <div class="min-h-screen bg-navy flex flex-col relative overflow-hidden">
         <!-- Background -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-cyan-500/10 rounded-full blur-[100px] animate-pulse" />
-            <div class="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-cyan-600/10 rounded-full blur-[100px] animate-pulse" style="animation-delay: 1s" />
+            <div class="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-emerald-500/10 rounded-full blur-[100px] animate-pulse" />
+            <div class="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-emerald-600/10 rounded-full blur-[100px] animate-pulse" style="animation-delay: 1s" />
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 bg-teal-500/5 rounded-full blur-[120px] animate-pulse" style="animation-delay: 2s" />
             <div class="absolute inset-0 bg-grid opacity-30" />
         </div>
@@ -34,7 +34,7 @@ onMounted(() => {
             >
                 <!-- Logo -->
                 <div class="flex items-center justify-center gap-3 mb-8">
-                    <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-lg shadow-cyan-500/30">
+                    <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30">
                         <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -76,8 +76,8 @@ onMounted(() => {
                 <!-- HTTP Monitoring -->
                 <div class="glass p-6 transition-transform hover:scale-[1.02]">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10">
-                            <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/10">
+                            <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 4 9 15 15 0 0 1-4 9 15 15 0 0 1-4-9 15 15 0 0 1 4-9Z" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
@@ -90,8 +90,8 @@ onMounted(() => {
                 <!-- Ping & Port -->
                 <div class="glass p-6 transition-transform hover:scale-[1.02]">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10">
-                            <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/10">
+                            <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </div>
@@ -103,8 +103,8 @@ onMounted(() => {
                 <!-- Alerts -->
                 <div class="glass p-6 transition-transform hover:scale-[1.02]">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10">
-                            <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/10">
+                            <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9ZM13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </div>
@@ -116,8 +116,8 @@ onMounted(() => {
                 <!-- Status Pages -->
                 <div class="glass p-6 transition-transform hover:scale-[1.02]">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-500/10">
-                            <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-500/10">
+                            <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Z" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M4 9h16M8 4v5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
@@ -148,7 +148,7 @@ onMounted(() => {
                 href="https://github.com/BBerthod/up"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-gray-500 hover:text-cyan-400 transition-colors"
+                class="text-gray-500 hover:text-emerald-400 transition-colors"
             >
                 GitHub
             </a>

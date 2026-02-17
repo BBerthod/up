@@ -75,8 +75,8 @@ const deleteUser = () => {
                         <tr v-for="user in users.data" :key="user.id" class="hover:bg-white/5 transition-colors">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center border border-white/10">
-                                        <span class="text-cyan-400 font-semibold text-sm">{{ user.name.charAt(0).toUpperCase() }}</span>
+                                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center border border-white/10">
+                                        <span class="text-emerald-400 font-semibold text-sm">{{ user.name.charAt(0).toUpperCase() }}</span>
                                     </div>
                                     <span class="text-white font-medium">{{ user.name }}</span>
                                 </div>
@@ -88,7 +88,7 @@ const deleteUser = () => {
                             </td>
                             <td class="px-6 py-4">
                                 <span v-if="user.role === 'super_admin'" class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold border border-amber-500/30">Super Admin</span>
-                                <span v-else-if="user.role === 'admin'" class="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-semibold border border-cyan-500/30">Admin</span>
+                                <span v-else-if="user.role === 'admin'" class="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/30">Admin</span>
                                 <span v-else class="px-2 py-1 rounded-lg bg-slate-700/30 text-slate-400 text-xs border border-white/5">Member</span>
                             </td>
                             <td class="px-6 py-4 text-right">
@@ -113,7 +113,7 @@ const deleteUser = () => {
                 <p class="text-sm text-slate-400">Page {{ users.current_page }} of {{ users.last_page }}</p>
                 <div class="flex items-center gap-1">
                     <template v-for="(link, index) in users.links" :key="index">
-                        <Link v-if="link.url" :href="link.url" class="px-3 py-1.5 rounded-lg text-sm transition-colors" :class="link.active ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white hover:bg-white/10'" v-html="link.label" />
+                        <Link v-if="link.url" :href="link.url" class="px-3 py-1.5 rounded-lg text-sm transition-colors" :class="link.active ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-slate-400 hover:text-white hover:bg-white/10'" v-html="link.label" />
                         <span v-else class="px-3 py-1.5 text-sm text-slate-600" v-html="link.label" />
                     </template>
                 </div>

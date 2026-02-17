@@ -49,8 +49,8 @@ const submit = () => {
         <PageHeader title="Edit User" description="Update user information" />
 
         <div class="glass p-4 mb-6 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center border border-white/10">
-                <span class="text-cyan-400 font-bold text-lg">{{ user.name.charAt(0).toUpperCase() }}</span>
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center border border-white/10">
+                <span class="text-emerald-400 font-bold text-lg">{{ user.name.charAt(0).toUpperCase() }}</span>
             </div>
             <div>
                 <h3 class="text-white font-semibold">{{ user.name }}</h3>
@@ -58,7 +58,7 @@ const submit = () => {
             </div>
             <div class="ml-auto">
                 <span v-if="user.role === 'super_admin'" class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold border border-amber-500/30">Super Admin</span>
-                <span v-else-if="user.role === 'admin'" class="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-semibold border border-cyan-500/30">Admin</span>
+                <span v-else-if="user.role === 'admin'" class="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/30">Admin</span>
                 <span v-else class="px-2 py-1 rounded-lg bg-slate-700/30 text-slate-400 text-xs border border-white/5">Member</span>
             </div>
         </div>

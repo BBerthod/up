@@ -107,7 +107,7 @@ const formatTime = (d: string) => {
                     </div>
                     <div class="flex justify-between mt-1">
                         <span class="text-xs" :class="isDark ? 'text-slate-500' : 'text-gray-400'">90 days ago</span>
-                        <span class="text-xs font-mono" :class="isDark ? 'text-cyan-400' : 'text-cyan-600'">{{ monitor.uptime_90d.toFixed(2) }}% uptime</span>
+                        <span class="text-xs font-mono" :class="isDark ? 'text-emerald-400' : 'text-emerald-600'">{{ monitor.uptime_90d.toFixed(2) }}% uptime</span>
                         <span class="text-xs" :class="isDark ? 'text-slate-500' : 'text-gray-400'">Today</span>
                     </div>
                 </div>

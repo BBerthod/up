@@ -5,7 +5,7 @@ const props = withDefaults(defineProps<{
     title: string
     description?: string
     icon?: 'check' | 'server' | 'bell' | 'globe' | 'chart'
-    iconColor?: 'emerald' | 'cyan' | 'red' | 'amber' | 'slate'
+    iconColor?: 'emerald' | 'red' | 'amber' | 'slate'
 }>(), {
     iconColor: 'emerald',
 })
@@ -13,7 +13,6 @@ const props = withDefaults(defineProps<{
 const colorConfig = computed(() => {
     const colors: Record<string, { bg: string; text: string }> = {
         emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-500' },
-        cyan: { bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
         red: { bg: 'bg-red-500/10', text: 'text-red-400' },
         amber: { bg: 'bg-amber-500/10', text: 'text-amber-400' },
         slate: { bg: 'bg-slate-500/10', text: 'text-slate-400' },

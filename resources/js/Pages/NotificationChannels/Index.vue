@@ -81,7 +81,7 @@ const testChannel = (channel: Channel) => {
             title="No notification channels yet"
             description="Set up channels to receive alerts when monitors go down."
             icon="bell"
-            icon-color="cyan"
+            icon-color="emerald"
         >
             <template #action>
                 <Link :href="route('channels.create')" class="btn-primary py-3 px-4 inline-block">Create Your First Channel</Link>

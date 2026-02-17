@@ -14,7 +14,7 @@ defineProps<{
 
                 <footer class="mt-12 text-center">
                     <p :class="theme === 'light' ? 'text-gray-400 text-sm' : 'text-slate-500 text-sm'">
-                        Powered by <span :class="theme === 'light' ? 'text-cyan-600 font-medium' : 'text-cyan-400 font-medium'">Up</span>
+                        Powered by <span :class="theme === 'light' ? 'text-emerald-600 font-medium' : 'text-emerald-400 font-medium'">Up</span>
                     </p>
                 </footer>
             </div>

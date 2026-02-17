@@ -77,7 +77,7 @@ const urlLabel = () => form.type === 'http' ? 'URL' : 'Host / Domain'
                 <div class="grid grid-cols-2 gap-3">
                     <div v-for="(info, key) in typeLabels" :key="key" @click="form.type = key"
                         :class="['p-3 rounded-lg cursor-pointer transition-colors border text-center',
-                            form.type === key ? 'bg-cyan-500/20 border-cyan-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10']">
+                            form.type === key ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10']">
                         <p class="text-white text-sm font-medium">{{ info.label }}</p>
                         <p class="text-slate-500 text-xs mt-0.5">{{ info.description }}</p>
                     </div>
@@ -175,9 +175,9 @@ const urlLabel = () => form.type === 'http' ? 'URL' : 'Host / Domain'
                 <div v-if="notificationChannels.length > 0" class="space-y-2">
                     <div v-for="ch in notificationChannels" :key="ch.id" @click="toggleChannel(ch.id)"
                         :class="['flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border',
-                            form.notification_channels.includes(ch.id) ? 'bg-cyan-500/20 border-cyan-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10']">
+                            form.notification_channels.includes(ch.id) ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10']">
                         <div class="flex-1"><p class="text-white text-sm font-medium">{{ ch.name }}</p><p class="text-slate-500 text-xs uppercase">{{ ch.type }}</p></div>
-                        <div :class="['w-5 h-5 rounded border-2 flex items-center justify-center', form.notification_channels.includes(ch.id) ? 'bg-cyan-500 border-cyan-500' : 'border-slate-500']">
+                        <div :class="['w-5 h-5 rounded border-2 flex items-center justify-center', form.notification_channels.includes(ch.id) ? 'bg-emerald-500 border-emerald-500' : 'border-slate-500']">
                             <svg v-if="form.notification_channels.includes(ch.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
                         </div>
                     </div>
