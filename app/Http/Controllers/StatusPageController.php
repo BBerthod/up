@@ -61,6 +61,8 @@ class StatusPageController extends Controller
 
     public function edit(StatusPage $statusPage): Response
     {
+        $this->authorize('view', $statusPage);
+
         $statusPage->load(['monitors' => fn ($q) => $q->orderByPivot('sort_order')]);
 
         return Inertia::render('StatusPages/Edit', [
@@ -79,6 +81,8 @@ class StatusPageController extends Controller
 
     public function update(Request $request, StatusPage $statusPage): RedirectResponse
     {
+        $this->authorize('update', $statusPage);
+
         $validated = $this->validateStatusPage($request, $statusPage->id);
 
         $monitors = $validated['monitors'] ?? [];
@@ -97,6 +101,8 @@ class StatusPageController extends Controller
 
     public function destroy(StatusPage $statusPage): RedirectResponse
     {
+        $this->authorize('delete', $statusPage);
+
         $statusPage->delete();
 
         return to_route('status-pages.index')->with('success', 'Status page deleted.');

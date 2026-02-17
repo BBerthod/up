@@ -26,4 +26,15 @@ export default defineConfig({
             'ziggy-js': resolve(__dirname, './vendor/tightenco/ziggy'),
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'primevue': ['primevue', '@primevue/themes'],
+                    'vue-vendor': ['vue', '@inertiajs/vue3'],
+                    'echo': ['laravel-echo', 'pusher-js'],
+                },
+            },
+        },
+    },
 })

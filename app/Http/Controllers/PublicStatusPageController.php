@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Models\StatusPage;
 use Inertia\Inertia;
@@ -20,42 +21,47 @@ class PublicStatusPageController extends Controller
 
         $monitorIds = $statusPage->monitors->pluck('id');
 
-        // Get daily uptime breakdown for last 90 days (single query per monitor)
-        $monitorsData = $statusPage->monitors->map(function ($monitor) {
-            $latestCheck = $monitor->checks()->latest('checked_at')->first();
+        $latestChecks = MonitorCheck::whereIn('monitor_id', $monitorIds)
+            ->whereIn('id', fn ($q) => $q->selectRaw('MAX(id)')->from('monitor_checks')->whereIn('monitor_id', $monitorIds)->groupBy('monitor_id'))
+            ->get()
+            ->keyBy('monitor_id');
 
-            // Aggregate daily uptime in a single query
-            $dailyStats = $monitor->checks()
-                ->where('checked_at', '>=', now()->subDays(90))
-                ->selectRaw('DATE(checked_at) as date')
-                ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
-                ->groupByRaw('DATE(checked_at)')
-                ->orderBy('date')
-                ->pluck('uptime', 'date');
+        $dailyStats = MonitorCheck::whereIn('monitor_id', $monitorIds)
+            ->where('checked_at', '>=', now()->subDays(90))
+            ->selectRaw('monitor_id, DATE(checked_at) as date')
+            ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
+            ->groupBy('monitor_id', 'date')
+            ->orderBy('date')
+            ->get()
+            ->groupBy('monitor_id');
 
-            // Build 90-day breakdown
+        $uptime90d = MonitorCheck::whereIn('monitor_id', $monitorIds)
+            ->where('checked_at', '>=', now()->subDays(90))
+            ->selectRaw('monitor_id')
+            ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 2) as uptime")
+            ->groupBy('monitor_id')
+            ->pluck('uptime', 'monitor_id');
+
+        $monitorsData = $statusPage->monitors->map(function ($monitor) use ($latestChecks, $dailyStats, $uptime90d) {
+            $monitorDailyStats = $dailyStats->get($monitor->id, collect())->keyBy('date');
+            $latestCheck = $latestChecks->get($monitor->id);
+
             $breakdown = [];
             for ($i = 89; $i >= 0; $i--) {
                 $date = now()->subDays($i)->format('Y-m-d');
-                $uptime = $dailyStats[$date] ?? null;
+                $uptime = $monitorDailyStats->get($date)?->uptime;
                 $breakdown[] = [
                     'date' => $date,
                     'status' => $uptime === null ? 'no-data' : ($uptime >= 99 ? 'up' : ($uptime >= 50 ? 'partial' : 'down')),
                 ];
             }
 
-            // 90-day overall uptime
-            $uptime90d = (float) ($monitor->checks()
-                ->where('checked_at', '>=', now()->subDays(90))
-                ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 2) as uptime")
-                ->value('uptime') ?? 0);
-
             return [
                 'id' => $monitor->id,
                 'name' => $monitor->name,
                 'current_status' => $latestCheck?->status->value ?? 'unknown',
                 'response_time_ms' => $latestCheck?->response_time_ms,
-                'uptime_90d' => $uptime90d,
+                'uptime_90d' => (float) ($uptime90d->get($monitor->id) ?? 0),
                 'daily_breakdown' => $breakdown,
             ];
         });

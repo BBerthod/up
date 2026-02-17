@@ -8,6 +8,7 @@ import MyPreset from './primevue-presets'
 import AppLayout from './Layouts/AppLayout.vue'
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import '@/Types/page'
 
 declare global {
     interface Window {

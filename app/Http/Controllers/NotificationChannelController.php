@@ -65,6 +65,8 @@ class NotificationChannelController extends Controller
 
     public function edit(NotificationChannel $channel): Response
     {
+        $this->authorize('view', $channel);
+
         return Inertia::render('NotificationChannels/Edit', [
             'channel' => [
                 'id' => $channel->id,
@@ -78,6 +80,8 @@ class NotificationChannelController extends Controller
 
     public function update(Request $request, NotificationChannel $channel): RedirectResponse
     {
+        $this->authorize('update', $channel);
+
         $validated = $this->validateChannel($request);
 
         if ($validated['type'] === 'telegram') {
@@ -98,6 +102,8 @@ class NotificationChannelController extends Controller
 
     public function destroy(NotificationChannel $channel): RedirectResponse
     {
+        $this->authorize('delete', $channel);
+
         $channel->delete();
 
         return to_route('channels.index')->with('success', 'Notification channel deleted.');
@@ -105,6 +111,8 @@ class NotificationChannelController extends Controller
 
     public function test(NotificationChannel $channel): RedirectResponse
     {
+        $this->authorize('test', $channel);
+
         $monitor = new Monitor([
             'name' => 'Test Monitor',
             'url' => 'https://example.com',

@@ -6,7 +6,7 @@ export function useFlashToast() {
     const toast = useToast()
     const page = usePage()
 
-    const flash = computed(() => (page.props as any).flash)
+    const flash = computed(() => page.props.flash)
 
     watch(
         flash,

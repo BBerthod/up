@@ -67,6 +67,8 @@ class MonitorController extends Controller
 
     public function show(Request $request, Monitor $monitor): Response
     {
+        $this->authorize('view', $monitor);
+
         $period = $request->query('period', '24h');
         if (! in_array($period, ['6mo', '3mo', '1mo', '7d', '24h', '1h'])) {
             $period = '24h';
@@ -153,6 +155,8 @@ class MonitorController extends Controller
 
     public function edit(Monitor $monitor): Response
     {
+        $this->authorize('update', $monitor);
+
         return Inertia::render('Monitors/Edit', [
             'monitor' => array_merge($monitor->toArray(), [
                 'notification_channel_ids' => $monitor->notificationChannels()->pluck('notification_channels.id'),
@@ -164,6 +168,8 @@ class MonitorController extends Controller
 
     public function update(UpdateMonitorRequest $request, Monitor $monitor): RedirectResponse
     {
+        $this->authorize('update', $monitor);
+
         $validated = $request->validated();
 
         $channels = $validated['notification_channels'] ?? [];
@@ -177,6 +183,8 @@ class MonitorController extends Controller
 
     public function destroy(Monitor $monitor): RedirectResponse
     {
+        $this->authorize('delete', $monitor);
+
         $monitor->delete();
 
         return to_route('monitors.index');
@@ -184,6 +192,8 @@ class MonitorController extends Controller
 
     public function pause(Monitor $monitor): RedirectResponse
     {
+        $this->authorize('pause', $monitor);
+
         $monitor->update(['is_active' => false]);
 
         return back();
@@ -191,6 +201,8 @@ class MonitorController extends Controller
 
     public function resume(Monitor $monitor): RedirectResponse
     {
+        $this->authorize('resume', $monitor);
+
         $monitor->update(['is_active' => true]);
 
         return back();
@@ -198,6 +210,8 @@ class MonitorController extends Controller
 
     public function lighthouse(Monitor $monitor): RedirectResponse
     {
+        $this->authorize('lighthouse', $monitor);
+
         if ($monitor->type->value !== 'http') {
             abort(422, 'Lighthouse audits are only available for HTTP monitors.');
         }

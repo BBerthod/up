@@ -2,9 +2,9 @@
 import { ref, computed } from 'vue'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
+import { useAuth } from '@/Composables/useAuth'
 
-const page = usePage()
-const user = computed(() => (page.props as any).auth?.user)
+const { user } = useAuth()
 
 const profileForm = useForm({
     name: user.value?.name ?? '',
