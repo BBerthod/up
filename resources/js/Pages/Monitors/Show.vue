@@ -14,7 +14,7 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 import CopyButton from '@/Components/CopyButton.vue'
 
 useRealtimeUpdates({
-    onMonitorChecked: ['checks', 'chartData', 'uptime', 'heatmapData', 'incidents'],
+    onMonitorChecked: ['monitor', 'checks', 'chartData', 'uptime', 'heatmapData', 'incidents'],
     onLighthouseCompleted: ['lighthouseScore', 'lighthouseHistory'],
 })
 

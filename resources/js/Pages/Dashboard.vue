@@ -1,15 +1,29 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3'
-import { computed, onMounted, ref } from 'vue'
+import { Head, Link, usePage } from '@inertiajs/vue3'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import PageHeader from '@/Components/PageHeader.vue'
 import GlassCard from '@/Components/GlassCard.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import SkeletonDashboard from '@/Components/SkeletonDashboard.vue'
 
+const lastUpdated = ref<Date | null>(null)
+const isRefreshing = ref(false)
+const flashKey = ref(0)
+
+const triggerRefreshAnimation = () => {
+    isRefreshing.value = true
+    flashKey.value++
+    lastUpdated.value = new Date()
+    setTimeout(() => {
+        isRefreshing.value = false
+    }, 600)
+}
+
 useRealtimeUpdates({
     onMonitorChecked: ['metrics'],
     onLighthouseCompleted: ['metrics'],
+    onRefresh: triggerRefreshAnimation,
 })
 
 interface DownMonitor {
@@ -81,6 +95,11 @@ const timeAgo = (iso: string | null) => {
     if (m < 60) return `${m}m ago`
     if (m < 1440) return `${Math.floor(m / 60)}h ago`
     return `${Math.floor(m / 1440)}d ago`
+}
+
+const formatLastUpdated = () => {
+    if (!lastUpdated.value) return null
+    return lastUpdated.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num)
@@ -156,11 +175,16 @@ const chartXLabels = computed(() => {
     <Head title="Dashboard" />
 
     <div class="space-y-12">
-        <PageHeader title="Overview" description="System status and metrics for the last 24 hours." />
+        <div class="flex items-end justify-between">
+            <PageHeader title="Overview" description="System status and metrics for the last 24 hours." />
+            <div v-if="lastUpdated" class="flex items-center gap-2 text-xs text-zinc-500">
+                <span :class="{ 'animate-pulse text-emerald-400': isRefreshing }">Last updated: {{ formatLastUpdated() }}</span>
+            </div>
+        </div>
 
         <!-- KPI Grid -->
         <SkeletonDashboard v-if="!loaded" />
-        <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-white/5 pb-12">
+        <div v-else :key="flashKey" class="grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-white/5 pb-12 transition-opacity duration-300" :class="{ 'opacity-80': isRefreshing }">
             <div class="space-y-1">
                 <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Monitors</span>
                 <div class="flex items-baseline gap-2">
@@ -258,8 +282,12 @@ const chartXLabels = computed(() => {
         </div>
 
         <!-- Response Time Chart (24h) -->
-        <GlassCard title="Response Time (24h)">
-            <div v-if="metrics.response_time_chart.length > 0">
+        <GlassCard>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-white">Response Time (24h)</h3>
+                <span v-if="isRefreshing" class="text-xs text-emerald-400 animate-pulse">Updating...</span>
+            </div>
+            <div v-if="metrics.response_time_chart.length > 0" :key="'chart-' + flashKey" class="transition-opacity duration-300" :class="{ 'opacity-70': isRefreshing }">
                 <svg :viewBox="`0 0 ${chartViewBox.w} ${chartViewBox.h}`" class="w-full h-auto" preserveAspectRatio="xMidYMid meet">
                     <defs>
                         <linearGradient id="dashAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -281,9 +309,12 @@ const chartXLabels = computed(() => {
         <GlassCard>
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-white">All Monitors</h3>
-                <span class="text-sm text-slate-400">{{ metrics.monitors_overview.length }} active</span>
+                <div class="flex items-center gap-3">
+                    <span v-if="isRefreshing" class="text-xs text-emerald-400 animate-pulse">Updating...</span>
+                    <span class="text-sm text-slate-400">{{ metrics.monitors_overview.length }} active</span>
+                </div>
             </div>
-            <div v-if="metrics.monitors_overview.length > 0" class="overflow-x-auto">
+            <div v-if="metrics.monitors_overview.length > 0" :key="'monitors-' + flashKey" class="overflow-x-auto transition-opacity duration-300" :class="{ 'opacity-70': isRefreshing }">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="text-left text-slate-400 border-b border-white/10">
