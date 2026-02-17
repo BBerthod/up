@@ -122,7 +122,11 @@ class MetricsService
                 'best_practices' => $s->best_practices,
                 'seo' => $s->seo,
                 'scored_at' => $s->scored_at->toIso8601String(),
-            ]);
+                '_avg' => ($s->performance + $s->accessibility + $s->best_practices + $s->seo) / 4,
+            ])
+            ->sortBy('_avg')
+            ->values()
+            ->map(fn ($item) => collect($item)->except('_avg')->all());
 
         return [
             'total_monitors' => $totalMonitors,
