@@ -5,7 +5,9 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\IngestSourceController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NotificationChannelController;
 use App\Http\Controllers\ProfileController;
@@ -56,6 +58,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/channels/{channel}/test', [NotificationChannelController::class, 'test'])->name('channels.test');
 
     Route::resource('status-pages', StatusPageController::class)->except(['show']);
+
+    // Ingest Sources
+    Route::get('/sources', [IngestSourceController::class, 'index'])->name('sources.index');
+    Route::post('/sources', [IngestSourceController::class, 'store'])->name('sources.store');
+    Route::put('/sources/{source}', [IngestSourceController::class, 'update'])->name('sources.update');
+    Route::delete('/sources/{source}', [IngestSourceController::class, 'destroy'])->name('sources.destroy');
+    Route::post('/sources/{source}/rotate-token', [IngestSourceController::class, 'rotateToken'])->name('sources.rotate-token');
+
+    // Events
+    Route::get('/events', [EventController::class, 'index'])->name('events.index');
 
     // Admin routes
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
