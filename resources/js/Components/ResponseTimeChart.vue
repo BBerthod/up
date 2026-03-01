@@ -351,8 +351,11 @@ function getStatusColor(status?: 'up' | 'down'): string {
                 </button>
             </div>
 
-            <div v-if="normalizedData.length > 0" class="text-sm text-slate-400">
-                Avg: {{ stats.avg }}ms · Max: {{ stats.max }}ms
+            <div class="flex items-center gap-3">
+                <div v-if="normalizedData.length > 0" class="text-sm text-slate-400">
+                    Avg: {{ stats.avg }}ms · Max: {{ stats.max }}ms
+                </div>
+                <slot name="actions" />
             </div>
         </div>
 

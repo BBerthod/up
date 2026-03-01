@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/settings/team', [TeamSettingsController::class, 'updateTeam'])->name('settings.team.update');
     Route::post('/settings/tokens', [TeamSettingsController::class, 'createToken'])->name('settings.tokens.store');
     Route::delete('/settings/tokens/{tokenId}', [TeamSettingsController::class, 'deleteToken'])->name('settings.tokens.destroy');
+    Route::delete('/settings/purge', [TeamSettingsController::class, 'purgeAll'])->name('settings.purge');
 
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
     Route::get('/incidents/export', [IncidentController::class, 'export'])->name('incidents.export');
