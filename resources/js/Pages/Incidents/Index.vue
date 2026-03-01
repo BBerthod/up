@@ -174,6 +174,9 @@ const typeLabels: Record<string, string> = {
                     <span class="inline-flex items-center px-2 py-0.5 rounded textxs font-medium bg-white/5 text-zinc-400 border border-white/5">
                         {{ incident.cause?.replace('_', ' ') }}
                     </span>
+                    <span v-if="incident.cause === 'functional' && incident.functional_check_name" class="block text-[10px] text-zinc-600 font-mono mt-0.5 truncate">
+                        {{ incident.functional_check_name }}
+                    </span>
                 </div>
 
                 <!-- Time -->

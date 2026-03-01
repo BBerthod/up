@@ -34,7 +34,7 @@ class SendNotification implements ShouldQueue
         public string $event,
         public Monitor $monitor,
         public MonitorIncident $incident,
-        public MonitorCheck $check
+        public ?MonitorCheck $check = null
     ) {
         $this->onQueue('notifications');
     }
@@ -78,10 +78,10 @@ class SendNotification implements ShouldQueue
                 'cause' => $this->incident->cause->value,
                 'started_at' => $this->incident->started_at->toIso8601String(),
             ],
-            'check' => [
+            'check' => $this->check ? [
                 'status_code' => $this->check->status_code,
                 'response_time_ms' => $this->check->response_time_ms,
-            ],
+            ] : null,
         ];
     }
 
@@ -116,13 +116,13 @@ class SendNotification implements ShouldQueue
                             ['type' => 'mrkdwn', 'text' => "*Cause:*\n{$this->incident->cause->value}"],
                         ],
                     ],
-                    [
+                    ...($this->check ? [[
                         'type' => 'section',
                         'fields' => [
                             ['type' => 'mrkdwn', 'text' => "*Status Code:*\n{$this->check->status_code}"],
                             ['type' => 'mrkdwn', 'text' => "*Response Time:*\n{$this->check->response_time_ms}ms"],
                         ],
-                    ],
+                    ]] : []),
                 ],
             ]],
         ])->throw();
@@ -190,8 +190,7 @@ class SendNotification implements ShouldQueue
 
         $text = "<b>{$statusEmoji} [Up] {$this->monitor->name} is {$statusText}</b>\n\n"
             ."<b>URL:</b> {$this->monitor->url}\n"
-            ."<b>Status Code:</b> {$this->check->status_code}\n"
-            ."<b>Response Time:</b> {$this->check->response_time_ms}ms\n"
+            .($this->check ? "<b>Status Code:</b> {$this->check->status_code}\n<b>Response Time:</b> {$this->check->response_time_ms}ms\n" : '')
             ."<b>Cause:</b> {$cause}";
 
         $response = Http::timeout(10)->post(
@@ -224,12 +223,12 @@ class SendNotification implements ShouldQueue
                 'title' => "[Up] {$this->monitor->name} is {$statusText}",
                 'url' => $this->monitor->url,
                 'color' => $color,
-                'fields' => [
+                'fields' => array_filter([
                     ['name' => 'URL', 'value' => $this->monitor->url, 'inline' => false],
-                    ['name' => 'Status Code', 'value' => (string) $this->check->status_code, 'inline' => true],
-                    ['name' => 'Response Time', 'value' => "{$this->check->response_time_ms}ms", 'inline' => true],
+                    $this->check ? ['name' => 'Status Code', 'value' => (string) $this->check->status_code, 'inline' => true] : null,
+                    $this->check ? ['name' => 'Response Time', 'value' => "{$this->check->response_time_ms}ms", 'inline' => true] : null,
                     ['name' => 'Cause', 'value' => ucfirst(str_replace('_', ' ', $this->incident->cause->value)), 'inline' => true],
-                ],
+                ]),
                 'timestamp' => now()->toIso8601String(),
                 'footer' => ['text' => config('app.name')],
             ]],
