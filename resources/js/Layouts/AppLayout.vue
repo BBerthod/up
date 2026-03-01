@@ -30,7 +30,7 @@ const navigation = computed(() => {
     ]
 
     if (isAdmin.value) {
-        items.push({ name: 'Users', href: '/users', icon: 'users', current: false })
+        items.push({ name: 'Users', href: '/admin/users', icon: 'users', current: false })
     }
 
     return items
