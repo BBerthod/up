@@ -43,6 +43,11 @@ class FunctionalCheck extends Model
         return $this->hasMany(FunctionalCheckResult::class);
     }
 
+    public function incidents(): HasMany
+    {
+        return $this->hasMany(MonitorIncident::class);
+    }
+
     public function scopeEnabled($query)
     {
         return $query->where('is_enabled', true);

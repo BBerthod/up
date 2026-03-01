@@ -9,4 +9,5 @@ enum IncidentCause: string
     case KEYWORD = 'keyword';
     case SSL = 'ssl';
     case ERROR = 'error';
+    case FUNCTIONAL = 'functional';
 }

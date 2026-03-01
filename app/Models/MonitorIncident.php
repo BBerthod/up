@@ -16,6 +16,7 @@ class MonitorIncident extends Model
 
     protected $fillable = [
         'monitor_id',
+        'functional_check_id',
         'started_at',
         'resolved_at',
         'cause',
@@ -30,6 +31,11 @@ class MonitorIncident extends Model
     public function monitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class);
+    }
+
+    public function functionalCheck(): BelongsTo
+    {
+        return $this->belongsTo(FunctionalCheck::class);
     }
 
     public function scopeActive($query)
