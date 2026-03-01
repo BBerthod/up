@@ -17,9 +17,11 @@ class RunLighthouseAudit implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 2;
 
     public int $timeout = 180;
+
+    public array $backoff = [1800]; // retry after 30 min on quota/rate limit errors
 
     public function __construct(public Monitor $monitor)
     {

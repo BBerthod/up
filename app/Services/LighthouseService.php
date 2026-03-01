@@ -29,14 +29,22 @@ class LighthouseService
             );
 
             if (! $response->successful()) {
-                Log::error('Lighthouse API request failed', [
+                $status = $response->status();
+                $context = [
                     'monitor_id' => $monitor->id,
                     'url' => $monitor->url,
-                    'status' => $response->status(),
+                    'status' => $status,
                     'body' => $response->body(),
-                ]);
+                ];
 
-                throw new RuntimeException('Lighthouse API request failed');
+                if ($status === 429 || $status === 403) {
+                    Log::warning('Lighthouse API quota/rate limit exceeded', $context);
+                    throw new RuntimeException('Lighthouse API quota exceeded (HTTP '.$status.')');
+                }
+
+                Log::error('Lighthouse API request failed', $context);
+
+                throw new RuntimeException('Lighthouse API request failed (HTTP '.$status.')');
             }
 
             $data = $response->json();

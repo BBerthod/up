@@ -25,8 +25,9 @@ class DispatchLighthouseAudits implements ShouldQueue
             ->where('type', 'http')
             ->get();
 
-        foreach ($monitors as $monitor) {
-            RunLighthouseAudit::dispatch($monitor);
+        foreach ($monitors as $index => $monitor) {
+            RunLighthouseAudit::dispatch($monitor)
+                ->delay(now()->addSeconds($index * 20));
         }
     }
 }
