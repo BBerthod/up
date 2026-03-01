@@ -9,7 +9,7 @@ use App\Models\MonitorIncident;
 
 class NotificationService
 {
-    public function notifyDown(Monitor $monitor, MonitorIncident $incident, MonitorCheck $check): void
+    public function notifyDown(Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check = null): void
     {
         $channels = $monitor->notificationChannels()->where('is_active', true)->get();
 
@@ -18,7 +18,7 @@ class NotificationService
         }
     }
 
-    public function notifyUp(Monitor $monitor, MonitorIncident $incident, MonitorCheck $check): void
+    public function notifyUp(Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check = null): void
     {
         $channels = $monitor->notificationChannels()->where('is_active', true)->get();
 
