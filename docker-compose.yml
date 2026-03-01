@@ -98,7 +98,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_DATABASE:-up}
       POSTGRES_USER: ${DB_USERNAME:-up}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:

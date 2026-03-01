@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\DTOs\FunctionalResult;
 use App\Enums\FunctionalCheckStatus;
 use App\Enums\FunctionalCheckType;
 use App\Enums\IncidentCause;
