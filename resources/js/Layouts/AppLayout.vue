@@ -49,6 +49,11 @@ const userMenuItems = [
         command: () => router.get(route('profile.edit'))
     },
     {
+        label: 'Settings',
+        icon: 'pi pi-cog',
+        command: () => router.get(route('settings.index'))
+    },
+    {
         label: 'Log Out',
         icon: 'pi pi-sign-out',
         command: () => router.post('/logout')
@@ -106,6 +111,12 @@ onMounted(() => {
                     <svg v-else-if="item.icon === 'server'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
                     <span>{{ item.name }}</span>
                 </Link>
+                <div class="pt-2 mt-2 border-t border-white/5">
+                    <Link :href="route('settings.index')" :class="['flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200', isActive('/settings') ? 'text-white bg-white/5' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5']" @click="mobileMenuOpen = false">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>Settings</span>
+                    </Link>
+                </div>
             </nav>
         </Drawer>
 
@@ -141,6 +152,15 @@ onMounted(() => {
                     <span v-if="sidebarOpen">{{ item.name }}</span>
                 </Link>
             </nav>
+
+            <!-- Settings link -->
+            <div class="px-4 pb-2 border-t border-white/5 pt-4">
+                <div v-if="sidebarOpen" class="px-2 mb-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Config</div>
+                <Link :href="route('settings.index')" :class="['flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 group', isActive('/settings') ? 'text-white bg-white/5' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5']">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span v-if="sidebarOpen">Settings</span>
+                </Link>
+            </div>
 
             <!-- Collapse button -->
             <div class="p-4 border-t border-white/5">
