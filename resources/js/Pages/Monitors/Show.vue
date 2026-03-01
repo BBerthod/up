@@ -16,6 +16,7 @@ import CopyButton from '@/Components/CopyButton.vue'
 import SkeletonMonitorShow from '@/Components/SkeletonMonitorShow.vue'
 import IncidentTimeline from '@/Components/IncidentTimeline.vue'
 import PurgeDialog from '@/Components/PurgeDialog.vue'
+import FunctionalChecks from '@/Components/FunctionalChecks.vue'
 
 useRealtimeUpdates({
     onMonitorChecked: ['monitor', 'checks', 'chartData', 'uptime', 'heatmapData', 'incidents', 'incidentStats', 'incidentTimeline'],
@@ -53,6 +54,7 @@ const props = defineProps<{
     lighthouseHistory?: Array<any> | null
     chartData: Array<any>
     currentPeriod: string
+    functionalChecks: Array<any>
 }>()
 
 const baseUrl = computed(() => typeof window !== 'undefined' ? window.location.origin : '')
@@ -418,6 +420,11 @@ const handleIncidentPage = (page: number) => {
                 </div>
             </div>
             <p v-else class="text-slate-500 text-center py-8">No incidents recorded</p>
+        </GlassCard>
+
+        <!-- Functional Checks Section -->
+        <GlassCard title="Functional Checks">
+            <FunctionalChecks :monitor-id="monitor.id" :checks="functionalChecks" />
         </GlassCard>
 
         <GlassCard v-if="monitor.badge_hash" title="Status Badge">
