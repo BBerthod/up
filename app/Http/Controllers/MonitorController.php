@@ -79,10 +79,50 @@ class MonitorController extends Controller
             ->limit(50)
             ->get(['id', 'status', 'response_time_ms', 'status_code', 'checked_at']);
 
+        $incidentSort = in_array($request->query('incident_sort'), ['started_at', 'resolved_at', 'cause'])
+            ? $request->query('incident_sort')
+            : 'started_at';
+        $incidentDir = $request->query('incident_dir') === 'asc' ? 'asc' : 'desc';
+
         $incidents = $monitor->incidents()
-            ->latest('started_at')
-            ->limit(20)
-            ->get(['id', 'started_at', 'resolved_at', 'cause']);
+            ->orderBy($incidentSort, $incidentDir)
+            ->paginate(15, ['id', 'started_at', 'resolved_at', 'cause'], 'incident_page');
+
+        $incidentStats = Cache::remember("monitor:{$monitor->id}:incident_stats", 300, function () use ($monitor) {
+            $activeIncident = $monitor->incidents()
+                ->whereNull('resolved_at')
+                ->latest('started_at')
+                ->first(['id', 'started_at', 'cause']);
+
+            return [
+                'total' => $monitor->incidents()->count(),
+                'active' => $monitor->incidents()->whereNull('resolved_at')->count(),
+                'active_incident' => $activeIncident ? [
+                    'id' => $activeIncident->id,
+                    'started_at' => $activeIncident->started_at->toIso8601String(),
+                    'cause' => $activeIncident->cause->value,
+                ] : null,
+                'mttr_minutes' => (int) round((float) ($monitor->incidents()
+                    ->whereNotNull('resolved_at')
+                    ->selectRaw('AVG(EXTRACT(EPOCH FROM (resolved_at - started_at)) / 60) as mttr')
+                    ->value('mttr') ?? 0)),
+                'downtime_30d_minutes' => (int) round((float) ($monitor->incidents()
+                    ->where('started_at', '>=', now()->subDays(30))
+                    ->selectRaw('SUM(EXTRACT(EPOCH FROM (COALESCE(resolved_at, NOW()) - started_at)) / 60) as total')
+                    ->value('total') ?? 0)),
+            ];
+        });
+
+        $incidentTimeline = $monitor->incidents()
+            ->where('started_at', '>=', now()->subDays(90))
+            ->orderBy('started_at')
+            ->get(['id', 'started_at', 'resolved_at', 'cause'])
+            ->map(fn ($i) => [
+                'id' => $i->id,
+                'started_at' => $i->started_at->toIso8601String(),
+                'resolved_at' => $i->resolved_at?->toIso8601String(),
+                'cause' => $i->cause->value,
+            ]);
 
         $uptimeData = Cache::remember("monitor:{$monitor->id}:uptime", 300, function () use ($monitor) {
             $calc = fn ($days) => (float) ($monitor->checks()
@@ -123,6 +163,10 @@ class MonitorController extends Controller
             ]),
             'checks' => $checks,
             'incidents' => $incidents,
+            'incidentStats' => $incidentStats,
+            'incidentTimeline' => $incidentTimeline,
+            'incidentSort' => $incidentSort,
+            'incidentDir' => $incidentDir,
             'uptime' => $uptimeData,
             'heatmapData' => $heatmapData,
             'lighthouseScore' => $lighthouseScore,
@@ -225,6 +269,44 @@ class MonitorController extends Controller
         RunLighthouseAudit::dispatch($monitor);
 
         return back()->with('success', 'Lighthouse audit queued successfully.');
+    }
+
+    public function purge(Request $request, Monitor $monitor): RedirectResponse
+    {
+        $this->authorize('purge', $monitor);
+
+        $validated = $request->validate([
+            'targets' => ['required', 'array', 'min:1'],
+            'targets.*' => ['required', 'string', 'in:checks,incidents,lighthouse'],
+            'period' => ['required', 'string', 'in:all,30d,90d,1y'],
+        ]);
+
+        $before = match ($validated['period']) {
+            '30d' => now()->subDays(30),
+            '90d' => now()->subDays(90),
+            '1y' => now()->subYear(),
+            default => null,
+        };
+
+        foreach ($validated['targets'] as $target) {
+            match ($target) {
+                'checks' => $before
+                    ? $monitor->checks()->where('checked_at', '<', $before)->delete()
+                    : $monitor->checks()->delete(),
+                'incidents' => $before
+                    ? $monitor->incidents()->where('started_at', '<', $before)->delete()
+                    : $monitor->incidents()->delete(),
+                'lighthouse' => $before
+                    ? $monitor->lighthouseScores()->where('scored_at', '<', $before)->delete()
+                    : $monitor->lighthouseScores()->delete(),
+            };
+        }
+
+        Cache::forget("monitor:{$monitor->id}:uptime");
+        Cache::forget("monitor:{$monitor->id}:heatmap");
+        Cache::forget("monitor:{$monitor->id}:incident_stats");
+
+        return back()->with('success', 'Monitor data purged successfully.');
     }
 
     public function lighthouseHistory(Request $request, Monitor $monitor): \Illuminate\Http\JsonResponse

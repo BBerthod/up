@@ -39,4 +39,9 @@ class MonitorPolicy
     {
         return $user->team_id === $monitor->team_id;
     }
+
+    public function purge(User $user, Monitor $monitor): bool
+    {
+        return $user->team_id === $monitor->team_id;
+    }
 }
