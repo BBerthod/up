@@ -205,6 +205,97 @@ class CheckServiceTest extends TestCase
         $this->assertNotNull($incident->resolved_at);
     }
 
+    public function test_threshold_exceeded_creates_timeout_incident(): void
+    {
+        $monitor = Monitor::factory()->create([
+            'url' => 'https://example.com',
+            'method' => MonitorMethod::GET,
+            'expected_status_code' => 200,
+            'critical_threshold_ms' => 500,
+        ]);
+
+        foreach ([600, 700, 800] as $i => $ms) {
+            MonitorCheck::create([
+                'monitor_id' => $monitor->id,
+                'status' => CheckStatus::UP,
+                'response_time_ms' => $ms,
+                'status_code' => 200,
+                'checked_at' => now()->subMinutes(4 - $i),
+            ]);
+        }
+
+        Http::fake(['example.com' => Http::response('OK', 200, [])]);
+
+        // The fake response will be fast, but checkThresholds reads from DB
+        // so we seed a slow response for the new check too
+        $monitor->checks()->latest('checked_at')->first()->update(['response_time_ms' => 900]);
+
+        // Simulate: 3 consecutive slow DB checks trigger the incident
+        // We do it by calling check() and checking the incident was created
+        $this->assertDatabaseMissing('monitor_incidents', ['monitor_id' => $monitor->id]);
+
+        // Manually create an additional slow check to trigger threshold
+        MonitorCheck::create([
+            'monitor_id' => $monitor->id,
+            'status' => CheckStatus::UP,
+            'response_time_ms' => 950,
+            'status_code' => 200,
+            'checked_at' => now(),
+        ]);
+
+        // Invoke threshold check directly via reflection
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('checkThresholds');
+        $method->setAccessible(true);
+
+        $check = $monitor->checks()->latest('checked_at')->first();
+        $method->invoke($this->service, $monitor, $check);
+
+        $this->assertDatabaseHas('monitor_incidents', [
+            'monitor_id' => $monitor->id,
+            'cause' => IncidentCause::TIMEOUT->value,
+            'resolved_at' => null,
+        ]);
+    }
+
+    public function test_threshold_recovery_resolves_active_incident(): void
+    {
+        $monitor = Monitor::factory()->create([
+            'url' => 'https://example.com',
+            'method' => MonitorMethod::GET,
+            'expected_status_code' => 200,
+            'critical_threshold_ms' => 500,
+        ]);
+
+        // Active threshold incident (monitor was slow but UP)
+        $incident = MonitorIncident::create([
+            'monitor_id' => $monitor->id,
+            'cause' => IncidentCause::TIMEOUT,
+            'started_at' => now()->subHour(),
+        ]);
+
+        // 3 recent checks now back under threshold
+        foreach ([100, 120, 90] as $i => $ms) {
+            MonitorCheck::create([
+                'monitor_id' => $monitor->id,
+                'status' => CheckStatus::UP,
+                'response_time_ms' => $ms,
+                'status_code' => 200,
+                'checked_at' => now()->subMinutes(3 - $i),
+            ]);
+        }
+
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('checkThresholds');
+        $method->setAccessible(true);
+
+        $check = $monitor->checks()->latest('checked_at')->first();
+        $method->invoke($this->service, $monitor, $check);
+
+        $incident->refresh();
+        $this->assertNotNull($incident->resolved_at);
+    }
+
     public function test_updates_monitor_last_checked_at(): void
     {
         $monitor = Monitor::factory()->create([
