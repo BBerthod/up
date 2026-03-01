@@ -11,7 +11,7 @@ class SitemapChecker
     public function check(FunctionalCheck $check): FunctionalResult
     {
         $startTime = microtime(true);
-        $url       = $check->resolveUrl();
+        $url = $check->resolveUrl();
 
         try {
             $response = Http::timeout(30)->connectTimeout(10)
@@ -19,23 +19,23 @@ class SitemapChecker
                 ->get($url);
 
             $body = $response->body();
-            $xml  = null;
+            $xml = null;
             $urls = [];
 
             try {
                 $xml = new \SimpleXMLElement($body);
                 $xml->registerXPathNamespace('sm', 'http://www.sitemaps.org/schemas/sitemap/0.9');
                 $urlElements = $xml->xpath('//sm:url/sm:loc') ?: $xml->xpath('//url/loc') ?: [];
-                $urls        = array_map(fn ($el) => (string) $el, $urlElements);
+                $urls = array_map(fn ($el) => (string) $el, $urlElements);
             } catch (\Throwable) {
                 // handled by is_valid_xml rule
             }
 
             $details = [];
-            $passed  = true;
+            $passed = true;
 
             foreach ($check->rules as $rule) {
-                $detail    = $this->applyRule($rule, $body, $xml, $urls, $check);
+                $detail = $this->applyRule($rule, $body, $xml, $urls, $check);
                 $details[] = $detail;
                 if (! $detail['passed']) {
                     $passed = false;
@@ -43,15 +43,15 @@ class SitemapChecker
             }
 
             return new FunctionalResult(
-                passed:     $passed,
+                passed: $passed,
                 durationMs: (int) ((microtime(true) - $startTime) * 1000),
-                details:    $details,
+                details: $details,
             );
         } catch (\Throwable $e) {
             return new FunctionalResult(
-                passed:       false,
-                durationMs:   (int) ((microtime(true) - $startTime) * 1000),
-                details:      [],
+                passed: false,
+                durationMs: (int) ((microtime(true) - $startTime) * 1000),
+                details: [],
                 errorMessage: $e->getMessage(),
             );
         }
@@ -61,26 +61,26 @@ class SitemapChecker
     {
         return match ($rule['type']) {
             'is_valid_xml' => [
-                'rule'    => 'is_valid_xml',
-                'passed'  => $xml !== null,
+                'rule' => 'is_valid_xml',
+                'passed' => $xml !== null,
                 'message' => $xml !== null ? 'Valid XML' : 'Invalid XML or empty response',
             ],
             'min_urls' => [
-                'rule'    => 'min_urls',
-                'value'   => $rule['value'],
-                'passed'  => count($urls) >= (int) $rule['value'],
-                'message' => count($urls) . ' URLs found (min: ' . $rule['value'] . ')',
+                'rule' => 'min_urls',
+                'value' => $rule['value'],
+                'passed' => count($urls) >= (int) $rule['value'],
+                'message' => count($urls).' URLs found (min: '.$rule['value'].')',
             ],
             'urls_accessible' => [
-                'rule'    => 'urls_accessible',
-                'value'   => $rule['value'] ?? 20,
-                'passed'  => $this->checkUrlsSample($urls, (int) ($rule['value'] ?? 20)),
-                'message' => 'Sample of ' . min(count($urls), (int) ($rule['value'] ?? 20)) . ' URLs checked',
+                'rule' => 'urls_accessible',
+                'value' => $rule['value'] ?? 20,
+                'passed' => $this->checkUrlsSample($urls, (int) ($rule['value'] ?? 20)),
+                'message' => 'Sample of '.min(count($urls), (int) ($rule['value'] ?? 20)).' URLs checked',
             ],
             'track_changes' => $this->trackChanges($urls, $check),
             default => [
-                'rule'    => $rule['type'],
-                'passed'  => false,
+                'rule' => $rule['type'],
+                'passed' => false,
                 'message' => "Unknown rule type: {$rule['type']}",
             ],
         };
@@ -108,28 +108,28 @@ class SitemapChecker
 
         if (! $lastResult) {
             return [
-                'rule'    => 'track_changes',
-                'passed'  => true,
-                'message' => 'Baseline established (' . count($currentUrls) . ' URLs)',
-                'urls'    => $currentUrls,
+                'rule' => 'track_changes',
+                'passed' => true,
+                'message' => 'Baseline established ('.count($currentUrls).' URLs)',
+                'urls' => $currentUrls,
             ];
         }
 
         $previousUrls = collect($lastResult->details)
             ->firstWhere('rule', 'track_changes')['urls'] ?? [];
 
-        $added   = array_values(array_diff($currentUrls, $previousUrls));
+        $added = array_values(array_diff($currentUrls, $previousUrls));
         $removed = array_values(array_diff($previousUrls, $currentUrls));
         $changed = count($added) > 0 || count($removed) > 0;
 
         return [
-            'rule'    => 'track_changes',
-            'passed'  => ! $changed,
+            'rule' => 'track_changes',
+            'passed' => ! $changed,
             'message' => $changed
-                ? count($added) . ' URL(s) added, ' . count($removed) . ' URL(s) removed'
-                : 'No changes (' . count($currentUrls) . ' URLs)',
-            'urls'    => $currentUrls,
-            'added'   => $added,
+                ? count($added).' URL(s) added, '.count($removed).' URL(s) removed'
+                : 'No changes ('.count($currentUrls).' URLs)',
+            'urls' => $currentUrls,
+            'added' => $added,
             'removed' => $removed,
         ];
     }

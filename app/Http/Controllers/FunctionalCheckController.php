@@ -17,12 +17,12 @@ class FunctionalCheckController extends Controller
         $this->authorize('update', $monitor);
 
         $validated = $request->validate([
-            'name'           => ['required', 'string', 'max:255'],
-            'url'            => ['required', 'string', 'max:2048'],
-            'type'           => ['required', Rule::enum(FunctionalCheckType::class)],
-            'rules'          => ['required', 'array'],
-            'rules.*.type'   => ['required', 'string'],
-            'rules.*.value'  => ['nullable'],
+            'name' => ['required', 'string', 'max:255'],
+            'url' => ['required', 'string', 'max:2048'],
+            'type' => ['required', Rule::enum(FunctionalCheckType::class)],
+            'rules' => ['required', 'array'],
+            'rules.*.type' => ['required', 'string'],
+            'rules.*.value' => ['nullable'],
             'check_interval' => ['sometimes', 'integer', 'min:5', 'max:1440'],
         ]);
 
@@ -37,14 +37,14 @@ class FunctionalCheckController extends Controller
         abort_if($functionalCheck->monitor_id !== $monitor->id, 403);
 
         $validated = $request->validate([
-            'name'           => ['required', 'string', 'max:255'],
-            'url'            => ['required', 'string', 'max:2048'],
-            'type'           => ['required', Rule::enum(FunctionalCheckType::class)],
-            'rules'          => ['required', 'array'],
-            'rules.*.type'   => ['required', 'string'],
-            'rules.*.value'  => ['nullable'],
+            'name' => ['required', 'string', 'max:255'],
+            'url' => ['required', 'string', 'max:2048'],
+            'type' => ['required', Rule::enum(FunctionalCheckType::class)],
+            'rules' => ['required', 'array'],
+            'rules.*.type' => ['required', 'string'],
+            'rules.*.value' => ['nullable'],
             'check_interval' => ['sometimes', 'integer', 'min:5', 'max:1440'],
-            'is_enabled'     => ['sometimes', 'boolean'],
+            'is_enabled' => ['sometimes', 'boolean'],
         ]);
 
         $functionalCheck->update($validated);

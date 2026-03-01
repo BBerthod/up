@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Enums\ChannelType;
-use App\Enums\IngestEventType;
 use App\Models\IngestEvent;
 use App\Models\IngestSource;
 use App\Models\NotificationChannel;

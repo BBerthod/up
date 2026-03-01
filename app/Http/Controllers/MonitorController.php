@@ -160,21 +160,21 @@ class MonitorController extends Controller
             ->orderBy('created_at')
             ->get()
             ->map(fn ($fc) => [
-                'id'              => $fc->id,
-                'name'            => $fc->name,
-                'url'             => $fc->url,
-                'resolved_url'    => $fc->resolveUrl(),
-                'type'            => $fc->type->value,
-                'rules'           => $fc->rules,
-                'check_interval'  => $fc->check_interval,
-                'is_enabled'      => $fc->is_enabled,
-                'last_status'     => $fc->last_status->value,
+                'id' => $fc->id,
+                'name' => $fc->name,
+                'url' => $fc->url,
+                'resolved_url' => $fc->resolveUrl(),
+                'type' => $fc->type->value,
+                'rules' => $fc->rules,
+                'check_interval' => $fc->check_interval,
+                'is_enabled' => $fc->is_enabled,
+                'last_status' => $fc->last_status->value,
                 'last_checked_at' => $fc->last_checked_at?->toIso8601String(),
-                'last_result'     => $fc->results->first() ? [
-                    'status'      => $fc->results->first()->status->value,
+                'last_result' => $fc->results->first() ? [
+                    'status' => $fc->results->first()->status->value,
                     'duration_ms' => $fc->results->first()->duration_ms,
-                    'details'     => $fc->results->first()->details,
-                    'checked_at'  => $fc->results->first()->checked_at->toIso8601String(),
+                    'details' => $fc->results->first()->details,
+                    'checked_at' => $fc->results->first()->checked_at->toIso8601String(),
                 ] : null,
             ]);
 

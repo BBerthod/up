@@ -15,16 +15,16 @@ class FunctionalCheckFactory extends Factory
     public function definition(): array
     {
         return [
-            'monitor_id'     => Monitor::factory(),
-            'name'           => fake()->words(3, true),
-            'url'            => '/' . fake()->slug(),
-            'type'           => FunctionalCheckType::CONTENT,
-            'rules'          => [
+            'monitor_id' => Monitor::factory(),
+            'name' => fake()->words(3, true),
+            'url' => '/'.fake()->slug(),
+            'type' => FunctionalCheckType::CONTENT,
+            'rules' => [
                 ['type' => 'text_absent', 'value' => 'Fatal error'],
             ],
             'check_interval' => 60,
-            'last_status'    => FunctionalCheckStatus::PENDING,
-            'is_enabled'     => true,
+            'last_status' => FunctionalCheckStatus::PENDING,
+            'is_enabled' => true,
         ];
     }
 
@@ -41,8 +41,8 @@ class FunctionalCheckFactory extends Factory
     public function sitemap(): static
     {
         return $this->state(fn () => [
-            'type'           => FunctionalCheckType::SITEMAP,
-            'url'            => '/sitemap.xml',
+            'type' => FunctionalCheckType::SITEMAP,
+            'url' => '/sitemap.xml',
             'check_interval' => 1440,
         ]);
     }
@@ -51,7 +51,7 @@ class FunctionalCheckFactory extends Factory
     {
         return $this->state(fn () => [
             'type' => FunctionalCheckType::ROBOTS_TXT,
-            'url'  => '/robots.txt',
+            'url' => '/robots.txt',
         ]);
     }
 

@@ -27,8 +27,8 @@ class SendFunctionalNotification implements ShouldQueue
 
     public function __construct(
         public NotificationChannel $channel,
-        public FunctionalCheck     $check,
-        public FunctionalResult    $result,
+        public FunctionalCheck $check,
+        public FunctionalResult $result,
     ) {
         $this->onQueue('notifications');
     }
@@ -36,21 +36,21 @@ class SendFunctionalNotification implements ShouldQueue
     public function handle(): void
     {
         match ($this->channel->type) {
-            ChannelType::EMAIL    => $this->sendEmail(),
-            ChannelType::WEBHOOK  => $this->sendWebhook(),
-            ChannelType::SLACK    => $this->sendSlack(),
-            ChannelType::DISCORD  => $this->sendDiscord(),
+            ChannelType::EMAIL => $this->sendEmail(),
+            ChannelType::WEBHOOK => $this->sendWebhook(),
+            ChannelType::SLACK => $this->sendSlack(),
+            ChannelType::DISCORD => $this->sendDiscord(),
             ChannelType::TELEGRAM => $this->sendTelegram(),
-            ChannelType::PUSH     => $this->sendPush(),
+            ChannelType::PUSH => $this->sendPush(),
         };
     }
 
     public function failed(Throwable $e): void
     {
         Log::error('Functional notification delivery failed', [
-            'channel_id'          => $this->channel->id,
+            'channel_id' => $this->channel->id,
             'functional_check_id' => $this->check->id,
-            'error'               => $e->getMessage(),
+            'error' => $e->getMessage(),
         ]);
     }
 
@@ -62,7 +62,7 @@ class SendFunctionalNotification implements ShouldQueue
     private function summaryText(): string
     {
         $monitor = $this->check->monitor;
-        $lines   = [
+        $lines = [
             "Functional check failed: \"{$this->check->name}\"",
             "Monitor: {$monitor->name} ({$monitor->url})",
             "URL checked: {$this->check->resolveUrl()}",
@@ -85,7 +85,7 @@ class SendFunctionalNotification implements ShouldQueue
 
         Mail::raw($this->summaryText(), function ($mail) use ($subject) {
             $mail->to($this->channel->settings['recipients'])
-                 ->subject($subject);
+                ->subject($subject);
         });
     }
 
@@ -94,10 +94,10 @@ class SendFunctionalNotification implements ShouldQueue
         $monitor = $this->check->monitor;
 
         Http::timeout(10)->post($this->channel->settings['url'], [
-            'event'         => 'functional.failed',
-            'monitor'       => ['id' => $monitor->id, 'name' => $monitor->name, 'url' => $monitor->url],
-            'check'         => ['id' => $this->check->id, 'name' => $this->check->name, 'url' => $this->check->resolveUrl(), 'type' => $this->check->type->value],
-            'failed_rules'  => array_values($this->failedRules()),
+            'event' => 'functional.failed',
+            'monitor' => ['id' => $monitor->id, 'name' => $monitor->name, 'url' => $monitor->url],
+            'check' => ['id' => $this->check->id, 'name' => $this->check->name, 'url' => $this->check->resolveUrl(), 'type' => $this->check->type->value],
+            'failed_rules' => array_values($this->failedRules()),
             'error_message' => $this->result->errorMessage,
         ])->throw();
     }
@@ -108,14 +108,14 @@ class SendFunctionalNotification implements ShouldQueue
 
         Http::timeout(10)->post($this->channel->settings['webhook_url'], [
             'attachments' => [[
-                'color'  => '#DC2626',
+                'color' => '#DC2626',
                 'blocks' => [
                     [
                         'type' => 'header',
                         'text' => ['type' => 'plain_text', 'text' => "[Up] Functional check failed: {$this->check->name}"],
                     ],
                     [
-                        'type'   => 'section',
+                        'type' => 'section',
                         'fields' => [
                             ['type' => 'mrkdwn', 'text' => "*Monitor:*\n{$monitor->name}"],
                             ['type' => 'mrkdwn', 'text' => "*URL:*\n{$this->check->resolveUrl()}"],
@@ -133,7 +133,7 @@ class SendFunctionalNotification implements ShouldQueue
     private function sendDiscord(): void
     {
         $monitor = $this->check->monitor;
-        $fields  = [
+        $fields = [
             ['name' => 'Monitor', 'value' => $monitor->name, 'inline' => true],
             ['name' => 'Check',   'value' => $this->check->name, 'inline' => true],
             ['name' => 'URL',     'value' => $this->check->resolveUrl(), 'inline' => false],
@@ -145,11 +145,11 @@ class SendFunctionalNotification implements ShouldQueue
 
         Http::timeout(10)->post($this->channel->settings['webhook_url'], [
             'embeds' => [[
-                'title'     => "[Up] Functional check failed: {$this->check->name}",
-                'color'     => 15158332,
-                'fields'    => $fields,
+                'title' => "[Up] Functional check failed: {$this->check->name}",
+                'color' => 15158332,
+                'fields' => $fields,
                 'timestamp' => now()->toIso8601String(),
-                'footer'    => ['text' => config('app.name')],
+                'footer' => ['text' => config('app.name')],
             ]],
         ])->throw();
     }
@@ -157,17 +157,17 @@ class SendFunctionalNotification implements ShouldQueue
     private function sendTelegram(): void
     {
         $text = "\u{1F534} <b>[Up] Functional check failed</b>\n\n"
-            . "<b>Check:</b> {$this->check->name}\n"
-            . "<b>Monitor:</b> {$this->check->monitor->name}\n"
-            . "<b>URL:</b> {$this->check->resolveUrl()}\n\n"
-            . htmlspecialchars($this->summaryText());
+            ."<b>Check:</b> {$this->check->name}\n"
+            ."<b>Monitor:</b> {$this->check->monitor->name}\n"
+            ."<b>URL:</b> {$this->check->resolveUrl()}\n\n"
+            .htmlspecialchars($this->summaryText());
 
         Http::timeout(10)->post(
             "https://api.telegram.org/bot{$this->channel->settings['bot_token']}/sendMessage",
             [
-                'chat_id'                  => $this->channel->settings['chat_id'],
-                'text'                     => $text,
-                'parse_mode'               => 'HTML',
+                'chat_id' => $this->channel->settings['chat_id'],
+                'text' => $text,
+                'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,
             ]
         )->throw();
@@ -176,10 +176,10 @@ class SendFunctionalNotification implements ShouldQueue
     private function sendPush(): void
     {
         $monitor = $this->check->monitor;
-        $auth    = [
+        $auth = [
             'VAPID' => [
-                'subject'    => config('app.url'),
-                'publicKey'  => config('services.webpush.vapid.public_key'),
+                'subject' => config('app.url'),
+                'publicKey' => config('services.webpush.vapid.public_key'),
                 'privateKey' => config('services.webpush.vapid.private_key'),
             ],
         ];
@@ -194,16 +194,16 @@ class SendFunctionalNotification implements ShouldQueue
 
         $payload = json_encode([
             'title' => "[Up] Functional check failed: {$this->check->name}",
-            'body'  => "Monitor: {$monitor->name}",
-            'data'  => ['url' => config('app.url') . "/monitors/{$monitor->id}"],
+            'body' => "Monitor: {$monitor->name}",
+            'data' => ['url' => config('app.url')."/monitors/{$monitor->id}"],
         ]);
 
-        $userIds       = $this->channel->team->users()->pluck('id');
+        $userIds = $this->channel->team->users()->pluck('id');
         $subscriptions = PushSubscription::whereIn('user_id', $userIds)->get();
 
         foreach ($subscriptions as $dbSubscription) {
             $subscription = \Minishlink\WebPush\Subscription::create([
-                'endpoint'  => $dbSubscription->endpoint,
+                'endpoint' => $dbSubscription->endpoint,
                 'publicKey' => $dbSubscription->p256dh,
                 'authToken' => $dbSubscription->auth,
             ]);

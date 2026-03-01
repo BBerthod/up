@@ -25,8 +25,8 @@ class ContentCheckerTest extends TestCase
     public function test_passes_when_required_text_present(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'text_present', 'value' => 'Welcome']],
         ]);
 
@@ -42,8 +42,8 @@ class ContentCheckerTest extends TestCase
     public function test_fails_when_required_text_absent(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'text_present', 'value' => 'Welcome']],
         ]);
 
@@ -58,8 +58,8 @@ class ContentCheckerTest extends TestCase
     public function test_fails_when_forbidden_text_present(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'text_absent', 'value' => 'Fatal error']],
         ]);
 
@@ -73,8 +73,8 @@ class ContentCheckerTest extends TestCase
     public function test_passes_when_content_long_enough(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'min_content_length', 'value' => 10]],
         ]);
 
@@ -88,8 +88,8 @@ class ContentCheckerTest extends TestCase
     public function test_fails_on_connection_error(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'text_present', 'value' => 'OK']],
         ]);
 
@@ -106,9 +106,9 @@ class ContentCheckerTest extends TestCase
         $monitor = Monitor::factory()->create(['url' => 'https://mysite.com']);
         $check = FunctionalCheck::factory()->create([
             'monitor_id' => $monitor->id,
-            'type'       => FunctionalCheckType::CONTENT,
-            'url'        => '/best-deals',
-            'rules'      => [['type' => 'text_present', 'value' => 'Sale']],
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => '/best-deals',
+            'rules' => [['type' => 'text_present', 'value' => 'Sale']],
         ]);
 
         Http::fake(['mysite.com/best-deals' => Http::response('<h1>Sale</h1>', 200)]);

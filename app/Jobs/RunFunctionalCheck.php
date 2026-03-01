@@ -16,7 +16,8 @@ class RunFunctionalCheck implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 1;
+    public int $tries = 1;
+
     public int $timeout = 90;
 
     public function __construct(public FunctionalCheck $check)
@@ -33,7 +34,7 @@ class RunFunctionalCheck implements ShouldQueue
     {
         Log::error('RunFunctionalCheck job failed', [
             'functional_check_id' => $this->check->id,
-            'error'               => $e->getMessage(),
+            'error' => $e->getMessage(),
         ]);
     }
 }

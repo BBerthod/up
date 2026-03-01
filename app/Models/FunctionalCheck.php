@@ -26,10 +26,10 @@ class FunctionalCheck extends Model
     ];
 
     protected $casts = [
-        'type'            => FunctionalCheckType::class,
-        'last_status'     => FunctionalCheckStatus::class,
-        'rules'           => 'array',
-        'is_enabled'      => 'boolean',
+        'type' => FunctionalCheckType::class,
+        'last_status' => FunctionalCheckStatus::class,
+        'rules' => 'array',
+        'is_enabled' => 'boolean',
         'last_checked_at' => 'datetime',
     ];
 
@@ -68,13 +68,13 @@ class FunctionalCheck extends Model
             return $this->url;
         }
 
-        $parsed  = parse_url($this->monitor->url);
-        $baseUrl = $parsed['scheme'] . '://' . $parsed['host'];
+        $parsed = parse_url($this->monitor->url);
+        $baseUrl = $parsed['scheme'].'://'.$parsed['host'];
 
         if (isset($parsed['port'])) {
-            $baseUrl .= ':' . $parsed['port'];
+            $baseUrl .= ':'.$parsed['port'];
         }
 
-        return $baseUrl . '/' . ltrim($this->url, '/');
+        return $baseUrl.'/'.ltrim($this->url, '/');
     }
 }

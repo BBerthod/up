@@ -11,15 +11,15 @@ class RedirectChecker
     public function check(FunctionalCheck $check): FunctionalResult
     {
         $startTime = microtime(true);
-        $url       = $check->resolveUrl();
+        $url = $check->resolveUrl();
 
         try {
-            $chain   = $this->followRedirects($url);
+            $chain = $this->followRedirects($url);
             $details = [];
-            $passed  = true;
+            $passed = true;
 
             foreach ($check->rules as $rule) {
-                $detail    = $this->applyRule($rule, $url, $chain);
+                $detail = $this->applyRule($rule, $url, $chain);
                 $details[] = $detail;
                 if (! $detail['passed']) {
                     $passed = false;
@@ -27,15 +27,15 @@ class RedirectChecker
             }
 
             return new FunctionalResult(
-                passed:     $passed,
+                passed: $passed,
                 durationMs: (int) ((microtime(true) - $startTime) * 1000),
-                details:    $details,
+                details: $details,
             );
         } catch (\Throwable $e) {
             return new FunctionalResult(
-                passed:       false,
-                durationMs:   (int) ((microtime(true) - $startTime) * 1000),
-                details:      [],
+                passed: false,
+                durationMs: (int) ((microtime(true) - $startTime) * 1000),
+                details: [],
                 errorMessage: $e->getMessage(),
             );
         }
@@ -43,7 +43,7 @@ class RedirectChecker
 
     private function followRedirects(string $url, int $maxHops = 10): array
     {
-        $chain   = [];
+        $chain = [];
         $current = $url;
 
         for ($i = 0; $i < $maxHops; $i++) {
@@ -65,8 +65,8 @@ class RedirectChecker
             }
 
             if (! str_starts_with($location, 'http')) {
-                $parsed   = parse_url($current);
-                $location = $parsed['scheme'] . '://' . $parsed['host'] . $location;
+                $parsed = parse_url($current);
+                $location = $parsed['scheme'].'://'.$parsed['host'].$location;
             }
 
             foreach ($chain as $visited) {
@@ -89,36 +89,36 @@ class RedirectChecker
 
         return match ($rule['type']) {
             'redirects_to' => [
-                'rule'    => 'redirects_to',
-                'value'   => $rule['value'],
-                'passed'  => $finalUrl === $rule['value'],
+                'rule' => 'redirects_to',
+                'value' => $rule['value'],
+                'passed' => $finalUrl === $rule['value'],
                 'message' => "Final URL: {$finalUrl}",
             ],
             'https_enforced' => [
-                'rule'    => 'https_enforced',
-                'passed'  => str_starts_with($finalUrl, 'https://'),
+                'rule' => 'https_enforced',
+                'passed' => str_starts_with($finalUrl, 'https://'),
                 'message' => str_starts_with($finalUrl, 'https://') ? 'HTTPS enforced' : "Final URL not HTTPS: {$finalUrl}",
             ],
             'no_redirect' => [
-                'rule'    => 'no_redirect',
-                'passed'  => count($chain) === 1,
-                'message' => count($chain) === 1 ? 'No redirect' : (count($chain) - 1) . ' redirect(s) found',
+                'rule' => 'no_redirect',
+                'passed' => count($chain) === 1,
+                'message' => count($chain) === 1 ? 'No redirect' : (count($chain) - 1).' redirect(s) found',
             ],
             'max_hops' => [
-                'rule'    => 'max_hops',
-                'value'   => $rule['value'],
-                'passed'  => (count($chain) - 1) <= (int) $rule['value'],
-                'message' => (count($chain) - 1) . ' hop(s) (max: ' . $rule['value'] . ')',
+                'rule' => 'max_hops',
+                'value' => $rule['value'],
+                'passed' => (count($chain) - 1) <= (int) $rule['value'],
+                'message' => (count($chain) - 1).' hop(s) (max: '.$rule['value'].')',
             ],
             'www_canonical' => [
-                'rule'    => 'www_canonical',
-                'value'   => $rule['value'] ?? 'non-www',
-                'passed'  => $this->checkWwwCanonical($finalUrl, $rule['value'] ?? 'non-www'),
-                'message' => 'Final host: ' . (parse_url($finalUrl, PHP_URL_HOST) ?? 'unknown'),
+                'rule' => 'www_canonical',
+                'value' => $rule['value'] ?? 'non-www',
+                'passed' => $this->checkWwwCanonical($finalUrl, $rule['value'] ?? 'non-www'),
+                'message' => 'Final host: '.(parse_url($finalUrl, PHP_URL_HOST) ?? 'unknown'),
             ],
             default => [
-                'rule'    => $rule['type'],
-                'passed'  => false,
+                'rule' => $rule['type'],
+                'passed' => false,
                 'message' => "Unknown rule type: {$rule['type']}",
             ],
         };
@@ -130,8 +130,8 @@ class RedirectChecker
 
         return match ($canonical) {
             'non-www' => ! str_starts_with($host, 'www.'),
-            'www'     => str_starts_with($host, 'www.'),
-            default   => true,
+            'www' => str_starts_with($host, 'www.'),
+            default => true,
         };
     }
 }

@@ -18,8 +18,8 @@ class FunctionalCheckResult extends Model
     ];
 
     protected $casts = [
-        'status'     => FunctionalCheckStatus::class,
-        'details'    => 'array',
+        'status' => FunctionalCheckStatus::class,
+        'details' => 'array',
         'checked_at' => 'datetime',
     ];
 

@@ -18,9 +18,9 @@ class FunctionalCheckService
     public function run(FunctionalCheck $check): FunctionalCheckResult
     {
         $result = match ($check->type) {
-            FunctionalCheckType::CONTENT    => (new ContentChecker)->check($check),
-            FunctionalCheckType::REDIRECT   => (new RedirectChecker)->check($check),
-            FunctionalCheckType::SITEMAP    => (new SitemapChecker)->check($check),
+            FunctionalCheckType::CONTENT => (new ContentChecker)->check($check),
+            FunctionalCheckType::REDIRECT => (new RedirectChecker)->check($check),
+            FunctionalCheckType::SITEMAP => (new SitemapChecker)->check($check),
             FunctionalCheckType::ROBOTS_TXT => (new RobotsChecker)->check($check),
         };
 
@@ -30,16 +30,16 @@ class FunctionalCheckService
 
         $record = FunctionalCheckResult::create([
             'functional_check_id' => $check->id,
-            'status'              => $status,
-            'duration_ms'         => $result->durationMs,
-            'details'             => $result->details,
-            'error_message'       => $result->errorMessage,
-            'checked_at'          => now(),
+            'status' => $status,
+            'duration_ms' => $result->durationMs,
+            'details' => $result->details,
+            'error_message' => $result->errorMessage,
+            'checked_at' => now(),
         ]);
 
         $check->update([
             'last_checked_at' => now(),
-            'last_status'     => $status,
+            'last_status' => $status,
         ]);
 
         if (! $result->passed) {

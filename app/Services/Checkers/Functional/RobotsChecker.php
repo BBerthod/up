@@ -11,19 +11,19 @@ class RobotsChecker
     public function check(FunctionalCheck $check): FunctionalResult
     {
         $startTime = microtime(true);
-        $url       = $check->resolveUrl();
+        $url = $check->resolveUrl();
 
         try {
             $response = Http::timeout(15)->connectTimeout(10)
                 ->withHeaders(['User-Agent' => 'Up-Monitor/1.0 (+https://github.com/BBerthod/up)'])
                 ->get($url);
 
-            $body    = $response->body();
+            $body = $response->body();
             $details = [];
-            $passed  = true;
+            $passed = true;
 
             foreach ($check->rules as $rule) {
-                $detail    = $this->applyRule($rule, $body, $check);
+                $detail = $this->applyRule($rule, $body, $check);
                 $details[] = $detail;
                 if (! $detail['passed']) {
                     $passed = false;
@@ -31,15 +31,15 @@ class RobotsChecker
             }
 
             return new FunctionalResult(
-                passed:     $passed,
+                passed: $passed,
                 durationMs: (int) ((microtime(true) - $startTime) * 1000),
-                details:    $details,
+                details: $details,
             );
         } catch (\Throwable $e) {
             return new FunctionalResult(
-                passed:       false,
-                durationMs:   (int) ((microtime(true) - $startTime) * 1000),
-                details:      [],
+                passed: false,
+                durationMs: (int) ((microtime(true) - $startTime) * 1000),
+                details: [],
                 errorMessage: $e->getMessage(),
             );
         }
@@ -49,32 +49,32 @@ class RobotsChecker
     {
         return match ($rule['type']) {
             'no_disallow_all' => [
-                'rule'    => 'no_disallow_all',
-                'passed'  => ! $this->hasDisallowAll($body),
+                'rule' => 'no_disallow_all',
+                'passed' => ! $this->hasDisallowAll($body),
                 'message' => $this->hasDisallowAll($body)
                     ? 'WARNING: Disallow: / found for User-agent: *'
                     : 'No global Disallow: / detected',
             ],
             'text_present' => [
-                'rule'    => 'text_present',
-                'value'   => $rule['value'],
-                'passed'  => str_contains($body, $rule['value']),
+                'rule' => 'text_present',
+                'value' => $rule['value'],
+                'passed' => str_contains($body, $rule['value']),
                 'message' => str_contains($body, $rule['value'])
                     ? 'Text found'
                     : "Text not found: \"{$rule['value']}\"",
             ],
             'text_absent' => [
-                'rule'    => 'text_absent',
-                'value'   => $rule['value'],
-                'passed'  => ! str_contains($body, $rule['value']),
+                'rule' => 'text_absent',
+                'value' => $rule['value'],
+                'passed' => ! str_contains($body, $rule['value']),
                 'message' => ! str_contains($body, $rule['value'])
                     ? 'Text absent (OK)'
                     : "Unwanted text found: \"{$rule['value']}\"",
             ],
             'track_changes' => $this->trackChanges($body, $check),
             default => [
-                'rule'    => $rule['type'],
-                'passed'  => false,
+                'rule' => $rule['type'],
+                'passed' => false,
                 'message' => "Unknown rule type: {$rule['type']}",
             ],
         };
@@ -82,7 +82,7 @@ class RobotsChecker
 
     private function hasDisallowAll(string $body): bool
     {
-        $lines             = explode("\n", $body);
+        $lines = explode("\n", $body);
         $currentAgentIsAll = false;
 
         foreach ($lines as $line) {
@@ -108,8 +108,8 @@ class RobotsChecker
 
         if (! $lastResult) {
             return [
-                'rule'    => 'track_changes',
-                'passed'  => true,
+                'rule' => 'track_changes',
+                'passed' => true,
                 'message' => 'Baseline established',
                 'content' => $currentBody,
             ];
@@ -121,8 +121,8 @@ class RobotsChecker
         $changed = $previousContent !== null && $previousContent !== $currentBody;
 
         return [
-            'rule'    => 'track_changes',
-            'passed'  => ! $changed,
+            'rule' => 'track_changes',
+            'passed' => ! $changed,
             'message' => $changed ? 'robots.txt content has changed' : 'No changes detected',
             'content' => $currentBody,
         ];

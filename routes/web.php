@@ -6,9 +6,9 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\FunctionalCheckController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IngestSourceController;
-use App\Http\Controllers\FunctionalCheckController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NotificationChannelController;
 use App\Http\Controllers\ProfileController;
@@ -58,10 +58,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/monitors/{monitor}/purge', [MonitorController::class, 'purge'])->name('monitors.purge');
 
     Route::prefix('monitors/{monitor}/functional-checks')->name('monitors.functional-checks.')->group(function () {
-        Route::post('/',                            [FunctionalCheckController::class, 'store'])->name('store');
-        Route::put('/{functionalCheck}',            [FunctionalCheckController::class, 'update'])->name('update');
-        Route::delete('/{functionalCheck}',         [FunctionalCheckController::class, 'destroy'])->name('destroy');
-        Route::post('/{functionalCheck}/run-now',   [FunctionalCheckController::class, 'runNow'])->name('run-now');
+        Route::post('/', [FunctionalCheckController::class, 'store'])->name('store');
+        Route::put('/{functionalCheck}', [FunctionalCheckController::class, 'update'])->name('update');
+        Route::delete('/{functionalCheck}', [FunctionalCheckController::class, 'destroy'])->name('destroy');
+        Route::post('/{functionalCheck}/run-now', [FunctionalCheckController::class, 'runNow'])->name('run-now');
     });
 
     Route::resource('channels', NotificationChannelController::class)->except(['show']);

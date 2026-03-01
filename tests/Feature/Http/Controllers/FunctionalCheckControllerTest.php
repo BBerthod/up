@@ -15,14 +15,16 @@ class FunctionalCheckControllerTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Monitor $monitor;
+
     private Team $team;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->team    = Team::factory()->create();
-        $this->user    = User::factory()->create(['team_id' => $this->team->id]);
+        $this->team = Team::factory()->create();
+        $this->user = User::factory()->create(['team_id' => $this->team->id]);
         $this->monitor = Monitor::factory()->for($this->team)->create();
     }
 
@@ -33,10 +35,10 @@ class FunctionalCheckControllerTest extends TestCase
             ->post(
                 route('monitors.functional-checks.store', $this->monitor),
                 [
-                    'name'           => 'Page Best Deals',
-                    'url'            => '/best-deals',
-                    'type'           => 'content',
-                    'rules'          => [['type' => 'text_present', 'value' => 'Sale']],
+                    'name' => 'Page Best Deals',
+                    'url' => '/best-deals',
+                    'type' => 'content',
+                    'rules' => [['type' => 'text_present', 'value' => 'Sale']],
                     'check_interval' => 60,
                 ]
             );
@@ -44,7 +46,7 @@ class FunctionalCheckControllerTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('functional_checks', [
             'monitor_id' => $this->monitor->id,
-            'name'       => 'Page Best Deals',
+            'name' => 'Page Best Deals',
         ]);
     }
 
@@ -52,9 +54,9 @@ class FunctionalCheckControllerTest extends TestCase
     {
         $response = $this->withoutMiddleware(ValidateCsrfToken::class)
             ->post(route('monitors.functional-checks.store', $this->monitor), [
-                'name'  => 'Test',
-                'url'   => '/',
-                'type'  => 'content',
+                'name' => 'Test',
+                'url' => '/',
+                'type' => 'content',
                 'rules' => [],
             ]);
 
@@ -63,8 +65,8 @@ class FunctionalCheckControllerTest extends TestCase
 
     public function test_store_rejects_other_team_monitor(): void
     {
-        $otherTeam    = Team::factory()->create();
-        $otherUser    = User::factory()->create(['team_id' => $otherTeam->id]);
+        $otherTeam = Team::factory()->create();
+        $otherUser = User::factory()->create(['team_id' => $otherTeam->id]);
         $otherMonitor = Monitor::factory()->for($otherTeam)->create();
 
         $response = $this->withoutMiddleware(ValidateCsrfToken::class)
@@ -72,9 +74,9 @@ class FunctionalCheckControllerTest extends TestCase
             ->post(
                 route('monitors.functional-checks.store', $otherMonitor),
                 [
-                    'name'  => 'Test',
-                    'url'   => '/',
-                    'type'  => 'content',
+                    'name' => 'Test',
+                    'url' => '/',
+                    'type' => 'content',
                     'rules' => [],
                 ]
             );

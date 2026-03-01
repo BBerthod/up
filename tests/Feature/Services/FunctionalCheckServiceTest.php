@@ -25,8 +25,8 @@ class FunctionalCheckServiceTest extends TestCase
     public function test_run_creates_passed_result(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'text_present', 'value' => 'Hello']],
         ]);
 
@@ -37,15 +37,15 @@ class FunctionalCheckServiceTest extends TestCase
         $this->assertSame(FunctionalCheckStatus::PASSED, $result->status);
         $this->assertDatabaseHas('functional_check_results', [
             'functional_check_id' => $check->id,
-            'status'              => 'passed',
+            'status' => 'passed',
         ]);
     }
 
     public function test_run_creates_failed_result(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'text_present', 'value' => 'Hello']],
         ]);
 
@@ -59,8 +59,8 @@ class FunctionalCheckServiceTest extends TestCase
     public function test_run_updates_last_checked_at(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [],
         ]);
 
@@ -74,8 +74,8 @@ class FunctionalCheckServiceTest extends TestCase
     public function test_run_updates_last_status(): void
     {
         $check = FunctionalCheck::factory()->create([
-            'type'  => FunctionalCheckType::CONTENT,
-            'url'   => 'https://example.com',
+            'type' => FunctionalCheckType::CONTENT,
+            'url' => 'https://example.com',
             'rules' => [['type' => 'text_absent', 'value' => 'Fatal error']],
         ]);
 
