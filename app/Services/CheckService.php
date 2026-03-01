@@ -114,6 +114,17 @@ class CheckService
                 ]);
                 $this->notificationService->notifyDown($monitor, $incident, $check);
             }
+        } else {
+            // Response times back below threshold — resolve any active incident
+            $incident = $monitor->incidents()
+                ->whereNull('resolved_at')
+                ->latest('started_at')
+                ->first();
+
+            if ($incident) {
+                $incident->resolve();
+                $this->notificationService->notifyUp($monitor, $incident, $check);
+            }
         }
     }
 }
