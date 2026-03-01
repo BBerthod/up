@@ -276,8 +276,7 @@ class MonitorController extends Controller
         $this->authorize('purge', $monitor);
 
         $validated = $request->validate([
-            'targets' => ['required', 'array', 'min:1'],
-            'targets.*' => ['required', 'string', 'in:checks,incidents,lighthouse'],
+            'target' => ['required', 'string', 'in:checks,incidents,lighthouse'],
             'period' => ['required', 'string', 'in:all,30d,90d,1y'],
         ]);
 
@@ -288,19 +287,17 @@ class MonitorController extends Controller
             default => null,
         };
 
-        foreach ($validated['targets'] as $target) {
-            match ($target) {
-                'checks' => $before
-                    ? $monitor->checks()->where('checked_at', '<', $before)->delete()
-                    : $monitor->checks()->delete(),
-                'incidents' => $before
-                    ? $monitor->incidents()->where('started_at', '<', $before)->delete()
-                    : $monitor->incidents()->delete(),
-                'lighthouse' => $before
-                    ? $monitor->lighthouseScores()->where('scored_at', '<', $before)->delete()
-                    : $monitor->lighthouseScores()->delete(),
-            };
-        }
+        match ($validated['target']) {
+            'checks' => $before
+                ? $monitor->checks()->where('checked_at', '<', $before)->delete()
+                : $monitor->checks()->delete(),
+            'incidents' => $before
+                ? $monitor->incidents()->where('started_at', '<', $before)->delete()
+                : $monitor->incidents()->delete(),
+            'lighthouse' => $before
+                ? $monitor->lighthouseScores()->where('scored_at', '<', $before)->delete()
+                : $monitor->lighthouseScores()->delete(),
+        };
 
         Cache::forget("monitor:{$monitor->id}:uptime");
         Cache::forget("monitor:{$monitor->id}:heatmap");
