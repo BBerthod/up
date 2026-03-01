@@ -15,11 +15,13 @@ class IncidentController extends Controller
     {
         $query = MonitorIncident::query()
             ->join('monitors', 'monitor_incidents.monitor_id', '=', 'monitors.id')
+            ->leftJoin('functional_checks', 'monitor_incidents.functional_check_id', '=', 'functional_checks.id')
             ->select([
                 'monitor_incidents.*',
                 'monitors.name as monitor_name',
                 'monitors.type as monitor_type',
                 'monitors.url as monitor_url',
+                'functional_checks.name as functional_check_name',
             ]);
 
         // Filters
