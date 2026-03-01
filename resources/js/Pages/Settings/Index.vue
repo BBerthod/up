@@ -6,6 +6,7 @@ import PageHeader from '@/Components/PageHeader.vue'
 import GlassCard from '@/Components/GlassCard.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
 import CopyButton from '@/Components/CopyButton.vue'
+import PurgeDialog from '@/Components/PurgeDialog.vue'
 
 interface Member { id: number; name: string; email: string; created_at: string }
 interface Token { id: number; name: string; created_at: string; last_used_at: string | null }
@@ -48,6 +49,34 @@ watch(flash, (val) => {
 const dismissToken = () => { newToken.value = null }
 
 const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = usePushNotifications()
+
+const showPurgeChecks = ref(false)
+const showPurgeIncidents = ref(false)
+const showPurgeLighthouse = ref(false)
+
+const dataManagementItems = [
+    {
+        key: 'checks' as const,
+        label: 'Check history',
+        description: 'Response times and status logs from all monitors',
+        icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>',
+        show: showPurgeChecks,
+    },
+    {
+        key: 'incidents' as const,
+        label: 'Incidents',
+        description: 'Downtime incidents and their causes across all monitors',
+        icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>',
+        show: showPurgeIncidents,
+    },
+    {
+        key: 'lighthouse' as const,
+        label: 'Lighthouse scores',
+        description: 'Performance audit history from all monitors',
+        icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>',
+        show: showPurgeLighthouse,
+    },
+]
 </script>
 
 <template>
@@ -142,6 +171,33 @@ const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = 
             </template>
         </GlassCard>
 
+        <GlassCard title="Data Management">
+            <p class="text-sm text-slate-500 mb-4">Purge historical data across all monitors. This action is permanent and cannot be undone.</p>
+            <div class="space-y-3">
+                <div
+                    v-for="item in dataManagementItems"
+                    :key="item.key"
+                    class="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/5"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-html="item.icon" />
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-white">{{ item.label }}</p>
+                            <p class="text-xs text-slate-500">{{ item.description }}</p>
+                        </div>
+                    </div>
+                    <button
+                        @click="item.show.value = true"
+                        class="px-3 py-1.5 rounded-lg text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors shrink-0"
+                    >
+                        Purge
+                    </button>
+                </div>
+            </div>
+        </GlassCard>
+
         <ConfirmDialog
             v-model:show="showRevokeDialog"
             title="Revoke Token"
@@ -150,5 +206,9 @@ const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = 
             variant="danger"
             @confirm="revokeToken"
         />
+
+        <PurgeDialog v-model:show="showPurgeChecks" :monitor-id="null" target="checks" />
+        <PurgeDialog v-model:show="showPurgeIncidents" :monitor-id="null" target="incidents" />
+        <PurgeDialog v-model:show="showPurgeLighthouse" :monitor-id="null" target="lighthouse" />
     </div>
 </template>
