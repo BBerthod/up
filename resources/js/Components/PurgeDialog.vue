@@ -5,8 +5,9 @@ import { useFocusTrap } from '@/Composables/useFocusTrap'
 
 const props = defineProps<{
     show: boolean
-    monitorId: number
-    monitorName: string
+    monitorId?: number | null
+    monitorName?: string
+    target: 'checks' | 'incidents' | 'lighthouse'
 }>()
 
 const emit = defineEmits<{
@@ -21,14 +22,13 @@ const showModel = computed({
 
 useFocusTrap(dialogRef, showModel)
 
-const targets = ref<string[]>(['checks', 'incidents', 'lighthouse'])
 const period = ref<string>('90d')
 
-const targetOptions = [
-    { value: 'checks', label: 'Check history', description: 'Response times and status logs' },
-    { value: 'incidents', label: 'Incidents', description: 'Downtime incidents and their causes' },
-    { value: 'lighthouse', label: 'Lighthouse scores', description: 'Performance audit history' },
-]
+const targetLabels: Record<string, string> = {
+    checks: 'Check history',
+    incidents: 'Incidents',
+    lighthouse: 'Lighthouse scores',
+}
 
 const periodOptions = [
     { value: '30d', label: 'Older than 30 days' },
@@ -38,14 +38,19 @@ const periodOptions = [
 ]
 
 const periodLabel = computed(() => periodOptions.find(p => p.value === period.value)?.label ?? '')
+const targetLabel = computed(() => targetLabels[props.target] ?? props.target)
+const isGlobal = computed(() => !props.monitorId)
 
 const form = useForm({})
 
 const submit = () => {
+    const routeName = isGlobal.value ? 'settings.purge' : 'monitors.purge'
+    const routeArgs = isGlobal.value ? undefined : props.monitorId
+
     form.transform(() => ({
-        targets: targets.value,
+        target: props.target,
         period: period.value,
-    })).delete(route('monitors.purge', props.monitorId), {
+    })).delete(route(routeName, routeArgs), {
         preserveScroll: true,
         onSuccess: () => close(),
     })
@@ -53,14 +58,6 @@ const submit = () => {
 
 const close = () => {
     showModel.value = false
-}
-
-const toggleTarget = (value: string) => {
-    if (targets.value.includes(value)) {
-        targets.value = targets.value.filter(t => t !== value)
-    } else {
-        targets.value = [...targets.value, value]
-    }
 }
 </script>
 
@@ -83,8 +80,8 @@ const toggleTarget = (value: string) => {
                                 </svg>
                             </div>
                             <div>
-                                <h2 id="purge-dialog-title" class="text-base font-semibold text-white">Purge Monitor Data</h2>
-                                <p class="text-xs text-slate-500">{{ monitorName }}</p>
+                                <h2 id="purge-dialog-title" class="text-base font-semibold text-white">Purge {{ targetLabel }}</h2>
+                                <p class="text-xs text-slate-500">{{ isGlobal ? 'All monitors' : monitorName }}</p>
                             </div>
                         </div>
                         <button @click="close" aria-label="Close" class="text-slate-500 hover:text-white transition-colors p-1">
@@ -95,30 +92,6 @@ const toggleTarget = (value: string) => {
                     </div>
 
                     <div class="px-6 py-5 space-y-5">
-                        <!-- What to delete -->
-                        <div>
-                            <p class="text-sm font-medium text-slate-300 mb-3">What to delete</p>
-                            <div class="space-y-2">
-                                <label
-                                    v-for="opt in targetOptions"
-                                    :key="opt.value"
-                                    :class="['flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors', targets.includes(opt.value) ? 'bg-red-500/5 border-red-500/20' : 'border-white/5 hover:border-white/10']"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        :value="opt.value"
-                                        :checked="targets.includes(opt.value)"
-                                        @change="toggleTarget(opt.value)"
-                                        class="w-4 h-4 rounded accent-red-500 shrink-0"
-                                    />
-                                    <div>
-                                        <p class="text-sm font-medium text-white">{{ opt.label }}</p>
-                                        <p class="text-xs text-slate-500">{{ opt.description }}</p>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
                         <!-- Period -->
                         <div>
                             <p class="text-sm font-medium text-slate-300 mb-3">Period</p>
@@ -145,10 +118,8 @@ const toggleTarget = (value: string) => {
                             </svg>
                             <p class="text-xs text-amber-400/80 leading-relaxed">
                                 This action is <strong class="text-amber-400">permanent and cannot be undone</strong>.
-                                <span v-if="targets.length > 0">
-                                    {{ targets.map(t => targetOptions.find(o => o.value === t)?.label).filter(Boolean).join(', ') }}
-                                    {{ periodLabel.toLowerCase() }} will be deleted.
-                                </span>
+                                {{ targetLabel }} {{ periodLabel.toLowerCase() }} will be deleted
+                                {{ isGlobal ? 'across all monitors' : `for ${monitorName}` }}.
                             </p>
                         </div>
                     </div>
@@ -160,7 +131,7 @@ const toggleTarget = (value: string) => {
                         </button>
                         <button
                             @click="submit"
-                            :disabled="form.processing || targets.length === 0"
+                            :disabled="form.processing"
                             class="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-400 text-white font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             <svg v-if="form.processing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

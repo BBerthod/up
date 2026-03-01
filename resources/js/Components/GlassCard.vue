@@ -25,7 +25,10 @@ const paddingClass = computed(() => {
 
 <template>
     <div class="glass" :class="paddingClass">
-        <h3 v-if="title" class="text-white font-medium mb-4">{{ title }}</h3>
+        <div v-if="title || $slots.actions" class="flex items-center justify-between mb-4">
+            <h3 v-if="title" class="text-white font-medium">{{ title }}</h3>
+            <slot name="actions" />
+        </div>
         <slot />
     </div>
 </template>
