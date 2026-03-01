@@ -34,7 +34,7 @@ class MonitorController extends Controller
             $query->inactive();
         }
 
-        $monitors = $query->latest()->get()->map(function ($monitor) {
+        $monitors = $query->orderByRaw('uptime_24h ASC NULLS LAST')->get()->map(function ($monitor) {
             $latestCheck = $monitor->checks->first();
 
             return [
