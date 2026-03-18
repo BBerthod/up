@@ -15,6 +15,7 @@ const props = defineProps<{
     team: { id: number; name: string }
     members: Member[]
     tokens: Token[]
+    weeklyReportEnabled: boolean
 }>()
 
 const flash = computed(() => (usePage().props as any).flash)
@@ -49,6 +50,12 @@ watch(flash, (val) => {
 const dismissToken = () => { newToken.value = null }
 
 const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = usePushNotifications()
+
+const weeklyReportForm = useForm({ enabled: props.weeklyReportEnabled })
+const toggleWeeklyReport = () => {
+    weeklyReportForm.enabled = !weeklyReportForm.enabled
+    weeklyReportForm.post('/settings/weekly-report')
+}
 
 const showPurgeChecks = ref(false)
 const showPurgeIncidents = ref(false)
@@ -169,6 +176,31 @@ const dataManagementItems = [
                 <p v-if="error" class="text-red-400 text-sm mt-2">{{ error }}</p>
                 <p class="text-slate-500 text-xs mt-3">Push notifications are per-browser. Enable on each device where you want to receive alerts.</p>
             </template>
+        </GlassCard>
+
+        <GlassCard title="Weekly Report">
+            <div class="flex items-center justify-between p-4 rounded-lg border transition-colors"
+                 :class="weeklyReportForm.enabled ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/10'">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full" :class="weeklyReportForm.enabled ? 'bg-emerald-400' : 'bg-slate-500'" />
+                        <span class="text-white text-sm">{{ weeklyReportForm.enabled ? 'Enabled' : 'Disabled' }}</span>
+                    </div>
+                    <p class="text-slate-500 text-xs mt-2 ml-[22px]">Receive a weekly uptime summary email every Monday at 8:00 AM.</p>
+                </div>
+                <button @click="toggleWeeklyReport"
+                        :disabled="weeklyReportForm.processing"
+                        class="text-sm px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+                        :class="weeklyReportForm.enabled
+                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                            : 'bg-white/10 text-white hover:bg-white/20'">
+                    <span v-if="weeklyReportForm.processing" class="flex items-center gap-2">
+                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        Saving...
+                    </span>
+                    <span v-else>{{ weeklyReportForm.enabled ? 'Disable' : 'Enable' }}</span>
+                </button>
+            </div>
         </GlassCard>
 
         <GlassCard title="Data Management">
