@@ -318,7 +318,7 @@ function formatChartTooltipDate(hour: string): string {
             <div class="space-y-1">
                 <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Uptime (24h)</span>
                 <div class="flex items-baseline gap-2">
-                    <span class="text-4xl font-semibold text-white tracking-tight">{{ metrics.avg_uptime_24h.toFixed(1) }}%</span>
+                    <span class="text-4xl font-semibold text-white tracking-tight">{{ (metrics.avg_uptime_24h ?? 0).toFixed(1) }}%</span>
                 </div>
                 <div class="flex gap-0.5 h-1 w-full max-w-[100px] mt-2 opacity-50">
                      <div v-for="i in 10" :key="i" class="flex-1 rounded-full" :class="i > 8 ? 'bg-emerald-500/30' : 'bg-emerald-500'"></div>
