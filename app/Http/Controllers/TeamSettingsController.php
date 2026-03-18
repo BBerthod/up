@@ -19,7 +19,9 @@ class TeamSettingsController extends Controller
         $members = $team->users()->get(['id', 'name', 'email', 'created_at']);
         $tokens = $request->user()->tokens()->latest()->get(['id', 'name', 'created_at', 'last_used_at']);
 
-        return Inertia::render('Settings/Index', compact('team', 'members', 'tokens'));
+        $weeklyReportEnabled = (bool) $request->user()->weekly_report_enabled;
+
+        return Inertia::render('Settings/Index', compact('team', 'members', 'tokens', 'weeklyReportEnabled'));
     }
 
     public function updateTeam(Request $request): RedirectResponse
@@ -46,6 +48,14 @@ class TeamSettingsController extends Controller
         $request->user()->tokens()->where('id', $tokenId)->delete();
 
         return back()->with('success', 'Token revoked.');
+    }
+
+    public function updateWeeklyReport(Request $request): RedirectResponse
+    {
+        $validated = $request->validate(['enabled' => 'required|boolean']);
+        $request->user()->update(['weekly_report_enabled' => $validated['enabled']]);
+
+        return back()->with('success', 'Weekly report preference updated.');
     }
 
     public function purgeAll(Request $request): RedirectResponse

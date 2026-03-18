@@ -25,7 +25,8 @@ class SearchApiController extends Controller
             ]);
         }
 
-        $searchTerm = "%{$query}%";
+        $escaped = str_replace(['%', '_'], ['\\%', '\\_'], (string) $query);
+        $searchTerm = "%{$escaped}%";
 
         $monitors = Monitor::query()
             ->where(fn ($q) => $q

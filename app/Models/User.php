@@ -13,7 +13,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password', 'team_id', 'role'];
+    protected $fillable = ['name', 'email', 'password', 'team_id', 'role', 'weekly_report_enabled'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -23,6 +23,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'weekly_report_enabled' => 'boolean',
         ];
     }
 

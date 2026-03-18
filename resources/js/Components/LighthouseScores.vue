@@ -21,9 +21,11 @@ const props = defineProps<{
 
 const auditing = ref(false)
 const auditMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
+const auditTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 watch(() => props.scores?.scored_at, (newVal, oldVal) => {
     if (auditing.value && newVal && newVal !== oldVal) {
+        if (auditTimeout.value) clearTimeout(auditTimeout.value)
         auditing.value = false
         auditMessage.value = { type: 'success', text: 'Lighthouse audit completed!' }
         setTimeout(() => { auditMessage.value = null }, 5000)
@@ -73,11 +75,20 @@ const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { mont
 const runAudit = () => {
     auditing.value = true
     auditMessage.value = null
+    if (auditTimeout.value) clearTimeout(auditTimeout.value)
+    auditTimeout.value = setTimeout(() => {
+        if (auditing.value) {
+            auditing.value = false
+            auditMessage.value = { type: 'error', text: 'Audit timed out. It may still be running — refresh the page later.' }
+            setTimeout(() => { auditMessage.value = null }, 8000)
+        }
+    }, 120_000)
     router.post(route('monitors.lighthouse', props.monitorId), {}, {
         preserveScroll: true,
         onFinish: () => {
             const flash = (usePage().props as any).flash
             if (flash?.error) {
+                if (auditTimeout.value) clearTimeout(auditTimeout.value)
                 auditing.value = false
                 auditMessage.value = { type: 'error', text: flash.error }
                 setTimeout(() => { auditMessage.value = null }, 5000)
