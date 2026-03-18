@@ -44,17 +44,53 @@ class CheckService
 
         if ($lock->get()) {
             try {
-                $previousCheck = $monitor->checks()->latest('checked_at')->skip(1)->first();
-                $wasUp = $previousCheck === null || $previousCheck->status === CheckStatus::UP;
+                $alertAfter = $monitor->alert_after_failures ?? 3;
+
+                // Fetch enough checks to detect the transition and count consecutive failures.
+                // The current check is already persisted, so checks()->latest() includes it.
+                $recentChecks = $monitor->checks()
+                    ->latest('checked_at')
+                    ->limit($alertAfter + 1)
+                    ->get();
+
                 $isUp = $result->status === CheckStatus::UP;
+                $previousCheck = $recentChecks->skip(1)->first();
+                $wasUp = $previousCheck === null || $previousCheck->status === CheckStatus::UP;
 
                 if ($wasUp && ! $isUp) {
+                    // First failure: always open an incident for timeline tracking.
                     $incident = MonitorIncident::create([
                         'monitor_id' => $monitor->id,
                         'started_at' => now(),
                         'cause' => $result->cause,
                     ]);
-                    $this->notificationService->notifyDown($monitor, $incident, $check);
+
+                    // Notify immediately only when the threshold is 1 (default behaviour).
+                    if ($alertAfter <= 1) {
+                        $this->notificationService->notifyDown($monitor, $incident, $check);
+                    }
+                } elseif (! $wasUp && ! $isUp) {
+                    // Continuing failure: count consecutive failures from the most-recent check.
+                    $consecutiveFailures = 0;
+                    foreach ($recentChecks as $c) {
+                        if ($c->status !== CheckStatus::UP) {
+                            $consecutiveFailures++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // Fire the notification exactly when we cross the configured threshold.
+                    if ($consecutiveFailures === $alertAfter) {
+                        $incident = $monitor->incidents()
+                            ->whereNull('resolved_at')
+                            ->latest('started_at')
+                            ->first();
+
+                        if ($incident) {
+                            $this->notificationService->notifyDown($monitor, $incident, $check);
+                        }
+                    }
                 } elseif (! $wasUp && $isUp) {
                     $incident = $monitor->incidents()
                         ->whereNull('resolved_at')

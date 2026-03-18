@@ -23,6 +23,7 @@ class UpdateMonitorRequest extends FormRequest
             'interval' => 'sometimes|required|integer|min:1|max:60',
             'warning_threshold_ms' => 'nullable|integer|min:1',
             'critical_threshold_ms' => 'nullable|integer|min:1',
+            'alert_after_failures' => 'integer|min:1|max:10',
             'notification_channels' => 'array',
             'notification_channels.*' => 'exists:notification_channels,id',
         ];

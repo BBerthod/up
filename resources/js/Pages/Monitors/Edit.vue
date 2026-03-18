@@ -21,6 +21,7 @@ const form = useForm({
     interval: props.monitor.interval,
     warning_threshold_ms: props.monitor.warning_threshold_ms,
     critical_threshold_ms: props.monitor.critical_threshold_ms,
+    alert_after_failures: props.monitor.alert_after_failures ?? 3,
     notification_channels: [...(props.monitor.notification_channel_ids || [])],
 })
 
@@ -152,6 +153,13 @@ const urlLabel = () => form.type === 'http' ? 'URL' : 'Host / Domain'
                     <label class="block text-sm font-medium text-white mb-2">Critical Threshold <span class="text-slate-500 font-normal">(ms)</span></label>
                     <input v-model.number="form.critical_threshold_ms" type="number" class="form-input w-full" placeholder="e.g. 3000" />
                 </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-white mb-2">Alert after <span class="text-slate-500 font-normal">consecutive failures</span></label>
+                <input v-model.number="form.alert_after_failures" type="number" min="1" max="10" class="form-input w-full" />
+                <p class="text-xs text-slate-500 mt-1">Number of consecutive failures before a notification is sent. The incident is always recorded from the first failure.</p>
+                <p v-if="form.errors.alert_after_failures" class="text-sm text-red-400 mt-1">{{ form.errors.alert_after_failures }}</p>
             </div>
 
             <div>

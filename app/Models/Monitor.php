@@ -31,6 +31,7 @@ class Monitor extends Model
         'last_checked_at',
         'warning_threshold_ms',
         'critical_threshold_ms',
+        'alert_after_failures',
     ];
 
     protected $casts = [
@@ -42,6 +43,7 @@ class Monitor extends Model
         'port' => 'integer',
         'warning_threshold_ms' => 'integer',
         'critical_threshold_ms' => 'integer',
+        'alert_after_failures' => 'integer',
     ];
 
     public function checks(): HasMany
