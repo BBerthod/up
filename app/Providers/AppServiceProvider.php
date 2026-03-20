@@ -6,10 +6,12 @@ use App\Models\IngestSource;
 use App\Models\Monitor;
 use App\Models\NotificationChannel;
 use App\Models\StatusPage;
+use App\Models\WarmSite;
 use App\Policies\IngestSourcePolicy;
 use App\Policies\MonitorPolicy;
 use App\Policies\NotificationChannelPolicy;
 use App\Policies\StatusPagePolicy;
+use App\Policies\WarmSitePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
         Monitor::class => MonitorPolicy::class,
         NotificationChannel::class => NotificationChannelPolicy::class,
         StatusPage::class => StatusPagePolicy::class,
+        WarmSite::class => WarmSitePolicy::class,
     ];
 
     public function register(): void
