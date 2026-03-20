@@ -140,7 +140,10 @@ class CheckService
         $allExceedCritical = $recentChecks->every(fn ($ms) => $ms >= $monitor->critical_threshold_ms);
 
         if ($allExceedCritical) {
-            $hasActiveIncident = $monitor->incidents()->whereNull('resolved_at')->exists();
+            $hasActiveIncident = $monitor->incidents()
+                ->whereNull('resolved_at')
+                ->where('cause', IncidentCause::TIMEOUT)
+                ->exists();
 
             if (! $hasActiveIncident) {
                 $incident = MonitorIncident::create([
@@ -151,15 +154,19 @@ class CheckService
                 $this->notificationService->notifyDown($monitor, $incident, $check);
             }
         } else {
-            // Response times back below threshold — resolve any active incident
-            $incident = $monitor->incidents()
-                ->whereNull('resolved_at')
-                ->latest('started_at')
-                ->first();
+            $allBelowThreshold = $recentChecks->every(fn ($ms) => $ms < $monitor->critical_threshold_ms);
 
-            if ($incident) {
-                $incident->resolve();
-                $this->notificationService->notifyUp($monitor, $incident, $check);
+            if ($allBelowThreshold) {
+                $incident = $monitor->incidents()
+                    ->whereNull('resolved_at')
+                    ->where('cause', IncidentCause::TIMEOUT)
+                    ->latest('started_at')
+                    ->first();
+
+                if ($incident) {
+                    $incident->resolve();
+                    $this->notificationService->notifyUp($monitor, $incident, $check);
+                }
             }
         }
     }
