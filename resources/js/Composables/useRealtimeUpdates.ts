@@ -4,9 +4,10 @@ import { router, usePage } from '@inertiajs/vue3'
 export function useRealtimeUpdates(options: {
     onMonitorChecked?: string[]
     onLighthouseCompleted?: string[]
+    onWarmRunProgress?: string[]
     onRefresh?: () => void
 }): void {
-    const { onMonitorChecked = [], onLighthouseCompleted = [], onRefresh } = options
+    const { onMonitorChecked = [], onLighthouseCompleted = [], onWarmRunProgress, onRefresh } = options
 
     const teamId = (usePage().props as any).auth?.team?.id
     const Echo = (window as any).Echo
@@ -17,14 +18,15 @@ export function useRealtimeUpdates(options: {
 
     let monitorTimer: ReturnType<typeof setTimeout> | null = null
     let lighthouseTimer: ReturnType<typeof setTimeout> | null = null
+    let warmRunTimer: ReturnType<typeof setTimeout> | null = null
 
-    const executeRefresh = async (props: string[]) => {
+    const executeRefresh = (props: string[]) => {
         onRefresh?.()
-        await router.reload({ only: props, preserveScroll: true })
+        router.reload({ only: props })
     }
 
     onMounted(() => {
-        Echo.private(channelName)
+        const channel = Echo.private(channelName)
             .listen('.monitor.checked', () => {
                 if (onMonitorChecked.length === 0) return
                 if (monitorTimer) clearTimeout(monitorTimer)
@@ -35,11 +37,24 @@ export function useRealtimeUpdates(options: {
                 if (lighthouseTimer) clearTimeout(lighthouseTimer)
                 lighthouseTimer = setTimeout(() => executeRefresh(onLighthouseCompleted), 500)
             })
+
+        if (onWarmRunProgress) {
+            channel.listen('.warm.run.progress', (event: any) => {
+                if (event.completed) {
+                    if (warmRunTimer) clearTimeout(warmRunTimer)
+                    warmRunTimer = setTimeout(() => {
+                        onRefresh?.()
+                        router.reload({ only: onWarmRunProgress })
+                    }, 500)
+                }
+            })
+        }
     })
 
     onUnmounted(() => {
         if (monitorTimer) clearTimeout(monitorTimer)
         if (lighthouseTimer) clearTimeout(lighthouseTimer)
+        if (warmRunTimer) clearTimeout(warmRunTimer)
         if (Echo) Echo.leave(channelName)
     })
 }
