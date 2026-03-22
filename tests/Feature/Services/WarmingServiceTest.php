@@ -204,6 +204,90 @@ XML;
         });
     }
 
+    public function test_resolve_urls_from_sitemap_index(): void
+    {
+        $indexXml = '<?xml version="1.0"?>'
+            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            . '<sitemap><loc>https://example.com/sitemap-pages.xml</loc></sitemap>'
+            . '<sitemap><loc>https://example.com/sitemap-posts.xml</loc></sitemap>'
+            . '</sitemapindex>';
+
+        $pagesXml = '<?xml version="1.0"?>'
+            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            . '<url><loc>https://example.com/about</loc></url>'
+            . '</urlset>';
+
+        $postsXml = '<?xml version="1.0"?>'
+            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            . '<url><loc>https://example.com/blog/post1</loc></url>'
+            . '<url><loc>https://example.com/blog/post2</loc></url>'
+            . '</urlset>';
+
+        Http::fake([
+            'https://example.com/sitemap.xml' => Http::response($indexXml, 200, ['Content-Type' => 'application/xml']),
+            'https://example.com/sitemap-pages.xml' => Http::response($pagesXml, 200, ['Content-Type' => 'application/xml']),
+            'https://example.com/sitemap-posts.xml' => Http::response($postsXml, 200, ['Content-Type' => 'application/xml']),
+        ]);
+
+        $site = WarmSite::factory()->sitemap()->create([
+            'domain' => 'example.com',
+            'sitemap_url' => 'https://example.com/sitemap.xml',
+            'max_urls' => 100,
+        ]);
+
+        $urls = $this->service->resolveUrls($site);
+
+        $this->assertCount(3, $urls);
+        $this->assertContains('https://example.com/about', $urls);
+        $this->assertContains('https://example.com/blog/post1', $urls);
+        $this->assertContains('https://example.com/blog/post2', $urls);
+    }
+
+    public function test_sitemap_index_respects_depth_limit(): void
+    {
+        // Level 0: sitemap index pointing to another index
+        $level0 = '<?xml version="1.0"?>'
+            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            . '<sitemap><loc>https://example.com/level1.xml</loc></sitemap>'
+            . '</sitemapindex>';
+
+        // Level 1: another index
+        $level1 = '<?xml version="1.0"?>'
+            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            . '<sitemap><loc>https://example.com/level2.xml</loc></sitemap>'
+            . '</sitemapindex>';
+
+        // Level 2: yet another index (should be the limit)
+        $level2 = '<?xml version="1.0"?>'
+            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            . '<sitemap><loc>https://example.com/level3.xml</loc></sitemap>'
+            . '</sitemapindex>';
+
+        // Level 3: actual URLs (should NOT be reached - depth > 2)
+        $level3 = '<?xml version="1.0"?>'
+            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            . '<url><loc>https://example.com/deep-page</loc></url>'
+            . '</urlset>';
+
+        Http::fake([
+            'https://example.com/sitemap.xml' => Http::response($level0, 200),
+            'https://example.com/level1.xml' => Http::response($level1, 200),
+            'https://example.com/level2.xml' => Http::response($level2, 200),
+            'https://example.com/level3.xml' => Http::response($level3, 200),
+        ]);
+
+        $site = WarmSite::factory()->sitemap()->create([
+            'domain' => 'example.com',
+            'sitemap_url' => 'https://example.com/sitemap.xml',
+            'max_urls' => 100,
+        ]);
+
+        $urls = $this->service->resolveUrls($site);
+
+        // level3 should NOT be fetched due to depth limit
+        $this->assertEmpty($urls);
+    }
+
     public function test_resolve_urls_rejects_private_ips(): void
     {
         $site = WarmSite::factory()->create([

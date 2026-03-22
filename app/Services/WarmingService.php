@@ -123,10 +123,20 @@ class WarmingService
     /**
      * Fetch and parse a sitemap XML document, returning all <loc> values.
      *
+     * Supports both flat sitemaps (<urlset>) and sitemap index files
+     * (<sitemapindex>) which reference child sitemaps. Recursion is limited
+     * to a maximum depth of 2 to prevent infinite loops or abuse.
+     *
      * @return string[]
      */
-    private function parseSitemap(string $sitemapUrl): array
+    private function parseSitemap(string $sitemapUrl, int $depth = 0): array
     {
+        if ($depth > 2) {
+            Log::warning('WarmingService: sitemap recursion depth exceeded', ['url' => $sitemapUrl, 'depth' => $depth]);
+
+            return [];
+        }
+
         try {
             $response = Http::timeout(15)
                 ->connectTimeout(5)
@@ -158,6 +168,26 @@ class WarmingService
             }
 
             $xml->registerXPathNamespace('sm', 'http://www.sitemaps.org/schemas/sitemap/0.9');
+
+            // Check if this is a sitemap index (contains <sitemap> elements)
+            $sitemapLocs = $xml->xpath('//sm:sitemap/sm:loc') ?: $xml->xpath('//sitemap/loc') ?: [];
+
+            if (! empty($sitemapLocs)) {
+                $allUrls = [];
+                foreach ($sitemapLocs as $childLoc) {
+                    $childUrl = trim((string) $childLoc);
+                    $childUrls = $this->parseSitemap($childUrl, $depth + 1);
+                    $allUrls = array_merge($allUrls, $childUrls);
+
+                    // Safety cap to avoid memory issues
+                    if (count($allUrls) > 10000) {
+                        Log::info('WarmingService: sitemap index URL cap reached', ['url' => $sitemapUrl, 'count' => count($allUrls)]);
+                        break;
+                    }
+                }
+
+                return $allUrls;
+            }
 
             $elements = $xml->xpath('//sm:url/sm:loc') ?: $xml->xpath('//url/loc') ?: [];
 
