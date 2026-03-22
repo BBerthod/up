@@ -7,6 +7,7 @@ import PageHeader from '@/Components/PageHeader.vue'
 const props = defineProps<{
     frequencies: Array<{ value: number; label: string }>
     modes: Array<{ value: string; label: string }>
+    blockedHeaders: string[]
 }>()
 
 const form = useForm({
@@ -17,10 +18,14 @@ const form = useForm({
     urls: [''] as string[],
     frequency_minutes: 60,
     max_urls: 50,
+    custom_headers: [] as Array<{ key: string; value: string }>,
 })
 
 // Textarea binding for the URLs field (one per line)
 const urlText = ref('')
+
+// Custom headers section visibility
+const showCustomHeaders = ref(false)
 
 // Auto-fill sitemap URL when domain changes and mode is sitemap
 watch(() => form.domain, (domain) => {
@@ -37,10 +42,33 @@ watch(() => form.mode, (mode) => {
     }
 })
 
+const addHeader = () => {
+    if (form.custom_headers.length < 10) {
+        form.custom_headers.push({ key: '', value: '' })
+    }
+}
+
+const removeHeader = (index: number) => {
+    form.custom_headers.splice(index, 1)
+}
+
 const submit = () => {
     if (form.mode === 'urls') {
         form.urls = urlText.value.split('\n').map(u => u.trim()).filter(Boolean)
     }
+
+    const headersObject: Record<string, string> = {}
+    form.custom_headers.forEach(h => {
+        if (h.key.trim()) {
+            headersObject[h.key.trim()] = h.value
+        }
+    })
+
+    form.transform(data => ({
+        ...data,
+        custom_headers: Object.keys(headersObject).length > 0 ? headersObject : null,
+    }))
+
     form.post(route('warming.store'))
 }
 
@@ -129,6 +157,71 @@ const modeInfo: Record<string, { label: string; description: string }> = {
                 <input v-model.number="form.max_urls" type="number" min="1" max="500" class="form-input w-full" placeholder="50" />
                 <p class="text-xs text-slate-500 mt-1">Limit how many URLs are warmed per scheduled run</p>
                 <p v-if="form.errors.max_urls" class="text-sm text-red-400 mt-1">{{ form.errors.max_urls }}</p>
+            </div>
+
+            <!-- Custom Headers -->
+            <div>
+                <button
+                    type="button"
+                    @click="showCustomHeaders = !showCustomHeaders"
+                    class="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+                >
+                    <svg
+                        :class="['w-4 h-4 transition-transform', showCustomHeaders ? 'rotate-90' : '']"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    Custom Headers
+                    <span v-if="form.custom_headers.length > 0" class="text-xs text-emerald-400">({{ form.custom_headers.length }})</span>
+                </button>
+
+                <div v-if="showCustomHeaders" class="mt-3 space-y-3">
+                    <p class="text-xs text-slate-500">
+                        Add custom HTTP headers sent with each warming request (max 10).
+                        The following headers are blocked for security:
+                        <span class="font-mono text-slate-400">{{ blockedHeaders.join(', ') }}</span>
+                    </p>
+
+                    <div v-for="(header, index) in form.custom_headers" :key="index" class="flex gap-2 items-start">
+                        <input
+                            v-model="header.key"
+                            type="text"
+                            class="form-input flex-1"
+                            placeholder="Header name"
+                        />
+                        <input
+                            v-model="header.value"
+                            type="text"
+                            class="form-input flex-1"
+                            placeholder="Value"
+                        />
+                        <button
+                            type="button"
+                            @click="removeHeader(index)"
+                            class="p-2 text-slate-500 hover:text-red-400 transition-colors shrink-0"
+                            title="Remove header"
+                        >
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <p v-if="form.errors['custom_headers']" class="text-sm text-red-400">{{ form.errors['custom_headers'] }}</p>
+
+                    <button
+                        v-if="form.custom_headers.length < 10"
+                        type="button"
+                        @click="addHeader"
+                        class="text-sm text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Header
+                    </button>
+                </div>
             </div>
 
             <button type="submit" :disabled="form.processing" class="btn-primary w-full py-3 px-4 disabled:opacity-50">

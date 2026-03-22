@@ -59,6 +59,7 @@ class RunWarmSite implements ShouldQueue
             ]);
 
             $urls = $warmingService->resolveUrls($this->warmSite);
+            $customHeaders = $this->warmSite->custom_headers ?? [];
 
             $hits = 0;
             $misses = 0;
@@ -72,7 +73,7 @@ class RunWarmSite implements ShouldQueue
                     usleep(1_000_000);
                 }
 
-                $result = $warmingService->warmUrl($url);
+                $result = $warmingService->warmUrl($url, $customHeaders);
 
                 $totalResponseMs += $result->responseTimeMs;
 

@@ -68,6 +68,7 @@ class WarmSiteController extends Controller
         return Inertia::render('CacheWarming/Create', [
             'frequencies' => $this->frequencies(),
             'modes' => $this->modes(),
+            'blockedHeaders' => ['host', 'cookie', 'content-length', 'transfer-encoding', 'connection', 'x-forwarded-for', 'x-real-ip', 'origin', 'referer'],
         ]);
     }
 
@@ -112,6 +113,7 @@ class WarmSiteController extends Controller
                 'urls' => $warming->urls,
                 'frequency_minutes' => $warming->frequency_minutes,
                 'max_urls' => $warming->max_urls,
+                'custom_headers' => $warming->custom_headers,
                 'is_active' => $warming->is_active,
                 'last_warmed_at' => $warming->last_warmed_at?->toIso8601String(),
             ],
@@ -133,6 +135,7 @@ class WarmSiteController extends Controller
                 'urls' => $warming->urls,
                 'frequency_minutes' => $warming->frequency_minutes,
                 'max_urls' => $warming->max_urls,
+                'custom_headers' => $warming->custom_headers,
                 'is_active' => $warming->is_active,
             ],
             'frequencies' => $this->frequencies(),

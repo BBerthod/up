@@ -177,6 +177,33 @@ XML;
         $this->assertFalse($result->isMiss());
     }
 
+    public function test_warm_url_sends_custom_headers(): void
+    {
+        Http::fake(['*' => Http::response('ok', 200)]);
+
+        $this->service->warmUrl('https://example.com/page', ['X-Custom' => 'test-value']);
+
+        Http::assertSent(function ($request) {
+            return $request->hasHeader('X-Custom', 'test-value');
+        });
+    }
+
+    public function test_warm_url_blocks_dangerous_headers(): void
+    {
+        Http::fake(['*' => Http::response('ok', 200)]);
+
+        $this->service->warmUrl('https://example.com/page', [
+            'X-Safe' => 'allowed',
+            'Host' => 'evil.com',
+            'Cookie' => 'session=stolen',
+        ]);
+
+        Http::assertSent(function ($request) {
+            return $request->hasHeader('X-Safe', 'allowed')
+                && ! $request->hasHeader('Cookie', 'session=stolen');
+        });
+    }
+
     public function test_resolve_urls_rejects_private_ips(): void
     {
         $site = WarmSite::factory()->create([

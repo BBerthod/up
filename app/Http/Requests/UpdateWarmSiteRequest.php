@@ -31,6 +31,9 @@ class UpdateWarmSiteRequest extends FormRequest
             'urls.*' => 'url',
             'frequency_minutes' => ['sometimes', 'required', 'integer', Rule::in([15, 30, 60, 120, 360, 720, 1440])],
             'max_urls' => 'sometimes|required|integer|min:1|max:500',
+            'custom_headers' => 'nullable|array|max:10',
+            'custom_headers.*.key' => 'required_with:custom_headers|string|max:255',
+            'custom_headers.*.value' => 'required_with:custom_headers|string|max:1000',
             'is_active' => 'sometimes|boolean',
         ];
     }

@@ -46,20 +46,31 @@ class WarmingService
      *
      * The cache status is determined by inspecting response headers in
      * priority order: Cloudflare → Nginx → Varnish/CloudFront → age header.
+     *
+     * @param  array<string, string>  $customHeaders  Additional headers to send with the request.
+     *                                                Dangerous headers (Host, Cookie, etc.) are filtered out.
      */
-    public function warmUrl(string $url): WarmUrlResult
+    public function warmUrl(string $url, array $customHeaders = []): WarmUrlResult
     {
         $start = microtime(true);
+
+        $blockedHeaders = ['host', 'cookie', 'content-length', 'transfer-encoding', 'connection', 'x-forwarded-for', 'x-real-ip', 'origin', 'referer'];
+        $safeCustomHeaders = [];
+        foreach ($customHeaders as $key => $value) {
+            if (! in_array(strtolower($key), $blockedHeaders, true)) {
+                $safeCustomHeaders[$key] = $value;
+            }
+        }
 
         try {
             $response = Http::timeout(10)
                 ->connectTimeout(5)
                 ->withoutVerifying()
                 ->maxRedirects(3)
-                ->withHeaders([
+                ->withHeaders(array_merge([
                     'User-Agent' => 'Up-Monitor/1.0 (+https://github.com/BBerthod/up)',
                     'Cache-Control' => 'max-age=0',
-                ])
+                ], $safeCustomHeaders))
                 ->get($url);
 
             $responseTimeMs = (int) ((microtime(true) - $start) * 1000);

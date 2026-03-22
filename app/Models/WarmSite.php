@@ -22,6 +22,7 @@ class WarmSite extends Model
         'urls',
         'frequency_minutes',
         'max_urls',
+        'custom_headers',
         'is_active',
         'last_warmed_at',
     ];
@@ -29,6 +30,7 @@ class WarmSite extends Model
     protected $casts = [
         'mode' => WarmSiteMode::class,
         'urls' => 'array',
+        'custom_headers' => 'array',
         'is_active' => 'boolean',
         'frequency_minutes' => 'integer',
         'max_urls' => 'integer',
