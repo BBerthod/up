@@ -8,6 +8,7 @@ const props = defineProps<{
     warmSite: any
     frequencies: Array<{ value: number; label: string }>
     modes: Array<{ value: string; label: string }>
+    monitors: Array<{ id: number; name: string; url: string }>
 }>()
 
 const form = useForm({
@@ -22,6 +23,7 @@ const form = useForm({
         ? Object.entries(props.warmSite.custom_headers as Record<string, string>).map(([key, value]) => ({ key, value }))
         : [] as Array<{ key: string; value: string }>,
     is_active: props.warmSite.is_active,
+    monitor_id: props.warmSite.monitor_id as number | null,
 })
 
 // Textarea binding for the URLs field (one per line)
@@ -119,6 +121,17 @@ const modeInfo: Record<string, { label: string; description: string }> = {
                 <input v-model="form.domain" type="text" class="form-input w-full" placeholder="example.com" required />
                 <p class="text-xs text-slate-500 mt-1">Without protocol prefix, e.g. example.com</p>
                 <p v-if="form.errors.domain" class="text-sm text-red-400 mt-1">{{ form.errors.domain }}</p>
+            </div>
+
+            <!-- Link to Monitor (optional) -->
+            <div>
+                <label class="block text-sm font-medium text-white mb-2">Link to Monitor <span class="text-slate-500 font-normal">(optional)</span></label>
+                <select v-model="form.monitor_id" class="form-input w-full">
+                    <option :value="null">None</option>
+                    <option v-for="m in monitors" :key="m.id" :value="m.id">{{ m.name }}</option>
+                </select>
+                <p class="text-xs text-slate-500 mt-1">Associate this warm site with an existing monitor</p>
+                <p v-if="form.errors.monitor_id" class="text-sm text-red-400 mt-1">{{ form.errors.monitor_id }}</p>
             </div>
 
             <!-- Sitemap URL (mode=sitemap) -->

@@ -35,6 +35,7 @@ class UpdateWarmSiteRequest extends FormRequest
             'custom_headers.*.key' => 'required_with:custom_headers|string|max:255',
             'custom_headers.*.value' => 'required_with:custom_headers|string|max:1000',
             'is_active' => 'sometimes|boolean',
+            'monitor_id' => 'nullable|integer|exists:monitors,id',
         ];
     }
 }

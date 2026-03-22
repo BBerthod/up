@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Monitor extends Model
 {
@@ -69,6 +70,11 @@ class Monitor extends Model
     public function notificationChannels(): BelongsToMany
     {
         return $this->belongsToMany(NotificationChannel::class, 'monitor_notification_channel');
+    }
+
+    public function warmSite(): HasOne
+    {
+        return $this->hasOne(\App\Models\WarmSite::class);
     }
 
     public function scopeActive($query)

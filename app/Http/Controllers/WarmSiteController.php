@@ -6,6 +6,7 @@ use App\Enums\WarmSiteMode;
 use App\Http\Requests\StoreWarmSiteRequest;
 use App\Http\Requests\UpdateWarmSiteRequest;
 use App\Jobs\RunWarmSite;
+use App\Models\Monitor;
 use App\Models\WarmRun;
 use App\Models\WarmSite;
 use Illuminate\Http\RedirectResponse;
@@ -36,7 +37,7 @@ class WarmSiteController extends Controller
 
     public function index(): Response
     {
-        $warmSites = WarmSite::with('latestRun')
+        $warmSites = WarmSite::with(['latestRun', 'monitor:id,name'])
             ->orderBy('name')
             ->get()
             ->map(fn ($site) => [
@@ -48,6 +49,8 @@ class WarmSiteController extends Controller
                 'frequency_minutes' => $site->frequency_minutes,
                 'is_active' => $site->is_active,
                 'last_warmed_at' => $site->last_warmed_at?->toIso8601String(),
+                'monitor_id' => $site->monitor_id,
+                'monitor_name' => $site->monitor?->name,
                 'last_run' => $site->latestRun ? [
                     'urls_total' => $site->latestRun->urls_total,
                     'urls_hit' => $site->latestRun->urls_hit,
@@ -69,6 +72,7 @@ class WarmSiteController extends Controller
         return Inertia::render('CacheWarming/Create', [
             'frequencies' => $this->frequencies(),
             'modes' => $this->modes(),
+            'monitors' => Monitor::select('id', 'name', 'url')->orderBy('name')->get(),
             'blockedHeaders' => ['host', 'cookie', 'content-length', 'transfer-encoding', 'connection', 'x-forwarded-for', 'x-real-ip', 'origin', 'referer'],
         ]);
     }
@@ -83,6 +87,7 @@ class WarmSiteController extends Controller
     public function show(WarmSite $warming): Response
     {
         $this->authorize('view', $warming);
+        $warming->load('monitor:id,name,url');
 
         $recentRuns = $warming->warmRuns()
             ->orderByDesc('created_at')
@@ -117,6 +122,11 @@ class WarmSiteController extends Controller
                 'custom_headers' => $warming->custom_headers,
                 'is_active' => $warming->is_active,
                 'last_warmed_at' => $warming->last_warmed_at?->toIso8601String(),
+                'monitor' => $warming->monitor ? [
+                    'id' => $warming->monitor->id,
+                    'name' => $warming->monitor->name,
+                    'url' => $warming->monitor->url,
+                ] : null,
             ],
             'recentRuns' => $recentRuns,
         ]);
@@ -138,9 +148,11 @@ class WarmSiteController extends Controller
                 'max_urls' => $warming->max_urls,
                 'custom_headers' => $warming->custom_headers,
                 'is_active' => $warming->is_active,
+                'monitor_id' => $warming->monitor_id,
             ],
             'frequencies' => $this->frequencies(),
             'modes' => $this->modes(),
+            'monitors' => Monitor::select('id', 'name', 'url')->orderBy('name')->get(),
         ]);
     }
 

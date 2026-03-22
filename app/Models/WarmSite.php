@@ -6,6 +6,7 @@ use App\Enums\WarmSiteMode;
 use App\Models\Traits\BelongsToTeam;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -25,6 +26,7 @@ class WarmSite extends Model
         'custom_headers',
         'is_active',
         'last_warmed_at',
+        'monitor_id',
     ];
 
     protected $casts = [
@@ -36,6 +38,11 @@ class WarmSite extends Model
         'max_urls' => 'integer',
         'last_warmed_at' => 'datetime',
     ];
+
+    public function monitor(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Monitor::class);
+    }
 
     public function warmRuns(): HasMany
     {

@@ -46,6 +46,7 @@ const props = defineProps<{
         sitemap_url: string | null
         urls: string[] | null
         max_urls: number
+        monitor: { id: number; name: string; url: string } | null
     }
     lastRunStats: RunStats | null
     recentRuns: RecentRun[]
@@ -151,6 +152,20 @@ const hitRatioClass = (ratio: number): string => {
                     </svg>
                     Delete
                 </button>
+            </div>
+        </div>
+
+        <!-- Linked Monitor -->
+        <div v-if="warmSite.monitor" class="glass p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></div>
+                <div>
+                    <span class="text-sm text-zinc-400">Linked Monitor:</span>
+                    <Link :href="route('monitors.show', warmSite.monitor.id)" class="text-emerald-400 hover:underline ml-2 text-sm font-medium">
+                        {{ warmSite.monitor.name }}
+                    </Link>
+                    <span class="text-zinc-600 text-xs ml-2 font-mono">{{ warmSite.monitor.url }}</span>
+                </div>
             </div>
         </div>
 
