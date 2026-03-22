@@ -230,7 +230,12 @@ const hitRatioClass = (ratio: number): string => {
             >
                 <Column header="Started" style="min-width: 140px">
                     <template #body="{ data }">
-                        <span class="text-sm text-zinc-300">{{ formatDate(data.started_at) }}</span>
+                        <Link
+                            :href="route('warming.run-detail', { warming: warmSite.id, warmRun: data.id })"
+                            class="text-emerald-400 hover:underline text-sm"
+                        >
+                            {{ formatDate(data.started_at) }}
+                        </Link>
                     </template>
                 </Column>
                 <Column header="Duration" style="min-width: 90px">

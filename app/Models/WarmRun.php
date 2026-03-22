@@ -6,6 +6,7 @@ use App\Enums\WarmRunStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WarmRun extends Model
 {
@@ -38,6 +39,11 @@ class WarmRun extends Model
     public function warmSite(): BelongsTo
     {
         return $this->belongsTo(WarmSite::class);
+    }
+
+    public function urls(): HasMany
+    {
+        return $this->hasMany(WarmRunUrl::class);
     }
 
     /**

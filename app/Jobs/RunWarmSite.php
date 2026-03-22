@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\WarmRunStatus;
 use App\Models\WarmRun;
+use App\Models\WarmRunUrl;
 use App\Models\WarmSite;
 use App\Services\WarmingService;
 use Illuminate\Bus\Queueable;
@@ -87,6 +88,15 @@ class RunWarmSite implements ShouldQueue
                     $misses++;
                     $consecutiveErrors = 0;
                 }
+
+                WarmRunUrl::create([
+                    'warm_run_id' => $warmRun->id,
+                    'url' => $result->url,
+                    'status_code' => $result->statusCode,
+                    'cache_status' => $result->cacheStatus,
+                    'response_time_ms' => $result->responseTimeMs,
+                    'error_message' => $result->errorMessage,
+                ]);
 
                 if ($result->statusCode === 429) {
                     sleep(5);

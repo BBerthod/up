@@ -6,6 +6,7 @@ use App\Enums\WarmSiteMode;
 use App\Http\Requests\StoreWarmSiteRequest;
 use App\Http\Requests\UpdateWarmSiteRequest;
 use App\Jobs\RunWarmSite;
+use App\Models\WarmRun;
 use App\Models\WarmSite;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -159,6 +160,48 @@ class WarmSiteController extends Controller
         $warming->delete();
 
         return to_route('warming.index');
+    }
+
+    public function runDetail(WarmSite $warming, WarmRun $warmRun): Response
+    {
+        $this->authorize('view', $warming);
+
+        abort_unless($warmRun->warm_site_id === $warming->id, 404);
+
+        $urlResults = $warmRun->urls()
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'url' => $u->url,
+                'status_code' => $u->status_code,
+                'cache_status' => $u->cache_status,
+                'response_time_ms' => $u->response_time_ms,
+                'error_message' => $u->error_message,
+            ]);
+
+        return Inertia::render('CacheWarming/RunDetail', [
+            'warmSite' => [
+                'id' => $warming->id,
+                'name' => $warming->name,
+                'domain' => $warming->domain,
+            ],
+            'warmRun' => [
+                'id' => $warmRun->id,
+                'urls_total' => $warmRun->urls_total,
+                'urls_hit' => $warmRun->urls_hit,
+                'urls_miss' => $warmRun->urls_miss,
+                'urls_error' => $warmRun->urls_error,
+                'hit_ratio' => $warmRun->hit_ratio,
+                'avg_response_ms' => $warmRun->avg_response_ms,
+                'status' => $warmRun->status->value,
+                'error_message' => $warmRun->error_message,
+                'duration_seconds' => $warmRun->duration_seconds,
+                'started_at' => $warmRun->started_at->toIso8601String(),
+                'completed_at' => $warmRun->completed_at?->toIso8601String(),
+            ],
+            'urlResults' => $urlResults,
+        ]);
     }
 
     public function warmNow(WarmSite $warming): RedirectResponse

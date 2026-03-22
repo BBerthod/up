@@ -84,6 +84,7 @@ Route::middleware('auth')->group(function () {
     // Cache Warming
     Route::resource('warming', WarmSiteController::class);
     Route::post('/warming/{warming}/warm-now', [WarmSiteController::class, 'warmNow'])->name('warming.warm-now');
+    Route::get('/warming/{warming}/runs/{warmRun}', [WarmSiteController::class, 'runDetail'])->name('warming.run-detail');
 
     // Admin routes
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {

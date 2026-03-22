@@ -5,6 +5,7 @@ namespace Tests\Feature\Jobs;
 use App\Enums\WarmRunStatus;
 use App\Jobs\RunWarmSite;
 use App\Models\WarmRun;
+use App\Models\WarmRunUrl;
 use App\Models\WarmSite;
 use App\Services\WarmingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,6 +83,32 @@ class RunWarmSiteTest extends TestCase
         $this->assertEquals(1, $run->urls_hit);
         $this->assertEquals(0, $run->urls_miss);
         $this->assertEquals(1, $run->urls_error);
+    }
+
+    public function test_creates_warm_run_url_records(): void
+    {
+        Http::fake([
+            'https://example.com/page1' => Http::response('ok', 200, ['cf-cache-status' => 'HIT']),
+            'https://example.com/page2' => Http::response('ok', 200, ['cf-cache-status' => 'MISS']),
+        ]);
+
+        $site = WarmSite::factory()->create([
+            'mode' => 'urls',
+            'urls' => ['https://example.com/page1', 'https://example.com/page2'],
+        ]);
+
+        (new RunWarmSite($site))->handle(app(WarmingService::class));
+
+        $this->assertDatabaseCount('warm_run_urls', 2);
+        $this->assertDatabaseHas('warm_run_urls', [
+            'url' => 'https://example.com/page1',
+            'cache_status' => 'hit',
+            'status_code' => 200,
+        ]);
+        $this->assertDatabaseHas('warm_run_urls', [
+            'url' => 'https://example.com/page2',
+            'cache_status' => 'miss',
+        ]);
     }
 
     public function test_skips_if_lock_unavailable(): void
