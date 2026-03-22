@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import BackLink from '@/Components/BackLink.vue'
 import GlassCard from '@/Components/GlassCard.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
+import WarmingHitRatioChart from '@/Components/WarmingHitRatioChart.vue'
 import Tag from 'primevue/tag'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -33,6 +34,12 @@ interface RecentRun {
     completed_at: string | null
 }
 
+interface ChartDataPoint {
+    date: string
+    hit_ratio: number
+    avg_ms: number
+}
+
 const props = defineProps<{
     warmSite: {
         id: number
@@ -50,6 +57,7 @@ const props = defineProps<{
     }
     lastRunStats: RunStats | null
     recentRuns: RecentRun[]
+    chartData: ChartDataPoint[]
 }>()
 
 const showDeleteDialog = ref(false)
@@ -193,6 +201,12 @@ const hitRatioClass = (ratio: number): string => {
                 </div>
                 <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Errors</div>
             </GlassCard>
+        </div>
+
+        <!-- Hit Ratio Chart -->
+        <div class="glass p-4">
+            <h3 class="text-sm font-medium text-zinc-400 mb-3">Hit Ratio Trend</h3>
+            <WarmingHitRatioChart :chartData="chartData" />
         </div>
 
         <!-- Config detail (sitemap_url or urls list) -->

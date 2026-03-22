@@ -108,6 +108,19 @@ class WarmSiteController extends Controller
                 'completed_at' => $run->completed_at?->toIso8601String(),
             ]);
 
+        $chartData = $warming->warmRuns()
+            ->where('status', 'completed')
+            ->orderBy('started_at')
+            ->limit(50)
+            ->get(['urls_total', 'urls_hit', 'avg_response_ms', 'started_at'])
+            ->map(fn ($run) => [
+                'date' => $run->started_at->toIso8601String(),
+                'hit_ratio' => $run->urls_total > 0
+                    ? round(($run->urls_hit / $run->urls_total) * 100, 1)
+                    : 0,
+                'avg_ms' => $run->avg_response_ms,
+            ]);
+
         return Inertia::render('CacheWarming/Show', [
             'warmSite' => [
                 'id' => $warming->id,
@@ -129,6 +142,7 @@ class WarmSiteController extends Controller
                 ] : null,
             ],
             'recentRuns' => $recentRuns,
+            'chartData' => $chartData,
         ]);
     }
 
