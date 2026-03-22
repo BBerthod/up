@@ -6,6 +6,8 @@ use App\Jobs\SendNotification;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
+use App\Models\WarmRun;
+use App\Models\WarmSite;
 use Illuminate\Support\Facades\Cache;
 
 class NotificationService
@@ -36,6 +38,22 @@ class NotificationService
 
         foreach ($channels as $channel) {
             SendNotification::dispatch($channel, 'up', $monitor, $incident, $check);
+        }
+    }
+
+    public function notifyWarmingFailed(WarmSite $warmSite, WarmRun $warmRun): void
+    {
+        $key = "notify:warming:{$warmSite->id}:failed";
+
+        if (Cache::has($key)) {
+            return;
+        }
+
+        Cache::put($key, true, now()->addHour());
+
+        $owner = $warmSite->team->users()->first();
+        if ($owner) {
+            $owner->notify(new \App\Notifications\WarmRunFailedNotification($warmSite, $warmRun));
         }
     }
 }

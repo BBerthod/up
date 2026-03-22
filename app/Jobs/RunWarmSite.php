@@ -123,6 +123,10 @@ class RunWarmSite implements ShouldQueue
             ]);
 
             $this->warmSite->update(['last_warmed_at' => now()]);
+
+            if ($errorMessage) {
+                app(\App\Services\NotificationService::class)->notifyWarmingFailed($this->warmSite, $warmRun);
+            }
         } finally {
             $lock->release();
         }
@@ -135,5 +139,21 @@ class RunWarmSite implements ShouldQueue
             'warm_site_name' => $this->warmSite->name,
             'error' => $e->getMessage(),
         ]);
+
+        try {
+            $run = WarmRun::create([
+                'warm_site_id' => $this->warmSite->id,
+                'status' => WarmRunStatus::FAILED,
+                'error_message' => $e->getMessage(),
+                'started_at' => now(),
+                'completed_at' => now(),
+            ]);
+
+            app(\App\Services\NotificationService::class)->notifyWarmingFailed($this->warmSite, $run);
+        } catch (\Throwable $notifyError) {
+            Log::error('RunWarmSite: failed to send failure notification', [
+                'error' => $notifyError->getMessage(),
+            ]);
+        }
     }
 }

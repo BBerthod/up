@@ -4,14 +4,16 @@ namespace Tests\Feature\Jobs;
 
 use App\Enums\WarmRunStatus;
 use App\Jobs\RunWarmSite;
+use App\Models\Team;
+use App\Models\User;
 use App\Models\WarmRun;
-use App\Models\WarmRunUrl;
 use App\Models\WarmSite;
 use App\Services\WarmingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RunWarmSiteTest extends TestCase
@@ -109,6 +111,39 @@ class RunWarmSiteTest extends TestCase
             'url' => 'https://example.com/page2',
             'cache_status' => 'miss',
         ]);
+    }
+
+    public function test_notifies_on_consecutive_errors(): void
+    {
+        Cache::flush();
+        Notification::fake();
+
+        Http::fake([
+            'https://example.com/page1' => function () {
+                throw new ConnectionException('timeout');
+            },
+            'https://example.com/page2' => function () {
+                throw new ConnectionException('timeout');
+            },
+            'https://example.com/page3' => function () {
+                throw new ConnectionException('timeout');
+            },
+        ]);
+
+        $team = Team::factory()->create();
+        $user = User::factory()->for($team)->create();
+        $site = WarmSite::factory()->for($team)->create([
+            'mode' => 'urls',
+            'urls' => ['https://example.com/page1', 'https://example.com/page2', 'https://example.com/page3'],
+        ]);
+
+        (new RunWarmSite($site))->handle(app(WarmingService::class));
+
+        $run = WarmRun::where('warm_site_id', $site->id)->first();
+        $this->assertNotNull($run->error_message);
+        $this->assertStringContainsString('consecutive errors', $run->error_message);
+
+        Notification::assertSentTo($user, \App\Notifications\WarmRunFailedNotification::class);
     }
 
     public function test_skips_if_lock_unavailable(): void
