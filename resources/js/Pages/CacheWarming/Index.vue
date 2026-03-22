@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
+import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 
 interface LastRun {
     urls_total: number
@@ -29,6 +30,10 @@ interface WarmSite {
 const props = defineProps<{
     warmSites: WarmSite[]
 }>()
+
+useRealtimeUpdates({
+    onWarmRunProgress: ['warmSites'],
+})
 
 const frequencyLabel = (mins: number): string => {
     if (mins < 60) return `Every ${mins} min`

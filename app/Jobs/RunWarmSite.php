@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\WarmRunStatus;
+use App\Events\WarmRunProgress;
 use App\Models\WarmRun;
 use App\Models\WarmRunUrl;
 use App\Models\WarmSite;
@@ -106,6 +107,19 @@ class RunWarmSite implements ShouldQueue
                     $errorMessage = "Stopped early: 3 consecutive errors. Last error: {$result->errorMessage}";
                     break;
                 }
+
+                if (($index + 1) % 5 === 0 || $index === count($urls) - 1) {
+                    WarmRunProgress::dispatch(
+                        $this->warmSite->team_id,
+                        $this->warmSite->id,
+                        $warmRun->id,
+                        $index + 1,
+                        count($urls),
+                        $hits,
+                        $misses,
+                        $errors,
+                    );
+                }
             }
 
             $total = $hits + $misses + $errors;
@@ -121,6 +135,18 @@ class RunWarmSite implements ShouldQueue
                 'error_message' => $errorMessage,
                 'completed_at' => now(),
             ]);
+
+            WarmRunProgress::dispatch(
+                $this->warmSite->team_id,
+                $this->warmSite->id,
+                $warmRun->id,
+                count($urls),
+                count($urls),
+                $hits,
+                $misses,
+                $errors,
+                completed: true,
+            );
 
             $this->warmSite->update(['last_warmed_at' => now()]);
 

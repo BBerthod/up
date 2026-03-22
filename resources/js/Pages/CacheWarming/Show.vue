@@ -9,6 +9,7 @@ import Tag from 'primevue/tag'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
+import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 
 interface RunStats {
     urls_total: number
@@ -59,6 +60,10 @@ const props = defineProps<{
     recentRuns: RecentRun[]
     chartData: ChartDataPoint[]
 }>()
+
+useRealtimeUpdates({
+    onWarmRunProgress: ['recentRuns', 'chartData', 'warmSite'],
+})
 
 const showDeleteDialog = ref(false)
 const deleteForm = useForm({})
