@@ -156,7 +156,7 @@ class RunWarmSite implements ShouldQueue
                 $hits,
                 $misses,
                 $errors,
-                completed: true,
+                true,
             );
 
             $this->warmSite->update(['last_warmed_at' => now()]);
