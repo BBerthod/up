@@ -173,6 +173,10 @@ class WarmingService
             $sitemapLocs = $xml->xpath('//sm:sitemap/sm:loc') ?: $xml->xpath('//sitemap/loc') ?: [];
 
             if (! empty($sitemapLocs)) {
+                // Limit child sitemaps to avoid timeout (each fetch can take up to 15s)
+                $maxChildSitemaps = 10;
+                $sitemapLocs = array_slice($sitemapLocs, 0, $maxChildSitemaps);
+
                 $allUrls = [];
                 foreach ($sitemapLocs as $childLoc) {
                     $childUrl = trim((string) $childLoc);

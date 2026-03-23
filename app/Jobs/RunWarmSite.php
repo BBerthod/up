@@ -23,6 +23,8 @@ class RunWarmSite implements ShouldQueue
 
     public int $tries = 2;
 
+    public int $timeout = 600; // 10 min — covers sitemap index fetch + URL warming
+
     public array $backoff = [300, 3600];
 
     public function __construct(public WarmSite $warmSite)
