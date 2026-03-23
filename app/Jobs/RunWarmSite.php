@@ -63,6 +63,17 @@ class RunWarmSite implements ShouldQueue
             $urls = $warmingService->resolveUrls($this->warmSite);
             $customHeaders = $this->warmSite->custom_headers ?? [];
 
+            if (empty($urls)) {
+                $warmRun->update([
+                    'status' => WarmRunStatus::FAILED,
+                    'error_message' => 'No URLs resolved (sitemap empty or unreachable)',
+                    'completed_at' => now(),
+                ]);
+                $this->warmSite->update(['last_warmed_at' => now()]);
+
+                return;
+            }
+
             $hits = 0;
             $misses = 0;
             $errors = 0;
@@ -153,6 +164,21 @@ class RunWarmSite implements ShouldQueue
             if ($errorMessage) {
                 app(\App\Services\NotificationService::class)->notifyWarmingFailed($this->warmSite, $warmRun);
             }
+        } catch (\Throwable $e) {
+            if ($warmRun) {
+                $warmRun->update([
+                    'status' => WarmRunStatus::FAILED,
+                    'error_message' => 'Job exception: '.$e->getMessage(),
+                    'completed_at' => now(),
+                ]);
+            }
+
+            Log::error('RunWarmSite: unexpected exception', [
+                'warm_site_id' => $this->warmSite->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
         } finally {
             $lock->release();
         }
