@@ -13,6 +13,15 @@ class StoreWarmSiteRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->mode === 'sitemap') {
+            $this->merge(['urls' => null]);
+        } elseif (is_array($this->urls)) {
+            $this->merge(['urls' => array_values(array_filter($this->urls, fn ($u) => trim($u) !== ''))]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -27,7 +36,7 @@ class StoreWarmSiteRequest extends FormRequest
             'mode' => ['required', Rule::enum(WarmSiteMode::class)],
             'sitemap_url' => 'nullable|url|required_if:mode,sitemap',
             'urls' => 'nullable|array|max:500|required_if:mode,urls',
-            'urls.*' => 'url',
+            'urls.*' => 'exclude_if:mode,sitemap|url',
             'frequency_minutes' => ['required', 'integer', Rule::in([15, 30, 60, 120, 360, 720, 1440])],
             'max_urls' => 'required|integer|min:1|max:500',
             'custom_headers' => 'nullable|array|max:10',
