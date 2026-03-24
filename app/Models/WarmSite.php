@@ -54,6 +54,12 @@ class WarmSite extends Model
         return $this->hasOne(WarmRun::class)->latestOfMany('started_at');
     }
 
+    public function latestCompletedRun(): HasOne
+    {
+        return $this->hasOne(WarmRun::class)
+            ->ofMany(['started_at' => 'max'], fn ($q) => $q->where('status', 'completed'));
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

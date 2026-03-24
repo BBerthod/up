@@ -37,7 +37,7 @@ class WarmSiteController extends Controller
 
     public function index(): Response
     {
-        $warmSites = WarmSite::with(['latestRun', 'monitor:id,name'])
+        $warmSites = WarmSite::with(['latestCompletedRun', 'monitor:id,name'])
             ->orderBy('name')
             ->get()
             ->map(fn ($site) => [
@@ -51,14 +51,14 @@ class WarmSiteController extends Controller
                 'last_warmed_at' => $site->last_warmed_at?->toIso8601String(),
                 'monitor_id' => $site->monitor_id,
                 'monitor_name' => $site->monitor?->name,
-                'last_run' => $site->latestRun ? [
-                    'urls_total' => $site->latestRun->urls_total,
-                    'urls_hit' => $site->latestRun->urls_hit,
-                    'urls_miss' => $site->latestRun->urls_miss,
-                    'urls_error' => $site->latestRun->urls_error,
-                    'hit_ratio' => $site->latestRun->hit_ratio,
-                    'avg_response_ms' => $site->latestRun->avg_response_ms,
-                    'status' => $site->latestRun->status->value,
+                'last_run' => $site->latestCompletedRun ? [
+                    'urls_total' => $site->latestCompletedRun->urls_total,
+                    'urls_hit' => $site->latestCompletedRun->urls_hit,
+                    'urls_miss' => $site->latestCompletedRun->urls_miss,
+                    'urls_error' => $site->latestCompletedRun->urls_error,
+                    'hit_ratio' => $site->latestCompletedRun->hit_ratio,
+                    'avg_response_ms' => $site->latestCompletedRun->avg_response_ms,
+                    'status' => $site->latestCompletedRun->status->value,
                 ] : null,
             ]);
 
