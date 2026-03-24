@@ -33,6 +33,7 @@ class DispatchWarmRuns implements ShouldQueue
 
         $sites = WarmSite::withoutGlobalScopes()
             ->dueForWarming()
+            ->whereDoesntHave('warmRuns', fn ($q) => $q->where('status', WarmRunStatus::RUNNING))
             ->get();
 
         foreach ($sites as $site) {

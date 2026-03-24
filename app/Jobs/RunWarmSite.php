@@ -9,6 +9,7 @@ use App\Models\WarmRunUrl;
 use App\Models\WarmSite;
 use App\Services\WarmingService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class RunWarmSite implements ShouldQueue
+class RunWarmSite implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -27,9 +28,16 @@ class RunWarmSite implements ShouldQueue
 
     public array $backoff = [300, 3600];
 
+    public int $uniqueFor = 660; // Prevent duplicate jobs for same site (slightly > timeout)
+
     public function __construct(public WarmSite $warmSite)
     {
         $this->onQueue('monitors');
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) $this->warmSite->id;
     }
 
     public function retryUntil(): \DateTime
@@ -42,7 +50,7 @@ class RunWarmSite implements ShouldQueue
 
     public function handle(WarmingService $warmingService): void
     {
-        $lock = Cache::lock("warming:{$this->warmSite->id}", 120);
+        $lock = Cache::lock("warming:{$this->warmSite->id}", 660); // Match timeout + buffer
 
         if (! $lock->get()) {
             return;
