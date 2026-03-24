@@ -43,9 +43,10 @@ const frequencyLabel = (mins: number): string => {
 }
 
 const hitRatioBadge = (ratio: number) => {
-    if (ratio >= 80) return { severity: 'success', label: `${ratio}% hit` }
-    if (ratio >= 50) return { severity: 'warn', label: `${ratio}% hit` }
-    return { severity: 'danger', label: `${ratio}% hit` }
+    const pct = Math.round(ratio * 100)
+    if (pct >= 80) return { severity: 'success', label: `${pct}% hit` }
+    if (pct >= 50) return { severity: 'warn', label: `${pct}% hit` }
+    return { severity: 'danger', label: `${pct}% hit` }
 }
 
 const warmNow = (id: number) => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import BackLink from '@/Components/BackLink.vue'
 import GlassCard from '@/Components/GlassCard.vue'
 import ConfirmDialog from '@/Components/ConfirmDialog.vue'
@@ -11,13 +11,19 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 
-interface RunStats {
-    urls_total: number
-    urls_hit: number
-    urls_miss: number
-    urls_error: number
-    hit_ratio: number
+interface Stats24h {
+    runs_completed: number
+    runs_total: number
+    total_urls: number
+    hit_ratio: number | null
     avg_response_ms: number
+    total_errors: number
+}
+
+interface LastSuccessfulRun {
+    started_at: string
+    urls_total: number
+    hit_ratio: number
 }
 
 interface RecentRun {
@@ -56,7 +62,8 @@ const props = defineProps<{
         max_urls: number
         monitor: { id: number; name: string; url: string } | null
     }
-    lastRunStats: RunStats | null
+    stats24h: Stats24h
+    lastSuccessfulRun: LastSuccessfulRun | null
     recentRuns: RecentRun[]
     chartData: ChartDataPoint[]
 }>()
@@ -102,6 +109,24 @@ const hitRatioClass = (ratio: number): string => {
     if (ratio >= 50) return 'text-yellow-400'
     return 'text-red-400'
 }
+
+const relativeTime = (iso: string): string => {
+    const diff = Date.now() - new Date(iso).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    return `${Math.floor(hours / 24)}d ago`
+}
+
+const filteredRuns = computed(() => {
+    const withUrls = props.recentRuns.filter(r => r.urls_total > 0)
+    const failedEmpty = props.recentRuns.filter(r => r.urls_total === 0).slice(0, 3)
+    return [...withUrls, ...failedEmpty]
+        .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
+        .slice(0, 10)
+})
 </script>
 
 <template>
@@ -182,29 +207,43 @@ const hitRatioClass = (ratio: number): string => {
             </div>
         </div>
 
-        <!-- Stats cards -->
+        <!-- Last successful warm badge -->
+        <div v-if="lastSuccessfulRun" class="glass p-3 flex items-center gap-3 text-sm">
+            <span class="text-zinc-400">Last successful warm:</span>
+            <span class="text-white font-medium">{{ relativeTime(lastSuccessfulRun.started_at) }}</span>
+            <span class="text-zinc-500">·</span>
+            <span class="text-zinc-400">{{ lastSuccessfulRun.urls_total }} URLs</span>
+            <span class="text-zinc-500">·</span>
+            <span class="text-emerald-400">{{ Math.round(lastSuccessfulRun.hit_ratio * 100) }}% hit</span>
+        </div>
+
+        <!-- Stats cards (24h aggregated) -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <GlassCard>
-                <div class="text-2xl font-bold" :class="lastRunStats ? hitRatioClass(lastRunStats.hit_ratio) : 'text-zinc-600'">
-                    {{ lastRunStats ? `${lastRunStats.hit_ratio}%` : '—' }}
+                <div class="text-2xl font-bold" :class="stats24h.hit_ratio !== null ? hitRatioClass(stats24h.hit_ratio) : 'text-zinc-600'">
+                    {{ stats24h.hit_ratio !== null ? `${stats24h.hit_ratio}%` : '—' }}
                 </div>
                 <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Hit Ratio</div>
+                <div class="text-xs text-zinc-600 mt-0.5">24h avg</div>
             </GlassCard>
             <GlassCard>
-                <div class="text-2xl font-bold text-white">{{ lastRunStats?.urls_total ?? '—' }}</div>
-                <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">URLs Total</div>
+                <div class="text-2xl font-bold text-white">{{ stats24h.total_urls || '—' }}</div>
+                <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">URLs Warmed</div>
+                <div class="text-xs text-zinc-600 mt-0.5">24h total</div>
             </GlassCard>
             <GlassCard>
                 <div class="text-2xl font-bold text-white">
-                    {{ lastRunStats ? `${lastRunStats.avg_response_ms}ms` : '—' }}
+                    {{ stats24h.avg_response_ms ? `${stats24h.avg_response_ms}ms` : '—' }}
                 </div>
                 <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Avg Response</div>
+                <div class="text-xs text-zinc-600 mt-0.5">24h avg</div>
             </GlassCard>
             <GlassCard>
-                <div class="text-2xl font-bold" :class="lastRunStats?.urls_error ? 'text-red-400' : 'text-zinc-600'">
-                    {{ lastRunStats?.urls_error ?? '—' }}
+                <div class="text-2xl font-bold" :class="stats24h.runs_total > 0 ? 'text-white' : 'text-zinc-600'">
+                    {{ stats24h.runs_total > 0 ? `${stats24h.runs_completed}/${stats24h.runs_total}` : '—' }}
                 </div>
-                <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Errors</div>
+                <div class="text-xs text-zinc-500 uppercase tracking-wider mt-1">Success Rate</div>
+                <div class="text-xs text-zinc-600 mt-0.5">24h runs</div>
             </GlassCard>
         </div>
 
@@ -247,14 +286,14 @@ const hitRatioClass = (ratio: number): string => {
         <!-- Recent Runs table -->
         <GlassCard title="Recent Runs" :padding="0">
             <template #actions>
-                <span class="text-xs text-zinc-500">Last {{ recentRuns.length }} runs</span>
+                <span class="text-xs text-zinc-500">Last {{ filteredRuns.length }} runs</span>
             </template>
-            <div v-if="recentRuns.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
+            <div v-if="filteredRuns.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
                 <p class="text-zinc-500 text-sm">No runs yet. Click "Warm Now" to trigger the first run.</p>
             </div>
             <DataTable
                 v-else
-                :value="recentRuns"
+                :value="filteredRuns"
                 class="w-full"
                 :pt="{
                     root: { class: 'bg-transparent' },

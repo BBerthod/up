@@ -165,6 +165,72 @@ class WarmSiteControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_show_returns_24h_aggregated_stats(): void
+    {
+        $user = $this->createAuthenticatedUser();
+        $site = WarmSite::factory()->for($user->team)->create();
+
+        // 2 completed runs within last 24h
+        WarmRun::factory()->for($site, 'warmSite')->create([
+            'status' => 'completed',
+            'urls_total' => 100,
+            'urls_hit' => 80,
+            'urls_miss' => 20,
+            'urls_error' => 0,
+            'avg_response_ms' => 200,
+            'started_at' => now()->subHours(2),
+            'completed_at' => now()->subHours(2)->addMinutes(5),
+        ]);
+        WarmRun::factory()->for($site, 'warmSite')->create([
+            'status' => 'completed',
+            'urls_total' => 100,
+            'urls_hit' => 60,
+            'urls_miss' => 40,
+            'urls_error' => 0,
+            'avg_response_ms' => 300,
+            'started_at' => now()->subHours(1),
+            'completed_at' => now()->subHours(1)->addMinutes(5),
+        ]);
+        // 1 failed run within last 24h (counts in runs_total but not runs_completed)
+        WarmRun::factory()->for($site, 'warmSite')->failed()->create([
+            'urls_total' => 0,
+            'started_at' => now()->subMinutes(30),
+        ]);
+
+        $response = $this->get(route('warming.show', $site));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('CacheWarming/Show')
+            ->has('stats24h')
+            ->where('stats24h.runs_completed', 2)
+            ->where('stats24h.runs_total', 3)
+            ->where('stats24h.total_urls', 200)
+            ->where('stats24h.hit_ratio', 70.0)
+            ->has('lastSuccessfulRun')
+        );
+    }
+
+    public function test_show_returns_null_last_successful_run_when_no_completed_runs(): void
+    {
+        $user = $this->createAuthenticatedUser();
+        $site = WarmSite::factory()->for($user->team)->create();
+        WarmRun::factory()->for($site, 'warmSite')->failed()->create([
+            'urls_total' => 0,
+            'started_at' => now()->subMinutes(10),
+        ]);
+
+        $response = $this->get(route('warming.show', $site));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('CacheWarming/Show')
+            ->where('lastSuccessfulRun', null)
+            ->where('stats24h.runs_completed', 0)
+            ->where('stats24h.hit_ratio', null)
+        );
+    }
+
     public function test_user_cannot_view_other_teams_site(): void
     {
         $user = $this->createAuthenticatedUser();
