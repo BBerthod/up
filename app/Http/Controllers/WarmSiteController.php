@@ -121,6 +121,29 @@ class WarmSiteController extends Controller
                 'avg_ms' => $run->avg_response_ms,
             ]);
 
+        // Aggregated stats from last 24h completed runs
+        $stats24h = $warming->warmRuns()
+            ->where('status', 'completed')
+            ->where('started_at', '>=', now()->subDay())
+            ->selectRaw('
+                COUNT(*) as runs_completed,
+                SUM(urls_total) as total_urls,
+                SUM(urls_hit) as total_hits,
+                SUM(urls_miss) as total_misses,
+                SUM(urls_error) as total_errors,
+                AVG(avg_response_ms) as avg_response_ms
+            ')
+            ->first();
+
+        $totalRuns24h = $warming->warmRuns()
+            ->where('started_at', '>=', now()->subDay())
+            ->count();
+
+        $lastSuccessfulRun = $warming->warmRuns()
+            ->where('status', 'completed')
+            ->orderByDesc('started_at')
+            ->first();
+
         return Inertia::render('CacheWarming/Show', [
             'warmSite' => [
                 'id' => $warming->id,
@@ -143,6 +166,21 @@ class WarmSiteController extends Controller
             ],
             'recentRuns' => $recentRuns,
             'chartData' => $chartData,
+            'stats24h' => [
+                'runs_completed' => (int) ($stats24h->runs_completed ?? 0),
+                'runs_total' => $totalRuns24h,
+                'total_urls' => (int) ($stats24h->total_urls ?? 0),
+                'hit_ratio' => ($stats24h->total_urls ?? 0) > 0
+                    ? round(($stats24h->total_hits / $stats24h->total_urls) * 100, 1)
+                    : null,
+                'avg_response_ms' => (int) ($stats24h->avg_response_ms ?? 0),
+                'total_errors' => (int) ($stats24h->total_errors ?? 0),
+            ],
+            'lastSuccessfulRun' => $lastSuccessfulRun ? [
+                'started_at' => $lastSuccessfulRun->started_at->toIso8601String(),
+                'urls_total' => $lastSuccessfulRun->urls_total,
+                'hit_ratio' => $lastSuccessfulRun->hit_ratio,
+            ] : null,
         ]);
     }
 
