@@ -2,7 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
 import SkeletonMonitorList from '@/Components/SkeletonMonitorList.vue'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import { usePageLoading } from '@/Composables/usePageLoading'
 import { useSimplePersistentFilter } from '@/Composables/usePersistentFilters'
@@ -71,6 +71,26 @@ const { value: activeFilter } = useSimplePersistentFilter(
     props.filters.status || 'all',
     'monitors.index'
 )
+
+const searchQuery = ref('')
+const debouncedQuery = ref('')
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(searchQuery, (val) => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+        debouncedQuery.value = val.trim().toLowerCase()
+    }, 250)
+})
+
+const filteredMonitors = computed(() => {
+    const q = debouncedQuery.value
+    if (!q) return props.monitors
+    return props.monitors.filter(m =>
+        m.name.toLowerCase().includes(q) || m.url.toLowerCase().includes(q)
+    )
+})
 </script>
 
 <template>
@@ -87,9 +107,23 @@ const { value: activeFilter } = useSimplePersistentFilter(
         </PageHeader>
 
         <!-- Filters & Stats Row -->
-        <div class="flex flex-col md:flex-row gap-6 items-end md:items-center justify-between border-b border-white/5 pb-6">
-            <div class="flex items-center gap-2">
-                 <SelectButton v-model="activeFilter" :options="filterOptions" optionLabel="label" optionValue="key" :allowEmpty="false" class="w-full md:w-auto" />
+        <div class="flex flex-col gap-4 border-b border-white/5 pb-6">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <!-- Search -->
+                <div class="relative flex-1 max-w-sm">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input
+                        v-model="searchQuery"
+                        type="search"
+                        placeholder="Search monitors..."
+                        class="w-full pl-9 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/20 focus:bg-white/[0.07] transition-colors"
+                        aria-label="Search monitors by name or URL"
+                    />
+                </div>
+                <!-- Status filter -->
+                <div class="flex items-center gap-2">
+                    <SelectButton v-model="activeFilter" :options="filterOptions" optionLabel="label" optionValue="key" :allowEmpty="false" />
+                </div>
             </div>
             <div class="flex items-center gap-6 text-sm">
                 <div class="flex items-center gap-2">
@@ -102,16 +136,19 @@ const { value: activeFilter } = useSimplePersistentFilter(
                     <span class="text-white font-medium">{{ stats.down }}</span>
                     <span class="text-zinc-500">Down</span>
                 </div>
-                 <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2">
                     <span class="text-white font-medium">{{ stats.avgMs }}ms</span>
                     <span class="text-zinc-500">Avg</span>
+                </div>
+                <div v-if="debouncedQuery" class="flex items-center gap-2 text-xs text-zinc-500">
+                    <span>{{ filteredMonitors.length }} result{{ filteredMonitors.length !== 1 ? 's' : '' }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Linear List -->
         <SkeletonMonitorList v-if="isLoading" />
-        <DataView v-else :value="monitors" :paginator="monitors.length > 20" :rows="20" class="bg-transparent">
+        <DataView v-else :value="filteredMonitors" :paginator="filteredMonitors.length > 20" :rows="20" class="bg-transparent">
             <template #list="slotProps">
                 <div class="flex flex-col">
                     <div v-for="(monitor, index) in slotProps.items" :key="index"
@@ -176,15 +213,25 @@ const { value: activeFilter } = useSimplePersistentFilter(
                 </div>
             </template>
             <template #empty>
-                 <div class="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.02]">
-                    <div class="p-4 mb-4 rounded-full bg-emerald-500/10">
-                        <i class="pi pi-server text-2xl text-emerald-500" />
-                    </div>
-                    <h3 class="text-lg font-medium text-white">No monitors found</h3>
-                    <p class="text-zinc-500 mt-1 max-w-sm mb-6">Get started by creating your first uptime monitor.</p>
-                     <Link :href="route('monitors.create')">
-                         <Button label="Add Monitor" icon="pi pi-plus" class="bg-white text-black border-white hover:bg-zinc-200" />
-                     </Link>
+                <div class="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.02]">
+                    <template v-if="debouncedQuery">
+                        <div class="p-4 mb-4 rounded-full bg-zinc-500/10">
+                            <svg class="w-6 h-6 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        </div>
+                        <h3 class="text-lg font-medium text-white">No monitors found</h3>
+                        <p class="text-zinc-500 mt-1 max-w-sm">No monitors match "<span class="text-zinc-300">{{ debouncedQuery }}</span>". Try a different search term.</p>
+                        <button @click="searchQuery = ''" class="mt-4 text-sm text-emerald-500 hover:text-emerald-400 transition-colors">Clear search</button>
+                    </template>
+                    <template v-else>
+                        <div class="p-4 mb-4 rounded-full bg-emerald-500/10">
+                            <i class="pi pi-server text-2xl text-emerald-500" />
+                        </div>
+                        <h3 class="text-lg font-medium text-white">No monitors found</h3>
+                        <p class="text-zinc-500 mt-1 max-w-sm mb-6">Get started by creating your first uptime monitor.</p>
+                        <Link :href="route('monitors.create')">
+                            <Button label="Add Monitor" icon="pi pi-plus" class="bg-white text-black border-white hover:bg-zinc-200" />
+                        </Link>
+                    </template>
                 </div>
             </template>
         </DataView>
