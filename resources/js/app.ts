@@ -1,6 +1,5 @@
 import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 import { ZiggyVue } from 'ziggy-js'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
@@ -35,10 +34,8 @@ createInertiaApp({
     title: (title) => title ? `${title} - Up by Radiank` : 'Up by Radiank',
 
     resolve: async (name) => {
-        const page = await resolvePageComponent(
-            `./Pages/${name}.vue`,
-            import.meta.glob('./Pages/**/*.vue')
-        )
+        const pages = import.meta.glob('./Pages/**/*.vue')
+        const page = await pages[`./Pages/${name}.vue`]() as { default: any }
         page.default.layout = page.default.layout ?? AppLayout
         return page
     },
