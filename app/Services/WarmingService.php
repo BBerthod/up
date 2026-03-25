@@ -32,6 +32,7 @@ class WarmingService
 
         $urls = $this->deduplicateUrls($urls);
         $urls = $this->filterSafeUrls($urls);
+        $urls = $this->filterByDomain($urls, $site->domain);
 
         if (count($urls) > $site->max_urls) {
             shuffle($urls);
@@ -140,6 +141,7 @@ class WarmingService
         try {
             $response = Http::timeout(15)
                 ->connectTimeout(5)
+                ->withoutVerifying()
                 ->withHeaders([
                     'User-Agent' => 'Up-Monitor/1.0 (+https://github.com/BBerthod/up)',
                 ])
@@ -308,6 +310,31 @@ class WarmingService
      * @param  string[]  $urls
      * @return string[]
      */
+    /**
+     * Keep only URLs whose host matches the warm site's domain.
+     *
+     * Sitemap indexes (e.g. Topelio) may reference child sitemaps from other
+     * subdomains (fr.topelio.com inside us.topelio.com/sitemap.xml).
+     * Without this filter, warming would hit the wrong locale.
+     *
+     * @param  string[]  $urls
+     * @return string[]
+     */
+    private function filterByDomain(array $urls, string $domain): array
+    {
+        $domain = strtolower(trim($domain));
+
+        if ($domain === '') {
+            return $urls;
+        }
+
+        return array_values(array_filter($urls, function (string $url) use ($domain): bool {
+            $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+
+            return $host === $domain || $host === 'www.'.$domain;
+        }));
+    }
+
     private function filterSafeUrls(array $urls): array
     {
         return array_values(array_filter($urls, function (string $url): bool {
