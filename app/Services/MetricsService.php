@@ -6,11 +6,26 @@ use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Models\MonitorLighthouseScore;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class MetricsService
 {
     public function getDashboardMetrics(): array
+    {
+        abort_unless(auth()->check(), 403, 'MetricsService requires auth context');
+
+        $teamId = auth()->user()->team_id;
+
+        return Cache::remember("dashboard:metrics:{$teamId}", 60, fn () => $this->computeDashboardMetrics());
+    }
+
+    public static function invalidateCache(int $teamId): void
+    {
+        Cache::forget("dashboard:metrics:{$teamId}");
+    }
+
+    private function computeDashboardMetrics(): array
     {
         $totalMonitors = Monitor::count();
         $monitorsPaused = Monitor::inactive()->count();

@@ -23,7 +23,9 @@ class NotificationService
 
         Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
 
-        $channels = $monitor->notificationChannels()->where('is_active', true)->get();
+        $channels = $monitor->relationLoaded('notificationChannels')
+            ? $monitor->notificationChannels->where('is_active', true)
+            : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
             SendNotification::dispatch($channel, 'down', $monitor, $incident, $check);
@@ -34,7 +36,9 @@ class NotificationService
     {
         Cache::forget("notify:{$monitor->id}:down");
 
-        $channels = $monitor->notificationChannels()->where('is_active', true)->get();
+        $channels = $monitor->relationLoaded('notificationChannels')
+            ? $monitor->notificationChannels->where('is_active', true)
+            : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
             SendNotification::dispatch($channel, 'up', $monitor, $incident, $check);

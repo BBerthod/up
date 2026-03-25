@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Models\StatusPage;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,11 +18,12 @@ class PublicStatusPageController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        $statusPage->load(['monitors' => fn ($q) => $q->orderByPivot('sort_order')]);
+        $cachedData = Cache::remember("status_page:{$slug}", 120, function () use ($statusPage) {
+            $statusPage->load(['monitors' => fn ($q) => $q->orderByPivot('sort_order')]);
 
-        $monitorIds = $statusPage->monitors->pluck('id');
+            $monitorIds = $statusPage->monitors->pluck('id');
 
-        $latestChecks = MonitorCheck::whereIn('monitor_id', $monitorIds)
+            $latestChecks = MonitorCheck::whereIn('monitor_id', $monitorIds)
             ->whereIn('id', fn ($q) => $q->selectRaw('MAX(id)')->from('monitor_checks')->whereIn('monitor_id', $monitorIds)->groupBy('monitor_id'))
             ->get()
             ->keyBy('monitor_id');
@@ -76,14 +78,17 @@ class PublicStatusPageController extends Controller
                 'started_at' => $i->started_at->toIso8601String(),
             ]);
 
-        return Inertia::render('StatusPages/Public', [
-            'statusPage' => [
-                'name' => $statusPage->name,
-                'description' => $statusPage->description,
-                'theme' => $statusPage->theme,
-            ],
-            'monitors' => $monitorsData,
-            'activeIncidents' => $activeIncidents,
-        ]);
+            return [
+                'statusPage' => [
+                    'name' => $statusPage->name,
+                    'description' => $statusPage->description,
+                    'theme' => $statusPage->theme,
+                ],
+                'monitors' => $monitorsData,
+                'activeIncidents' => $activeIncidents,
+            ];
+        });
+
+        return Inertia::render('StatusPages/Public', $cachedData);
     }
 }

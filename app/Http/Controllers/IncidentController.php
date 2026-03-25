@@ -72,7 +72,7 @@ class IncidentController extends Controller
         ]);
     }
 
-    public function export(Request $request): Response
+    public function export(Request $request): Response|\Symfony\Component\HttpFoundation\StreamedResponse
     {
         $format = $request->input('format', 'csv');
 
@@ -131,28 +131,27 @@ class IncidentController extends Controller
             ]);
         }
 
-        // CSV
-        $csv = "Monitor,Type,Status,Cause,Started,Resolved,Duration (seconds)\n";
-        foreach ($incidents as $i) {
-            $status = $i->resolved_at ? 'resolved' : 'active';
-            $duration = $i->resolved_at
-                ? $i->started_at->diffInSeconds($i->resolved_at)
-                : '';
-            $csv .= sprintf(
-                "%s,%s,%s,%s,%s,%s,%s\n",
-                '"'.str_replace('"', '""', $i->monitor_name).'"',
-                $i->monitor_type,
-                $status,
-                $i->cause,
-                $i->started_at,
-                $i->resolved_at ?? '',
-                $duration,
-            );
-        }
-
-        return response($csv, 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="incidents-'.now()->format('Y-m-d').'.csv"',
-        ]);
+        // CSV — streamed to avoid memory issues on large exports
+        return response()->streamDownload(function () use ($query) {
+            echo "Monitor,Type,Status,Cause,Started,Resolved,Duration (seconds)\n";
+            $query->orderByDesc('monitor_incidents.started_at')->chunk(500, function ($incidents) {
+                foreach ($incidents as $i) {
+                    $status = $i->resolved_at ? 'resolved' : 'active';
+                    $duration = $i->resolved_at
+                        ? $i->started_at->diffInSeconds($i->resolved_at)
+                        : '';
+                    echo sprintf(
+                        "%s,%s,%s,%s,%s,%s,%s\n",
+                        '"'.str_replace('"', '""', $i->monitor_name).'"',
+                        $i->monitor_type,
+                        $status,
+                        $i->cause,
+                        $i->started_at,
+                        $i->resolved_at ?? '',
+                        $duration,
+                    );
+                }
+            });
+        }, 'incidents-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     }
 }

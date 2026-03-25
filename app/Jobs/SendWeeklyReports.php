@@ -29,18 +29,18 @@ class SendWeeklyReports implements ShouldQueue
 
     public function handle(WeeklyReportService $weeklyReportService): void
     {
-        Team::with('users', 'monitors')->get()->each(function (Team $team) use ($weeklyReportService) {
-            $activeMonitorCount = $team->monitors->where('is_active', true)->count();
+        Team::with('users')->whereHas('monitors', fn ($q) => $q->where('is_active', true))->chunk(50, function ($teams) use ($weeklyReportService) {
+            foreach ($teams as $team) {
+                try {
+                    $report = $weeklyReportService->generate($team);
 
-            if ($activeMonitorCount === 0) {
-                return;
+                    $team->users
+                        ->filter(fn ($user) => $user->weekly_report_enabled === true)
+                        ->each(fn ($user) => Mail::to($user->email)->send(new WeeklyReportMail($report, $team->name)));
+                } catch (Throwable $e) {
+                    Log::error('Weekly report failed for team', ['team_id' => $team->id, 'error' => $e->getMessage()]);
+                }
             }
-
-            $report = $weeklyReportService->generate($team);
-
-            $team->users
-                ->filter(fn ($user) => $user->weekly_report_enabled === true)
-                ->each(fn ($user) => Mail::to($user->email)->send(new WeeklyReportMail($report, $team->name)));
         });
     }
 
