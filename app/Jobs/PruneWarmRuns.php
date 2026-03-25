@@ -14,15 +14,25 @@ class PruneWarmRuns implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $timeout = 300;
+
     public function handle(): void
     {
         $retentionDays = (int) config('warming.retention_days', 180);
+        $cutoff = now()->subDays($retentionDays);
+        $total = 0;
 
-        $deleted = WarmRun::where('created_at', '<', now()->subDays($retentionDays))->delete();
+        do {
+            $deleted = WarmRun::where('created_at', '<', $cutoff)
+                ->limit(500)
+                ->delete();
 
-        if ($deleted > 0) {
+            $total += $deleted;
+        } while ($deleted > 0);
+
+        if ($total > 0) {
             Log::info('PruneWarmRuns: deleted old warm runs', [
-                'count' => $deleted,
+                'count' => $total,
                 'retention_days' => $retentionDays,
             ]);
         }

@@ -90,6 +90,8 @@ class RunWarmSite implements ShouldBeUnique, ShouldQueue
             $totalResponseMs = 0;
             $consecutiveErrors = 0;
             $errorMessage = null;
+            $urlBatch = [];
+            $urlCount = count($urls);
 
             foreach ($urls as $index => $url) {
                 if ($index > 0) {
@@ -111,14 +113,16 @@ class RunWarmSite implements ShouldBeUnique, ShouldQueue
                     $consecutiveErrors = 0;
                 }
 
-                WarmRunUrl::create([
+                $urlBatch[] = [
                     'warm_run_id' => $warmRun->id,
                     'url' => $result->url,
                     'status_code' => $result->statusCode,
                     'cache_status' => $result->cacheStatus,
                     'response_time_ms' => $result->responseTimeMs,
                     'error_message' => $result->errorMessage,
-                ]);
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
 
                 if ($result->statusCode === 429) {
                     sleep(5);
@@ -129,18 +133,22 @@ class RunWarmSite implements ShouldBeUnique, ShouldQueue
                     break;
                 }
 
-                if (($index + 1) % 5 === 0 || $index === count($urls) - 1) {
+                if (($index + 1) % 5 === 0 || $index === $urlCount - 1) {
                     WarmRunProgress::dispatch(
                         $this->warmSite->team_id,
                         $this->warmSite->id,
                         $warmRun->id,
                         $index + 1,
-                        count($urls),
+                        $urlCount,
                         $hits,
                         $misses,
                         $errors,
                     );
                 }
+            }
+
+            if (! empty($urlBatch)) {
+                WarmRunUrl::insert($urlBatch);
             }
 
             $total = $hits + $misses + $errors;
