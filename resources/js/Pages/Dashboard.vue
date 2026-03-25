@@ -463,8 +463,8 @@ function formatChartTooltipDate(hour: string): string {
                         @mouseenter="handleChartMouseEnter($event, point)"
                         @mousemove="handleChartMouseMove($event, point)"
                         @mouseleave="handleChartMouseLeave"
-                        @touchstart.passive="handleChartTouchStart($event, point)"
-                        @touchmove.passive="handleChartTouchMove($event, point)"
+                        @touchstart="handleChartTouchStart($event, point)"
+                        @touchmove="handleChartTouchMove($event, point)"
                         @touchend="handleChartTouchEnd"
                     />
                 </svg>
