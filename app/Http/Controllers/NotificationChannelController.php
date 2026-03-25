@@ -174,8 +174,8 @@ class NotificationChannelController extends Controller
         return match ($type) {
             ChannelType::EMAIL => sprintf(
                 '%d recipient%s',
-                count($settings['recipients'] ?? []),
-                count($settings['recipients'] ?? []) !== 1 ? 's' : ''
+                is_string($settings['recipients'] ?? '') ? count(array_filter(array_map('trim', explode(',', $settings['recipients'] ?? '')))) : 0,
+                count(array_filter(array_map('trim', explode(',', $settings['recipients'] ?? '')))) !== 1 ? 's' : ''
             ),
             ChannelType::WEBHOOK,
             ChannelType::SLACK,
@@ -195,7 +195,7 @@ class NotificationChannelController extends Controller
         ];
 
         $rules = array_merge($rules, match ($request->input('type')) {
-            'email' => ['settings.recipients' => ['required', 'string', 'max:1000']],
+            'email' => ['settings.recipients' => ['required', 'string', 'max:1000', 'regex:/^[\w.+\-]+@[\w\-]+\.[\w.]+(\s*,\s*[\w.+\-]+@[\w\-]+\.[\w.]+)*$/']],
             'webhook' => ['settings.url' => ['required', 'url', 'max:2000']],
             'slack' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
             'discord' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],

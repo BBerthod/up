@@ -88,6 +88,6 @@ class WarmSite extends Model
             return $this->sitemap_url;
         }
 
-        return rtrim($this->domain, '/').'/sitemap.xml';
+        return 'https://'.rtrim($this->domain, '/').'/sitemap.xml';
     }
 }

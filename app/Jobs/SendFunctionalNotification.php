@@ -156,16 +156,29 @@ class SendFunctionalNotification implements ShouldQueue
 
     private function sendTelegram(): void
     {
+        $botToken = $this->channel->settings['bot_token'] ?? null;
+        $chatId = $this->channel->settings['chat_id'] ?? null;
+
+        if (! $botToken || ! $chatId) {
+            \Log::warning('Telegram channel missing settings', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
+        $checkName = htmlspecialchars($this->check->name, ENT_QUOTES, 'UTF-8');
+        $monitorName = htmlspecialchars($this->check->monitor->name, ENT_QUOTES, 'UTF-8');
+        $checkUrl = htmlspecialchars($this->check->resolveUrl(), ENT_QUOTES, 'UTF-8');
+
         $text = "\u{1F534} <b>[Up] Functional check failed</b>\n\n"
-            ."<b>Check:</b> {$this->check->name}\n"
-            ."<b>Monitor:</b> {$this->check->monitor->name}\n"
-            ."<b>URL:</b> {$this->check->resolveUrl()}\n\n"
+            ."<b>Check:</b> {$checkName}\n"
+            ."<b>Monitor:</b> {$monitorName}\n"
+            ."<b>URL:</b> {$checkUrl}\n\n"
             .htmlspecialchars($this->summaryText());
 
         Http::timeout(10)->post(
-            "https://api.telegram.org/bot{$this->channel->settings['bot_token']}/sendMessage",
+            "https://api.telegram.org/bot{$botToken}/sendMessage",
             [
-                'chat_id' => $this->channel->settings['chat_id'],
+                'chat_id' => $chatId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,

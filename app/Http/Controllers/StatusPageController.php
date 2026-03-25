@@ -117,7 +117,7 @@ class StatusPageController extends Controller
             'is_active' => 'boolean',
             'theme' => 'required|in:dark,light',
             'monitors' => 'array',
-            'monitors.*' => 'exists:monitors,id',
+            'monitors.*' => ['integer', Rule::exists('monitors', 'id')->where('team_id', $request->user()->team_id)],
         ]);
     }
 }

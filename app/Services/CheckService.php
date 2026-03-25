@@ -14,6 +14,7 @@ use App\Services\Checkers\HttpChecker;
 use App\Services\Checkers\PingChecker;
 use App\Services\Checkers\PortChecker;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class CheckService
 {
@@ -40,9 +41,11 @@ class CheckService
 
         $monitor->update(['last_checked_at' => now()]);
 
+        $monitor->load('notificationChannels');
+
         $lock = Cache::lock("monitor:check:{$monitor->id}", 30);
 
-        if ($lock->get()) {
+        if ($lock->block(10)) {
             try {
                 $alertAfter = $monitor->alert_after_failures ?? 3;
 
@@ -107,6 +110,8 @@ class CheckService
             } finally {
                 $lock->release();
             }
+        } else {
+            \Log::warning('CheckService: could not acquire lock', ['monitor_id' => $monitor->id]);
         }
 
         return $check;

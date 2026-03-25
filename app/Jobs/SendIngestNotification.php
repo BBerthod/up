@@ -253,21 +253,33 @@ class SendIngestNotification implements ShouldQueue
 
     private function sendTelegram(): void
     {
+        $botToken = $this->channel->settings['bot_token'] ?? null;
+        $chatId = $this->channel->settings['chat_id'] ?? null;
+
+        if (! $botToken || ! $chatId) {
+            \Log::warning('Telegram channel missing settings', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
         $emoji = $this->levelEmoji();
-        $text = "<b>{$emoji} [{$this->source->name}] {$this->event->level->label()}</b>\n\n"
+        $sourceName = htmlspecialchars($this->source->name, ENT_QUOTES, 'UTF-8');
+        $eventMessage = htmlspecialchars($this->event->message, ENT_QUOTES, 'UTF-8');
+
+        $text = "<b>{$emoji} [{$sourceName}] {$this->event->level->label()}</b>\n\n"
             ."<b>Type:</b> {$this->event->type->label()}\n"
-            ."<b>Message:</b> {$this->event->message}\n"
+            ."<b>Message:</b> {$eventMessage}\n"
             ."<b>Occurred:</b> {$this->event->occurred_at->toIso8601String()}";
 
         if ($this->event->context) {
-            $contextJson = json_encode(array_slice($this->event->context, 0, 5), JSON_PRETTY_PRINT);
+            $contextJson = htmlspecialchars(json_encode(array_slice($this->event->context, 0, 5), JSON_PRETTY_PRINT), ENT_QUOTES, 'UTF-8');
             $text .= "\n\n<b>Context:</b>\n<code>{$contextJson}</code>";
         }
 
         $response = Http::timeout(10)->post(
-            "https://api.telegram.org/bot{$this->channel->settings['bot_token']}/sendMessage",
+            "https://api.telegram.org/bot{$botToken}/sendMessage",
             [
-                'chat_id' => $this->channel->settings['chat_id'],
+                'chat_id' => $chatId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,

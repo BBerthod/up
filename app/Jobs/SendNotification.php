@@ -93,15 +93,29 @@ class SendNotification implements ShouldQueue
 
     private function sendWebhook(array $payload): void
     {
-        Http::timeout(10)->post($this->channel->settings['url'], $payload)->throw();
+        $url = $this->channel->settings['url'] ?? null;
+        if (! $url) {
+            Log::warning('Webhook channel missing URL', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
+        Http::timeout(10)->post($url, $payload)->throw();
     }
 
     private function sendSlack(): void
     {
+        $webhookUrl = $this->channel->settings['webhook_url'] ?? null;
+        if (! $webhookUrl) {
+            Log::warning('Slack channel missing webhook_url', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
         $color = $this->event === 'down' ? '#DC2626' : '#16A34A';
         $statusText = $this->event === 'down' ? 'Down' : 'Up';
 
-        Http::timeout(10)->post($this->channel->settings['webhook_url'], [
+        Http::timeout(10)->post($webhookUrl, [
             'attachments' => [[
                 'color' => $color,
                 'blocks' => [
@@ -184,19 +198,30 @@ class SendNotification implements ShouldQueue
 
     private function sendTelegram(): void
     {
+        $botToken = $this->channel->settings['bot_token'] ?? null;
+        $chatId = $this->channel->settings['chat_id'] ?? null;
+
+        if (! $botToken || ! $chatId) {
+            Log::warning('Telegram channel missing settings', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
         $statusEmoji = $this->event === 'down' ? "\u{1F534}" : "\u{1F7E2}";
         $statusText = $this->event === 'down' ? 'Down' : 'Up';
         $cause = ucfirst(str_replace('_', ' ', $this->incident->cause->value));
+        $monitorName = htmlspecialchars($this->monitor->name, ENT_QUOTES, 'UTF-8');
+        $monitorUrl = htmlspecialchars($this->monitor->url, ENT_QUOTES, 'UTF-8');
 
-        $text = "<b>{$statusEmoji} [Up] {$this->monitor->name} is {$statusText}</b>\n\n"
-            ."<b>URL:</b> {$this->monitor->url}\n"
+        $text = "<b>{$statusEmoji} [Up] {$monitorName} is {$statusText}</b>\n\n"
+            ."<b>URL:</b> {$monitorUrl}\n"
             .($this->check ? "<b>Status Code:</b> {$this->check->status_code}\n<b>Response Time:</b> {$this->check->response_time_ms}ms\n" : '')
             ."<b>Cause:</b> {$cause}";
 
         $response = Http::timeout(10)->post(
-            "https://api.telegram.org/bot{$this->channel->settings['bot_token']}/sendMessage",
+            "https://api.telegram.org/bot{$botToken}/sendMessage",
             [
-                'chat_id' => $this->channel->settings['chat_id'],
+                'chat_id' => $chatId,
                 'text' => $text,
                 'parse_mode' => 'HTML',
                 'disable_web_page_preview' => true,

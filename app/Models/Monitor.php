@@ -108,6 +108,8 @@ class Monitor extends Model
 
     public function isDown(): bool
     {
-        return ! $this->isUp();
+        $status = $this->checks()->latest('checked_at')->value('status');
+
+        return $status !== null && $status !== CheckStatus::UP;
     }
 }

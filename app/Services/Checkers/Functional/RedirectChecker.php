@@ -77,6 +77,12 @@ class RedirectChecker
                 }
             }
 
+            if ($this->isPrivateUrl($location)) {
+                $chain[] = ['url' => $location, 'status' => 'ssrf_blocked'];
+
+                return $chain;
+            }
+
             $current = $location;
         }
 
@@ -122,6 +128,25 @@ class RedirectChecker
                 'message' => "Unknown rule type: {$rule['type']}",
             ],
         };
+    }
+
+    private function isPrivateUrl(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+        if (! $host) {
+            return true;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return ! filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+        }
+
+        $ip = gethostbyname($host);
+        if ($ip === $host) {
+            return false;
+        }
+
+        return ! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
     }
 
     private function checkWwwCanonical(string $finalUrl, string $canonical): bool
