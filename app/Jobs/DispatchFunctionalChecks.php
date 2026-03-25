@@ -21,7 +21,7 @@ class DispatchFunctionalChecks implements ShouldQueue
     public function handle(): void
     {
         FunctionalCheck::dueForCheck()
-            ->get()
+            ->cursor()
             ->each(fn (FunctionalCheck $check) => RunFunctionalCheck::dispatch($check));
     }
 }

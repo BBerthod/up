@@ -20,13 +20,10 @@ class DispatchChecks implements ShouldQueue
 
     public function handle(): void
     {
-        $monitors = Monitor::withoutGlobalScopes()
+        Monitor::withoutGlobalScopes()
             ->active()
             ->dueForCheck()
-            ->get();
-
-        foreach ($monitors as $monitor) {
-            RunCheck::dispatch($monitor);
-        }
+            ->cursor()
+            ->each(fn (Monitor $monitor) => RunCheck::dispatch($monitor));
     }
 }
