@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Contracts\MonitorChecker;
 use App\Enums\CheckStatus;
 use App\Enums\IncidentCause;
+use App\Enums\IncidentSeverity;
 use App\Enums\MonitorType;
+use App\Events\IncidentCreated;
+use App\Events\IncidentResolved;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
@@ -66,7 +69,11 @@ class CheckService
                         'monitor_id' => $monitor->id,
                         'started_at' => now(),
                         'cause' => $result->cause,
+                        'severity' => $this->resolveSeverity($result->cause),
                     ]);
+
+                    event(new IncidentCreated($incident));
+                    MetricsService::invalidateCache($monitor->team_id);
 
                     // Notify immediately only when the threshold is 1 (default behaviour).
                     if ($alertAfter <= 1) {
@@ -102,6 +109,8 @@ class CheckService
 
                     if ($incident) {
                         $incident->resolve();
+                        event(new IncidentResolved($incident));
+                        MetricsService::invalidateCache($monitor->team_id);
                         $this->notificationService->notifyUp($monitor, $incident, $check);
                     }
                 }
@@ -155,7 +164,10 @@ class CheckService
                     'monitor_id' => $monitor->id,
                     'started_at' => now(),
                     'cause' => IncidentCause::TIMEOUT,
+                    'severity' => IncidentSeverity::CRITICAL,
                 ]);
+                event(new IncidentCreated($incident));
+                MetricsService::invalidateCache($monitor->team_id);
                 $this->notificationService->notifyDown($monitor, $incident, $check);
             }
         } else {
@@ -170,9 +182,21 @@ class CheckService
 
                 if ($incident) {
                     $incident->resolve();
+                    event(new IncidentResolved($incident));
+                    MetricsService::invalidateCache($monitor->team_id);
                     $this->notificationService->notifyUp($monitor, $incident, $check);
                 }
             }
         }
+    }
+
+    private function resolveSeverity(IncidentCause $cause): IncidentSeverity
+    {
+        return match ($cause) {
+            IncidentCause::TIMEOUT, IncidentCause::ERROR => IncidentSeverity::CRITICAL,
+            IncidentCause::STATUS_CODE, IncidentCause::KEYWORD => IncidentSeverity::MAJOR,
+            IncidentCause::SSL => IncidentSeverity::MINOR,
+            IncidentCause::FUNCTIONAL => IncidentSeverity::WARNING,
+        };
     }
 }

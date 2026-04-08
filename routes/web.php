@@ -16,6 +16,7 @@ use App\Http\Controllers\PublicStatusPageController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TeamSettingsController;
 use App\Http\Controllers\WarmSiteController;
+use App\Http\Controllers\NotificationLogController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,7 +52,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
     Route::get('/incidents/export', [IncidentController::class, 'export'])->name('incidents.export');
+    Route::put('/incidents/{incident}', [IncidentController::class, 'update'])->name('incidents.update');
 
+    Route::post('/monitors/bulk-action', [MonitorController::class, 'bulkAction'])->name('monitors.bulk-action');
     Route::resource('monitors', MonitorController::class);
     Route::post('/monitors/{monitor}/pause', [MonitorController::class, 'pause'])->name('monitors.pause');
     Route::post('/monitors/{monitor}/resume', [MonitorController::class, 'resume'])->name('monitors.resume');
@@ -77,6 +80,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/sources/{source}', [IngestSourceController::class, 'update'])->name('sources.update');
     Route::delete('/sources/{source}', [IngestSourceController::class, 'destroy'])->name('sources.destroy');
     Route::post('/sources/{source}/rotate-token', [IngestSourceController::class, 'rotateToken'])->name('sources.rotate-token');
+
+    // Notification History
+    Route::get('/notification-logs', [NotificationLogController::class, 'index'])->name('notification-logs.index');
 
     // Events
     Route::get('/events', [EventController::class, 'index'])->name('events.index');

@@ -2,10 +2,17 @@
 
 namespace App\Services;
 
-use App\Jobs\SendNotification;
+use App\Enums\ChannelType;
+use App\Jobs\Notifications\SendDiscordNotification;
+use App\Jobs\Notifications\SendEmailNotification;
+use App\Jobs\Notifications\SendPushNotification;
+use App\Jobs\Notifications\SendSlackNotification;
+use App\Jobs\Notifications\SendTelegramNotification;
+use App\Jobs\Notifications\SendWebhookNotification;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
+use App\Models\NotificationChannel;
 use App\Models\WarmRun;
 use App\Models\WarmSite;
 use Illuminate\Support\Facades\Cache;
@@ -28,7 +35,7 @@ class NotificationService
             : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
-            SendNotification::dispatch($channel, 'down', $monitor, $incident, $check);
+            $this->dispatchForChannel($channel, 'down', $monitor, $incident, $check);
         }
     }
 
@@ -41,7 +48,7 @@ class NotificationService
             : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
-            SendNotification::dispatch($channel, 'up', $monitor, $incident, $check);
+            $this->dispatchForChannel($channel, 'up', $monitor, $incident, $check);
         }
     }
 
@@ -59,5 +66,19 @@ class NotificationService
         if ($owner) {
             $owner->notify(new \App\Notifications\WarmRunFailedNotification($warmSite, $warmRun));
         }
+    }
+
+    private function dispatchForChannel(NotificationChannel $channel, string $event, Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check): void
+    {
+        $jobClass = match ($channel->type) {
+            ChannelType::EMAIL => SendEmailNotification::class,
+            ChannelType::WEBHOOK => SendWebhookNotification::class,
+            ChannelType::SLACK => SendSlackNotification::class,
+            ChannelType::DISCORD => SendDiscordNotification::class,
+            ChannelType::PUSH => SendPushNotification::class,
+            ChannelType::TELEGRAM => SendTelegramNotification::class,
+        };
+
+        $jobClass::dispatch($channel, $event, $monitor, $incident, $check);
     }
 }

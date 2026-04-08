@@ -18,6 +18,10 @@ services:
         condition: service_healthy
     networks:
       - up-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   worker:
     build:
@@ -38,6 +42,10 @@ services:
     networks:
       - up-network
     stop_signal: SIGTERM
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'queue:work' || exit 1"]
       interval: 30s
@@ -62,6 +70,10 @@ services:
         condition: service_healthy
     networks:
       - up-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'schedule:work' || exit 1"]
       interval: 30s
@@ -85,6 +97,10 @@ services:
       - app
     networks:
       - up-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'reverb:start' || exit 1"]
       interval: 30s
@@ -103,6 +119,10 @@ services:
       - pgdata:/var/lib/postgresql/data
     networks:
       - up-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-up} -d ${DB_DATABASE:-up}"]
       interval: 10s
@@ -118,6 +138,10 @@ services:
       - redisdata:/data
     networks:
       - up-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s

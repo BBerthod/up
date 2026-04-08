@@ -2,9 +2,10 @@
     "name": "Up - Uptime Monitor",
     "short_name": "Up",
     "description": "Monitor your websites and services with real-time uptime tracking",
-    "start_url": "/monitors",
+    "start_url": "/dashboard",
     "scope": "/",
     "display": "standalone",
+    "orientation": "any",
     "theme_color": "#0a0f1a",
     "background_color": "#0a0f1a",
     "categories": ["utilities", "productivity"],
@@ -20,6 +21,26 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "url": "/dashboard",
+            "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]
+        },
+        {
+            "name": "Monitors",
+            "short_name": "Monitors",
+            "url": "/monitors",
+            "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]
+        },
+        {
+            "name": "Incidents",
+            "short_name": "Incidents",
+            "url": "/incidents",
+            "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]
         }
     ]
 }

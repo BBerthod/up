@@ -249,6 +249,28 @@ class MonitorController extends Controller
         return to_route('monitors.show', $monitor);
     }
 
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'string', 'in:pause,resume,delete'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $monitors = Monitor::whereIn('id', $validated['ids'])->get();
+        foreach ($monitors as $monitor) {
+            $this->authorize($validated['action'] === 'delete' ? 'delete' : 'update', $monitor);
+        }
+
+        match ($validated['action']) {
+            'pause' => Monitor::whereIn('id', $validated['ids'])->update(['is_active' => false]),
+            'resume' => Monitor::whereIn('id', $validated['ids'])->update(['is_active' => true]),
+            'delete' => Monitor::whereIn('id', $validated['ids'])->delete(),
+        };
+
+        return back()->with('success', count($validated['ids']).' monitors updated.');
+    }
+
     public function destroy(Monitor $monitor): RedirectResponse
     {
         $this->authorize('delete', $monitor);

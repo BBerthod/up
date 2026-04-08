@@ -7,6 +7,7 @@ import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import { usePersistentFilters } from '@/Composables/usePersistentFilters'
 import { usePageLoading } from '@/Composables/usePageLoading'
 import Tag from 'primevue/tag'
+import SeverityBadge from '@/Components/SeverityBadge.vue'
 
 useRealtimeUpdates({
     onMonitorChecked: ['incidents', 'activeCount'],
@@ -126,7 +127,7 @@ const typeLabels: Record<string, string> = {
         <!-- Linear List Header -->
         <div class="hidden md:grid grid-cols-12 gap-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider px-4">
             <div class="col-span-1">Status</div>
-            <div @click="toggleSort('monitor_name')" @keydown.enter="toggleSort('monitor_name')" @keydown.space.prevent="toggleSort('monitor_name')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'monitor_name' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-4 flex items-center gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'monitor_name' ? 'text-white' : 'hover:text-zinc-300'">
+            <div @click="toggleSort('monitor_name')" @keydown.enter="toggleSort('monitor_name')" @keydown.space.prevent="toggleSort('monitor_name')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'monitor_name' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-3 flex items-center gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'monitor_name' ? 'text-white' : 'hover:text-zinc-300'">
                 Monitor
                 <span v-if="filters.sort === 'monitor_name'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
             </div>
@@ -134,7 +135,8 @@ const typeLabels: Record<string, string> = {
                 Cause
                 <span v-if="filters.sort === 'cause'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
             </div>
-            <div @click="toggleSort('started_at')" @keydown.enter="toggleSort('started_at')" @keydown.space.prevent="toggleSort('started_at')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'started_at' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-3 flex items-center gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'started_at' ? 'text-white' : 'hover:text-zinc-300'">
+            <div class="col-span-2">Severity</div>
+            <div @click="toggleSort('started_at')" @keydown.enter="toggleSort('started_at')" @keydown.space.prevent="toggleSort('started_at')" tabindex="0" role="columnheader" :aria-sort="filters.sort === 'started_at' ? (filters.dir === 'asc' ? 'ascending' : 'descending') : undefined" class="col-span-2 flex items-center gap-1 cursor-pointer select-none focus:outline-none focus:text-white" :class="filters.sort === 'started_at' ? 'text-white' : 'hover:text-zinc-300'">
                 Started
                 <span v-if="filters.sort === 'started_at'">{{ filters.dir === 'asc' ? '↑' : '↓' }}</span>
             </div>
@@ -162,7 +164,7 @@ const typeLabels: Record<string, string> = {
                 </div>
 
                 <!-- Monitor -->
-                <div class="col-span-4 min-w-0">
+                <div class="col-span-3 min-w-0">
                     <Link :href="route('monitors.show', incident.monitor_id)" class="block text-sm font-medium text-white hover:text-emerald-400 transition-colors truncate">
                         {{ incident.monitor_name }}
                     </Link>
@@ -171,7 +173,7 @@ const typeLabels: Record<string, string> = {
 
                 <!-- Cause -->
                 <div class="col-span-2">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded textxs font-medium bg-white/5 text-zinc-400 border border-white/5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-400 border border-white/5">
                         {{ incident.cause?.replace('_', ' ') }}
                     </span>
                     <span v-if="incident.cause === 'functional' && incident.functional_check_name" class="block text-[10px] text-zinc-600 font-mono mt-0.5 truncate">
@@ -179,8 +181,14 @@ const typeLabels: Record<string, string> = {
                     </span>
                 </div>
 
+                <!-- Severity -->
+                <div class="col-span-2">
+                    <SeverityBadge v-if="incident.severity" :severity="incident.severity" />
+                    <span v-else class="text-xs text-zinc-600">-</span>
+                </div>
+
                 <!-- Time -->
-                <div class="col-span-3 font-mono text-sm text-zinc-400">
+                <div class="col-span-2 font-mono text-sm text-zinc-400">
                     {{ formatDate(incident.started_at) }}
                 </div>
 

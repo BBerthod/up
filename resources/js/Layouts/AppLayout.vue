@@ -9,6 +9,7 @@ import Button from 'primevue/button'
 import { useFlashToast } from '@/Composables/useFlashToast'
 import { useAuth } from '@/Composables/useAuth'
 import GlobalSearch from '@/Components/GlobalSearch.vue'
+import InstallPrompt from '@/Components/InstallPrompt.vue'
 
 const page = usePage()
 useFlashToast()
@@ -26,6 +27,7 @@ const navigation = computed(() => {
         { name: 'Incidents', href: '/incidents', icon: 'alert-triangle', current: false },
         { name: 'Channels', href: '/channels', icon: 'bell-alert', current: false },
         { name: 'Status Pages', href: '/status-pages', icon: 'globe', current: false },
+        { name: 'Notifications', href: '/notification-logs', icon: 'bell-ring', current: false },
         { name: 'Events', href: '/events', icon: 'bell', current: false },
         { name: 'Sources', href: '/sources', icon: 'server', current: false },
         { name: 'Cache Warming', href: '/warming', icon: 'flame', current: false },
@@ -108,6 +110,7 @@ onMounted(() => {
                     <svg v-else-if="item.icon === 'activity'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     <svg v-else-if="item.icon === 'alert-triangle'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     <svg v-else-if="item.icon === 'bell'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <svg v-else-if="item.icon === 'bell-ring'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M2 8c0-2.2.7-4.3 2-6"/><path d="M22 8a10 10 0 0 0-2-6"/></svg>
                     <svg v-else-if="item.icon === 'bell-alert'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><circle cx="18" cy="4" r="2" fill="currentColor" stroke="none"/></svg>
                     <svg v-else-if="item.icon === 'globe'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     <svg v-else-if="item.icon === 'users'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -150,6 +153,7 @@ onMounted(() => {
                     <svg v-else-if="item.icon === 'activity'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     <svg v-else-if="item.icon === 'alert-triangle'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     <svg v-else-if="item.icon === 'bell'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <svg v-else-if="item.icon === 'bell-ring'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M2 8c0-2.2.7-4.3 2-6"/><path d="M22 8a10 10 0 0 0-2-6"/></svg>
                     <svg v-else-if="item.icon === 'bell-alert'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><circle cx="18" cy="4" r="2" fill="currentColor" stroke="none"/></svg>
                     <svg v-else-if="item.icon === 'globe'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     <svg v-else-if="item.icon === 'users'" class="w-4 h-4 shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -221,4 +225,5 @@ onMounted(() => {
             </main>
         </div>
     </div>
+    <InstallPrompt />
 </template>
