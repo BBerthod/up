@@ -30,18 +30,21 @@ class MetricsService
         $totalMonitors = Monitor::count();
         $monitorsPaused = Monitor::inactive()->count();
 
+        $activeMonitorIds = Monitor::active()->pluck('id');
+
         $latestChecks = MonitorCheck::query()
             ->select('monitor_id', 'status')
-            ->whereIn('id', function ($q) {
+            ->whereIn('monitor_id', $activeMonitorIds)
+            ->whereIn('id', function ($q) use ($activeMonitorIds) {
                 $q->select(DB::raw('MAX(id)'))
                     ->from('monitor_checks')
+                    ->whereIn('monitor_id', $activeMonitorIds)
                     ->groupBy('monitor_id');
             })
             ->get();
 
-        $activeMonitorIds = Monitor::active()->pluck('id');
-        $monitorsUp = $latestChecks->filter(fn ($c) => $activeMonitorIds->contains($c->monitor_id) && $c->status->value === 'up')->count();
-        $monitorsDown = $latestChecks->filter(fn ($c) => $activeMonitorIds->contains($c->monitor_id) && $c->status->value === 'down')->count();
+        $monitorsUp = $latestChecks->filter(fn ($c) => $c->status->value === 'up')->count();
+        $monitorsDown = $latestChecks->filter(fn ($c) => $c->status->value === 'down')->count();
 
         $checksLast24h = MonitorCheck::where('checked_at', '>=', now()->subDay());
 
@@ -50,6 +53,22 @@ class MetricsService
             ->value('uptime') ?? 100);
 
         $avgResponseTime24h = (int) ($checksLast24h->clone()->avg('response_time_ms') ?? 0);
+
+        $percentiles = MonitorCheck::where('checked_at', '>=', now()->subDay())
+            ->selectRaw("PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time_ms) as p95")
+            ->selectRaw("PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY response_time_ms) as p99")
+            ->first();
+
+        $p95ResponseTime24h = (int) ($percentiles->p95 ?? 0);
+        $p99ResponseTime24h = (int) ($percentiles->p99 ?? 0);
+
+        $teamId = auth()->user()->team_id;
+        $team = \App\Models\Team::find($teamId);
+        $slaTarget = (float) ($team->sla_target ?? 99.90);
+
+        $slaCurrentMonth = (float) (MonitorCheck::where('checked_at', '>=', now()->startOfMonth())
+            ->selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 2), 100) as uptime")
+            ->value('uptime') ?? 100);
 
         $totalChecksToday = MonitorCheck::where('checked_at', '>=', now()->startOfDay())->count();
 
@@ -150,6 +169,10 @@ class MetricsService
             'monitors_paused' => $monitorsPaused,
             'avg_uptime_24h' => $avgUptime24h,
             'avg_response_time_24h' => $avgResponseTime24h,
+            'p95_response_time_24h' => $p95ResponseTime24h,
+            'p99_response_time_24h' => $p99ResponseTime24h,
+            'sla_target' => $slaTarget,
+            'sla_current_month' => $slaCurrentMonth,
             'total_checks_today' => $totalChecksToday,
             'active_incidents' => $activeIncidents,
             'down_monitors' => $downMonitors,
