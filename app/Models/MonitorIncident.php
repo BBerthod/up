@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\IncidentCause;
+use App\Enums\IncidentSeverity;
 use Carbon\CarbonInterval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,10 +21,13 @@ class MonitorIncident extends Model
         'started_at',
         'resolved_at',
         'cause',
+        'severity',
+        'notes',
     ];
 
     protected $casts = [
         'cause' => IncidentCause::class,
+        'severity' => IncidentSeverity::class,
         'started_at' => 'datetime',
         'resolved_at' => 'datetime',
     ];

@@ -10,7 +10,11 @@ class Team extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'sla_target'];
+
+    protected $casts = [
+        'sla_target' => 'decimal:2',
+    ];
 
     public function users(): HasMany
     {

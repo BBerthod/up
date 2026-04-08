@@ -1,16 +1,81 @@
-const CACHE_NAME = 'up-cache-v2'
+const STATIC_CACHE = 'up-static-v3'
+const API_CACHE = 'up-api-v1'
+const OFFLINE_URL = '/offline.html'
 
-self.addEventListener('install', () => {
-    self.skipWaiting()
+// Assets to pre-cache on install
+const PRECACHE_ASSETS = [
+    OFFLINE_URL,
+]
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(STATIC_CACHE)
+            .then(cache => cache.addAll(PRECACHE_ASSETS))
+            .then(() => self.skipWaiting())
+    )
 })
 
 self.addEventListener('activate', (event) => {
+    const validCaches = [STATIC_CACHE, API_CACHE]
     event.waitUntil(
-        caches.keys().then(names =>
-            Promise.all(names.map(n => caches.delete(n)))
-        ).then(() => self.clients.claim())
+        caches.keys()
+            .then(names => Promise.all(
+                names
+                    .filter(name => !validCaches.includes(name))
+                    .map(name => caches.delete(name))
+            ))
+            .then(() => self.clients.claim())
     )
 })
+
+// Network-first with timeout helper
+function networkFirstWithTimeout(request, cacheName, timeoutMs = 5000) {
+    return new Promise((resolve) => {
+        let settled = false
+
+        const timeoutId = setTimeout(() => {
+            if (settled) return
+            settled = true
+            caches.match(request).then(cached => {
+                if (cached) {
+                    resolve(cached)
+                } else {
+                    // No cache — let the network promise resolve when it can
+                }
+            })
+        }, timeoutMs)
+
+        fetch(request.clone())
+            .then(response => {
+                clearTimeout(timeoutId)
+                if (!settled) {
+                    settled = true
+                    if (response.ok) {
+                        const clone = response.clone()
+                        caches.open(cacheName).then(cache => cache.put(request, clone))
+                    }
+                    resolve(response)
+                } else if (response.ok) {
+                    // Timeout already fired but update cache in background
+                    const clone = response.clone()
+                    caches.open(cacheName).then(cache => cache.put(request, clone))
+                }
+            })
+            .catch(() => {
+                clearTimeout(timeoutId)
+                if (!settled) {
+                    settled = true
+                    caches.match(request).then(cached => {
+                        if (cached) {
+                            resolve(cached)
+                        } else {
+                            resolve(new Response('Network error', { status: 503 }))
+                        }
+                    })
+                }
+            })
+    })
+}
 
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return
@@ -18,19 +83,52 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url)
     if (url.origin !== location.origin) return
 
-    // Only cache static assets (cache-first)
-    if (/\.(css|js|png|jpg|svg|woff2?|ttf)$/i.test(url.pathname) || url.pathname.startsWith('/build/')) {
+    // Static assets — cache-first
+    if (/\.(css|js|png|jpg|jpeg|gif|svg|woff2?|ttf|ico)$/i.test(url.pathname) || url.pathname.startsWith('/build/')) {
         event.respondWith(
             caches.match(event.request).then(cached =>
                 cached || fetch(event.request).then(response => {
                     if (response.ok) {
                         const clone = response.clone()
-                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
+                        caches.open(STATIC_CACHE).then(cache => cache.put(event.request, clone))
                     }
                     return response
                 })
             )
         )
+        return
+    }
+
+    // Inertia requests — network-first with 5s timeout, cache fallback
+    if (event.request.headers.get('X-Inertia')) {
+        event.respondWith(networkFirstWithTimeout(event.request, API_CACHE, 5000))
+        return
+    }
+
+    // API requests — network-first with 5s timeout, cache fallback
+    if (url.pathname.startsWith('/api/')) {
+        event.respondWith(networkFirstWithTimeout(event.request, API_CACHE, 5000))
+        return
+    }
+
+    // Navigation requests (HTML) — network-first, fallback to cached, ultimate fallback to offline page
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    if (response.ok) {
+                        const clone = response.clone()
+                        caches.open(API_CACHE).then(cache => cache.put(event.request, clone))
+                    }
+                    return response
+                })
+                .catch(() =>
+                    caches.match(event.request).then(cached =>
+                        cached || caches.match(OFFLINE_URL)
+                    )
+                )
+        )
+        return
     }
 })
 

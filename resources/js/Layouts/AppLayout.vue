@@ -9,6 +9,7 @@ import Button from 'primevue/button'
 import { useFlashToast } from '@/Composables/useFlashToast'
 import { useAuth } from '@/Composables/useAuth'
 import GlobalSearch from '@/Components/GlobalSearch.vue'
+import InstallPrompt from '@/Components/InstallPrompt.vue'
 
 const page = usePage()
 useFlashToast()
@@ -221,4 +222,5 @@ onMounted(() => {
             </main>
         </div>
     </div>
+    <InstallPrompt />
 </template>
