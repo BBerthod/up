@@ -7,6 +7,7 @@ import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import { usePageLoading } from '@/Composables/usePageLoading'
 import { useSimplePersistentFilter } from '@/Composables/usePersistentFilters'
 import DataView from 'primevue/dataview'
+import Dialog from 'primevue/dialog'
 
 useRealtimeUpdates({
     onMonitorChecked: ['monitors'],
@@ -91,6 +92,63 @@ const filteredMonitors = computed(() => {
         m.name.toLowerCase().includes(q) || m.url.toLowerCase().includes(q)
     )
 })
+
+// Bulk selection
+const selectedIds = ref<Set<number>>(new Set())
+const showDeleteConfirm = ref(false)
+
+const allVisibleSelected = computed(() => {
+    if (filteredMonitors.value.length === 0) return false
+    return filteredMonitors.value.every(m => selectedIds.value.has(m.id))
+})
+
+const someSelected = computed(() => selectedIds.value.size > 0)
+
+const toggleSelectAll = () => {
+    if (allVisibleSelected.value) {
+        filteredMonitors.value.forEach(m => selectedIds.value.delete(m.id))
+    } else {
+        filteredMonitors.value.forEach(m => selectedIds.value.add(m.id))
+    }
+    // Trigger reactivity
+    selectedIds.value = new Set(selectedIds.value)
+}
+
+const toggleSelect = (id: number) => {
+    if (selectedIds.value.has(id)) {
+        selectedIds.value.delete(id)
+    } else {
+        selectedIds.value.add(id)
+    }
+    selectedIds.value = new Set(selectedIds.value)
+}
+
+const clearSelection = () => {
+    selectedIds.value = new Set()
+}
+
+const executeBulkAction = (action: 'pause' | 'resume' | 'delete') => {
+    if (action === 'delete') {
+        showDeleteConfirm.value = true
+        return
+    }
+    router.post(route('monitors.bulk-action'), {
+        action,
+        ids: Array.from(selectedIds.value),
+    }, {
+        onSuccess: clearSelection,
+    })
+}
+
+const confirmBulkDelete = () => {
+    showDeleteConfirm.value = false
+    router.post(route('monitors.bulk-action'), {
+        action: 'delete',
+        ids: Array.from(selectedIds.value),
+    }, {
+        onSuccess: clearSelection,
+    })
+}
 </script>
 
 <template>
@@ -151,62 +209,99 @@ const filteredMonitors = computed(() => {
         <DataView v-else :value="filteredMonitors" :paginator="filteredMonitors.length > 20" :rows="20" class="bg-transparent">
             <template #list="slotProps">
                 <div class="flex flex-col">
+                    <!-- Select-all header row (only shown when list has items) -->
+                    <div v-if="slotProps.items.length > 0" class="flex items-center gap-3 py-2 px-2 mb-1 border-b border-white/5">
+                        <label class="flex items-center justify-center w-4 h-4 cursor-pointer" :aria-label="allVisibleSelected ? 'Deselect all monitors' : 'Select all monitors'">
+                            <input
+                                type="checkbox"
+                                :checked="allVisibleSelected"
+                                :indeterminate="someSelected && !allVisibleSelected"
+                                @change="toggleSelectAll"
+                                class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 text-emerald-500 accent-emerald-500 cursor-pointer"
+                                aria-label="Select all monitors"
+                            />
+                        </label>
+                        <span class="text-xs text-zinc-500">Select all</span>
+                    </div>
+
                     <div v-for="(monitor, index) in slotProps.items" :key="index"
-                        class="group flex items-center justify-between py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors -mx-4 px-4 sm:mx-0 sm:px-2 rounded-lg cursor-pointer"
-                        tabindex="0"
-                        role="button"
-                        @click="router.visit(route('monitors.show', monitor.id))"
-                        @keydown.enter="router.visit(route('monitors.show', monitor.id))"
-                        @keydown.space.prevent="router.visit(route('monitors.show', monitor.id))"
-                        :aria-label="`View ${monitor.name} monitor details`">
+                        class="group flex items-center py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors -mx-4 px-4 sm:mx-0 sm:px-2 rounded-lg gap-3"
+                        :class="selectedIds.has(monitor.id) ? 'bg-emerald-500/[0.03]' : ''">
 
-                        <div class="flex items-center gap-4 min-w-0">
-                             <!-- Status Dot -->
-                            <div class="relative flex items-center justify-center w-4 h-4 shrink-0">
-                                <template v-if="!monitor.is_active">
-                                    <div class="w-2.5 h-2.5 rounded-full border-2 border-zinc-600 bg-transparent" />
-                                    <span class="sr-only">Status: Paused</span>
-                                </template>
-                                <template v-else-if="monitor.latest_check?.status === 'up'">
-                                     <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                                     <span class="sr-only">Status: Up</span>
-                                </template>
-                                <template v-else>
-                                     <span class="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-25 animate-ping"></span>
-                                     <div class="relative w-2.5 h-2.5 rounded-full bg-red-500" />
-                                     <span class="sr-only">Status: Down</span>
-                                </template>
-                            </div>
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <!-- Checkbox -->
+                            <label
+                                class="flex items-center justify-center w-4 h-4 shrink-0 cursor-pointer"
+                                @click.stop
+                                :aria-label="`${selectedIds.has(monitor.id) ? 'Deselect' : 'Select'} ${monitor.name}`"
+                            >
+                                <input
+                                    type="checkbox"
+                                    :checked="selectedIds.has(monitor.id)"
+                                    @change="toggleSelect(monitor.id)"
+                                    class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-emerald-500 cursor-pointer"
+                                />
+                            </label>
 
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-white font-medium tracking-tight truncate">{{ monitor.name }}</span>
-                                    <span v-if="!monitor.is_active" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-zinc-800 text-zinc-400">Paused</span>
+                            <!-- Clickable row content -->
+                            <div
+                                class="flex items-center justify-between flex-1 min-w-0 cursor-pointer"
+                                tabindex="0"
+                                role="button"
+                                @click="router.visit(route('monitors.show', monitor.id))"
+                                @keydown.enter="router.visit(route('monitors.show', monitor.id))"
+                                @keydown.space.prevent="router.visit(route('monitors.show', monitor.id))"
+                                :aria-label="`View ${monitor.name} monitor details`"
+                            >
+                                <div class="flex items-center gap-4 min-w-0">
+                                    <!-- Status Dot -->
+                                    <div class="relative flex items-center justify-center w-4 h-4 shrink-0">
+                                        <template v-if="!monitor.is_active">
+                                            <div class="w-2.5 h-2.5 rounded-full border-2 border-zinc-600 bg-transparent" />
+                                            <span class="sr-only">Status: Paused</span>
+                                        </template>
+                                        <template v-else-if="monitor.latest_check?.status === 'up'">
+                                            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                                            <span class="sr-only">Status: Up</span>
+                                        </template>
+                                        <template v-else>
+                                            <span class="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-25 animate-ping"></span>
+                                            <div class="relative w-2.5 h-2.5 rounded-full bg-red-500" />
+                                            <span class="sr-only">Status: Down</span>
+                                        </template>
+                                    </div>
+
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-white font-medium tracking-tight truncate">{{ monitor.name }}</span>
+                                            <span v-if="!monitor.is_active" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-zinc-800 text-zinc-400">Paused</span>
+                                        </div>
+                                        <p class="text-xs text-zinc-500 font-mono truncate hover:text-emerald-400 transition-colors">{{ monitor.url }}</p>
+                                    </div>
                                 </div>
-                                <p class="text-xs text-zinc-500 font-mono truncate hover:text-emerald-400 transition-colors">{{ monitor.url }}</p>
+
+                                <!-- Metrics Column -->
+                                <div class="flex items-center gap-8 md:gap-12 shrink-0 ml-4">
+                                    <div class="hidden md:block text-right w-20">
+                                        <span class="block text-sm font-medium" :class="monitor.uptime_24h > 98 ? 'text-emerald-500' : 'text-zinc-300'">{{ monitor.uptime_24h ?? '-' }}%</span>
+                                        <span class="text-[10px] text-zinc-600 uppercase tracking-wider">Uptime</span>
+                                    </div>
+
+                                    <div class="hidden sm:block text-right w-16">
+                                        <span class="block text-sm font-mono text-zinc-300">{{ monitor.latest_check?.response_time_ms ?? '-' }}ms</span>
+                                        <span class="text-[10px] text-zinc-600 uppercase tracking-wider">Latency</span>
+                                    </div>
+
+                                    <div class="text-right w-16">
+                                        <span class="block text-xs text-zinc-400">{{ relativeTime(monitor.latest_check?.checked_at) }}</span>
+                                        <span class="text-[10px] text-zinc-600 uppercase tracking-wider">Checked</span>
+                                    </div>
+
+                                    <div class="text-zinc-600 group-hover:text-emerald-500 transition-colors">
+                                        <i class="pi pi-chevron-right text-xs" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Metrics Column -->
-                        <div class="flex items-center gap-8 md:gap-12 shrink-0 ml-4">
-                             <div class="hidden md:block text-right w-20">
-                                 <span class="block text-sm font-medium" :class="monitor.uptime_24h > 98 ? 'text-emerald-500' : 'text-zinc-300'">{{ monitor.uptime_24h ?? '-' }}%</span>
-                                 <span class="text-[10px] text-zinc-600 uppercase tracking-wider">Uptime</span>
-                             </div>
-
-                             <div class="hidden sm:block text-right w-16">
-                                 <span class="block text-sm font-mono text-zinc-300">{{ monitor.latest_check?.response_time_ms ?? '-' }}ms</span>
-                                 <span class="text-[10px] text-zinc-600 uppercase tracking-wider">Latency</span>
-                             </div>
-
-                             <div class="text-right w-16">
-                                 <span class="block text-xs text-zinc-400">{{ relativeTime(monitor.latest_check?.checked_at) }}</span>
-                                 <span class="text-[10px] text-zinc-600 uppercase tracking-wider">Checked</span>
-                             </div>
-
-                             <div class="text-zinc-600 group-hover:text-emerald-500 transition-colors">
-                                 <i class="pi pi-chevron-right text-xs" />
-                             </div>
                         </div>
 
                     </div>
@@ -236,4 +331,95 @@ const filteredMonitors = computed(() => {
             </template>
         </DataView>
     </div>
+
+    <!-- Floating Bulk Action Bar -->
+    <Teleport to="body">
+        <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 translate-y-4"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition-all duration-150 ease-in"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 translate-y-4"
+        >
+            <div
+                v-if="someSelected"
+                class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl"
+                style="background: linear-gradient(135deg, rgba(24, 24, 27, 0.95) 0%, rgba(17, 17, 19, 0.98) 100%); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1);"
+                role="toolbar"
+                :aria-label="`${selectedIds.size} monitors selected`"
+            >
+                <span class="text-sm font-medium text-zinc-300 pr-1 border-r border-white/10 mr-1">
+                    {{ selectedIds.size }} selected
+                </span>
+                <button
+                    @click="executeBulkAction('pause')"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+                    aria-label="Pause selected monitors"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                    Pause
+                </button>
+                <button
+                    @click="executeBulkAction('resume')"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
+                    aria-label="Resume selected monitors"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Resume
+                </button>
+                <button
+                    @click="executeBulkAction('delete')"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 transition-colors"
+                    aria-label="Delete selected monitors"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Delete
+                </button>
+                <button
+                    @click="clearSelection"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-colors"
+                    aria-label="Cancel selection"
+                >
+                    Cancel
+                </button>
+            </div>
+        </Transition>
+    </Teleport>
+
+    <!-- Bulk Delete Confirmation -->
+    <Dialog
+        v-model:visible="showDeleteConfirm"
+        modal
+        header="Delete Monitors"
+        :style="{ width: '380px' }"
+        class="!bg-[#111113] !border-white/10"
+    >
+        <p class="text-sm text-zinc-300 leading-relaxed">
+            Are you sure you want to delete <span class="text-white font-medium">{{ selectedIds.size }} monitor{{ selectedIds.size !== 1 ? 's' : '' }}</span>?
+            This action cannot be undone.
+        </p>
+        <template #footer>
+            <div class="flex justify-end gap-2">
+                <button
+                    @click="showDeleteConfirm = false"
+                    class="px-4 py-2 rounded-lg text-sm text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                >
+                    Cancel
+                </button>
+                <button
+                    @click="confirmBulkDelete"
+                    class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 transition-colors"
+                >
+                    Delete {{ selectedIds.size }} monitor{{ selectedIds.size !== 1 ? 's' : '' }}
+                </button>
+            </div>
+        </template>
+    </Dialog>
 </template>

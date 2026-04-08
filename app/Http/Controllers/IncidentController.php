@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\IncidentCause;
 use App\Models\Monitor;
 use App\Models\MonitorIncident;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Inertia\Inertia;
@@ -153,5 +154,17 @@ class IncidentController extends Controller
                 }
             });
         }, 'incidents-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    public function update(Request $request, MonitorIncident $incident): RedirectResponse
+    {
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:5000'],
+            'severity' => ['nullable', 'string', 'in:critical,major,minor,warning'],
+        ]);
+
+        $incident->update($validated);
+
+        return back()->with('success', 'Incident updated.');
     }
 }

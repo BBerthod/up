@@ -17,6 +17,7 @@ import SkeletonMonitorShow from '@/Components/SkeletonMonitorShow.vue'
 import IncidentTimeline from '@/Components/IncidentTimeline.vue'
 import PurgeDialog from '@/Components/PurgeDialog.vue'
 import FunctionalChecks from '@/Components/FunctionalChecks.vue'
+import SeverityBadge from '@/Components/SeverityBadge.vue'
 
 useRealtimeUpdates({
     onMonitorChecked: ['monitor', 'checks', 'chartData', 'uptime', 'heatmapData', 'incidents', 'incidentStats', 'incidentTimeline'],
@@ -26,7 +27,7 @@ useRealtimeUpdates({
 const { isLoading } = usePageLoading()
 
 interface Check { id: number; status: 'up' | 'down'; response_time_ms: number; status_code: number; checked_at: string }
-interface Incident { id: number; started_at: string; resolved_at: string | null; cause: string }
+interface Incident { id: number; started_at: string; resolved_at: string | null; cause: string; severity?: string | null; notes?: string | null }
 interface PaginatedIncidents {
     data: Incident[]
     links: { first: string; last: string; prev: string | null; next: string | null }
@@ -67,6 +68,30 @@ const showDeleteDialog = ref(false)
 const showPurgeChecks = ref(false)
 const showPurgeIncidents = ref(false)
 const showPurgeLighthouse = ref(false)
+
+// Incident notes
+const editingNotesId = ref<number | null>(null)
+const notesInput = ref('')
+
+const openNotesEditor = (incident: Incident) => {
+    editingNotesId.value = incident.id
+    notesInput.value = incident.notes ?? ''
+}
+
+const cancelNotesEditor = () => {
+    editingNotesId.value = null
+    notesInput.value = ''
+}
+
+const saveNotes = (incidentId: number) => {
+    router.put(route('incidents.update', incidentId), { notes: notesInput.value }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingNotesId.value = null
+            notesInput.value = ''
+        },
+    })
+}
 
 useFocusTrap(channelModalRef, showChannelModal)
 
@@ -344,6 +369,7 @@ const handleIncidentPage = (page: number) => {
                                     <i :class="[sortIcon('cause'), 'text-xs']" />
                                 </button>
                             </th>
+                            <th class="pb-3 font-medium">Severity</th>
                             <!-- Sortable: started_at -->
                             <th class="pb-3 font-medium">
                                 <button @click="handleIncidentSort('started_at')" class="inline-flex items-center gap-1.5 hover:text-white transition-colors">
@@ -359,15 +385,20 @@ const handleIncidentPage = (page: number) => {
                                 </button>
                             </th>
                             <th class="pb-3 font-medium">Duration</th>
+                            <th class="pb-3 font-medium">Notes</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="incident in incidents.data" :key="incident.id" class="border-b border-white/5 last:border-0">
+                        <tr v-for="incident in incidents.data" :key="incident.id" class="border-b border-white/5 last:border-0 align-top">
                             <td class="py-3">
                                 <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium', getCauseConfig(incident.cause).cls]">
                                     <svg v-if="getCauseConfig(incident.cause).icon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-html="getCauseConfig(incident.cause).icon" />
                                     {{ getCauseConfig(incident.cause).label }}
                                 </span>
+                            </td>
+                            <td class="py-3">
+                                <SeverityBadge v-if="incident.severity" :severity="incident.severity" />
+                                <span v-else class="text-xs text-slate-600">-</span>
                             </td>
                             <td class="py-3 text-slate-300 text-sm">{{ formatDate(incident.started_at) }}</td>
                             <td class="py-3 text-sm">
@@ -378,6 +409,44 @@ const handleIncidentPage = (page: number) => {
                                 </span>
                             </td>
                             <td class="py-3 text-slate-400 text-sm font-mono">{{ duration(incident.started_at, incident.resolved_at) }}</td>
+                            <!-- Notes cell (resolved incidents only) -->
+                            <td class="py-3 max-w-[200px]">
+                                <template v-if="incident.resolved_at">
+                                    <div v-if="editingNotesId !== incident.id">
+                                        <p v-if="incident.notes" class="text-xs text-slate-400 leading-relaxed mb-1 line-clamp-2">{{ incident.notes }}</p>
+                                        <button
+                                            @click="openNotesEditor(incident)"
+                                            class="text-xs text-zinc-600 hover:text-emerald-400 transition-colors"
+                                        >
+                                            {{ incident.notes ? 'Edit notes' : '+ Add notes' }}
+                                        </button>
+                                    </div>
+                                    <div v-else class="space-y-1.5">
+                                        <textarea
+                                            v-model="notesInput"
+                                            rows="3"
+                                            placeholder="Post-mortem notes..."
+                                            class="w-full text-xs bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 resize-none transition-colors"
+                                            @keydown.escape="cancelNotesEditor"
+                                        />
+                                        <div class="flex items-center gap-2">
+                                            <button
+                                                @click="saveNotes(incident.id)"
+                                                class="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/20 transition-colors"
+                                            >
+                                                Save
+                                            </button>
+                                            <button
+                                                @click="cancelNotesEditor"
+                                                class="text-xs px-2 py-1 rounded text-zinc-500 hover:text-zinc-300 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                                <span v-else class="text-xs text-zinc-700">-</span>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

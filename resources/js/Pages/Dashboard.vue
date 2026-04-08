@@ -7,6 +7,7 @@ import PageHeader from '@/Components/PageHeader.vue'
 import GlassCard from '@/Components/GlassCard.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import SkeletonDashboard from '@/Components/SkeletonDashboard.vue'
+import SlaProgressBar from '@/Components/SlaProgressBar.vue'
 
 const lastUpdated = ref<Date | null>(null)
 const isRefreshing = ref(false)
@@ -78,6 +79,10 @@ const props = defineProps<{
         monitors_paused: number
         avg_uptime_24h: number
         avg_response_time_24h: number
+        p95_response_time_24h: number
+        p99_response_time_24h: number
+        sla_target: number
+        sla_current_month: number
         total_checks_today: number
         active_incidents: number
         down_monitors: DownMonitor[]
@@ -345,7 +350,20 @@ function formatChartTooltipDate(hour: string): string {
                     <span class="text-4xl font-semibold text-white tracking-tight">{{ metrics.avg_response_time_24h }}</span>
                     <span class="text-base text-zinc-500">ms</span>
                 </div>
+                <div v-if="metrics.p95_response_time_24h || metrics.p99_response_time_24h" class="flex items-center gap-3 mt-1">
+                    <span v-if="metrics.p95_response_time_24h" class="text-xs font-mono text-zinc-500">
+                        p95 <span class="text-zinc-300">{{ metrics.p95_response_time_24h }}ms</span>
+                    </span>
+                    <span v-if="metrics.p99_response_time_24h" class="text-xs font-mono text-zinc-500">
+                        p99 <span class="text-zinc-300">{{ metrics.p99_response_time_24h }}ms</span>
+                    </span>
+                </div>
             </div>
+        </div>
+
+        <!-- SLA Progress Bar -->
+        <div v-if="metrics.sla_target > 0" class="pb-8">
+            <SlaProgressBar :target="metrics.sla_target" :current="metrics.sla_current_month" />
         </div>
 
         <div class="grid lg:grid-cols-12 gap-12">
