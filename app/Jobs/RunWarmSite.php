@@ -32,7 +32,7 @@ class RunWarmSite implements ShouldBeUnique, ShouldQueue
 
     public function __construct(public WarmSite $warmSite)
     {
-        $this->onQueue('monitors');
+        $this->onQueue('lighthouse');
     }
 
     public function uniqueId(): string

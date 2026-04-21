@@ -25,7 +25,7 @@ class RunLighthouseAudit implements ShouldQueue
 
     public function __construct(public Monitor $monitor)
     {
-        $this->onQueue('monitors');
+        $this->onQueue('lighthouse');
     }
 
     public function handle(LighthouseService $lighthouseService): void
