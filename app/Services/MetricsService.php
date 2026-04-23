@@ -56,7 +56,7 @@ class MetricsService
             ->where('checked_at', '>=', now()->subDay());
 
         $avgUptime24h = (float) ($checksLast24h->clone()
-            ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
+            ->uptimePercent(1)
             ->value('uptime') ?? 100);
 
         $avgResponseTime24h = (int) ($checksLast24h->clone()->avg('response_time_ms') ?? 0);
@@ -74,7 +74,7 @@ class MetricsService
 
         $slaCurrentMonth = (float) (MonitorCheck::whereIn('monitor_id', $teamMonitorIds)
             ->where('checked_at', '>=', now()->startOfMonth())
-            ->selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 2), 100) as uptime")
+            ->selectRaw('COALESCE('.MonitorCheck::uptimeRaw(2).', 100) as uptime')
             ->value('uptime') ?? 100);
 
         $totalChecksToday = MonitorCheck::whereIn('monitor_id', $teamMonitorIds)
@@ -124,10 +124,10 @@ class MetricsService
 
         $monitorsOverview = Monitor::active()
             ->addSelect([
-                'uptime_24h' => MonitorCheck::selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1), 100)")
+                'uptime_24h' => MonitorCheck::selectRaw('COALESCE('.MonitorCheck::uptimeRaw(1).', 100)')
                     ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
                     ->where('checked_at', '>=', now()->subDay()),
-                'uptime_7d' => MonitorCheck::selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1), 100)")
+                'uptime_7d' => MonitorCheck::selectRaw('COALESCE('.MonitorCheck::uptimeRaw(1).', 100)')
                     ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
                     ->where('checked_at', '>=', now()->subDays(7)),
                 'last_response_ms' => MonitorCheck::selectRaw('COALESCE(response_time_ms, 0)')

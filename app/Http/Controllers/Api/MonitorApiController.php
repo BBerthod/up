@@ -41,7 +41,7 @@ class MonitorApiController extends Controller
 
         $uptimeQuery = fn (int $days) => (float) ($monitor->checks()
             ->where('checked_at', '>=', now()->subDays($days))
-            ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 2) as uptime")
+            ->uptimePercent(2)
             ->value('uptime') ?? 100);
 
         return (new MonitorResource($monitor))->additional([

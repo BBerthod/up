@@ -63,4 +63,21 @@ class MonitorCheck extends Model
 
         return $this->response_time_ms >= $this->monitor->critical_threshold_ms;
     }
+
+    /**
+     * Select the uptime percentage as a "uptime" column.
+     */
+    public function scopeUptimePercent($query, int $decimals = 1): void
+    {
+        $query->selectRaw(self::uptimeRaw($decimals).' as uptime');
+    }
+
+    /**
+     * Return the raw SQL fragment for uptime percentage (no alias).
+     * Use inside COALESCE(), addSelect(), or multi-column selectRaw() contexts.
+     */
+    public static function uptimeRaw(int $decimals = 1): string
+    {
+        return "ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), {$decimals})";
+    }
 }

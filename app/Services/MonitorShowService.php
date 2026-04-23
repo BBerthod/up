@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Monitor;
+use App\Models\MonitorCheck;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -46,7 +47,7 @@ class MonitorShowService
         $uptimeData = Cache::remember("monitor:{$monitor->id}:uptime", 300, function () use ($monitor) {
             $calc = fn ($days) => (float) ($monitor->checks()
                 ->where('checked_at', '>=', now()->subDays($days))
-                ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
+                ->uptimePercent(1)
                 ->value('uptime') ?? 100);
 
             return [
@@ -70,7 +71,7 @@ class MonitorShowService
             ->latest('scored_at')
             ->first(['performance', 'accessibility', 'best_practices', 'seo', 'lcp', 'fcp', 'cls', 'tbt', 'speed_index', 'scored_at']);
 
-        $badgeHash = rtrim(strtr(base64_encode(pack('V', $monitor->id)), '+/', '-_'), '=');
+        $badgeSecret = $monitor->badge_secret;
 
         $chartData = $this->getChartData($monitor, $period);
 
@@ -101,7 +102,7 @@ class MonitorShowService
             'monitor' => array_merge($monitor->toArray(), [
                 'notification_channels' => $monitor->notificationChannels()
                     ->get(['notification_channels.id', 'name', 'type']),
-                'badge_hash' => $badgeHash,
+                'badge_secret' => $badgeSecret,
             ]),
             'checks' => $checks,
             'incidents' => $incidents,
@@ -190,13 +191,13 @@ class MonitorShowService
     private function getAggregatedChartData(Monitor $monitor, Carbon $from): array
     {
         return $monitor->checks()
-            ->selectRaw("
+            ->selectRaw('
                 DATE(checked_at) as date,
                 ROUND(AVG(response_time_ms)) as avg_ms,
                 MIN(response_time_ms) as min_ms,
                 MAX(response_time_ms) as max_ms,
-                ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime_percent
-            ")
+                '.MonitorCheck::uptimeRaw(1).' as uptime_percent
+            ')
             ->where('checked_at', '>=', $from)
             ->groupByRaw('DATE(checked_at)')
             ->orderBy('date')

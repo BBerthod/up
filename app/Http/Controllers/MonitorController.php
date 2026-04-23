@@ -28,7 +28,7 @@ class MonitorController extends Controller
             ->with(['checks' => fn ($q) => $q->latest('checked_at')->limit(1)])
             ->withCount(['incidents as active_incidents_count' => fn ($q) => $q->whereNull('resolved_at')])
             ->addSelect([
-                'uptime_24h' => MonitorCheck::selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1)")
+                'uptime_24h' => MonitorCheck::selectRaw(MonitorCheck::uptimeRaw(1))
                     ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
                     ->where('checked_at', '>=', now()->subDay()),
             ]);
@@ -188,7 +188,7 @@ class MonitorController extends Controller
     {
         $this->authorize('lighthouse', $monitor);
 
-        if ($monitor->type->value !== 'http') {
+        if ($monitor->type !== \App\Enums\MonitorType::HTTP) {
             abort(422, 'Lighthouse audits are only available for HTTP monitors.');
         }
 

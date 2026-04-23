@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\IncidentCause;
+use App\Enums\IncidentSeverity;
 use App\Models\Monitor;
 use App\Models\MonitorIncident;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class IncidentController extends Controller
@@ -167,7 +169,7 @@ class IncidentController extends Controller
 
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:5000'],
-            'severity' => ['nullable', 'string', 'in:critical,major,minor,warning'],
+            'severity' => ['nullable', Rule::enum(IncidentSeverity::class)],
         ]);
 
         $incident->update($validated);

@@ -23,7 +23,7 @@ class WeeklyReportService
 
         $overallUptime = (float) (MonitorCheck::whereIn('monitor_id', $monitorIds)
             ->where('checked_at', '>=', $periodStart)
-            ->selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1), 100) as uptime")
+            ->selectRaw('COALESCE('.MonitorCheck::uptimeRaw(1).', 100) as uptime')
             ->value('uptime') ?? 100);
 
         $avgResponseTime = (int) (MonitorCheck::whereIn('monitor_id', $monitorIds)
@@ -32,7 +32,7 @@ class WeeklyReportService
 
         $monitors = $team->monitors()->active()
             ->addSelect([
-                'uptime_pct' => MonitorCheck::selectRaw("COALESCE(ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1), 100)")
+                'uptime_pct' => MonitorCheck::selectRaw('COALESCE('.MonitorCheck::uptimeRaw(1).', 100)')
                     ->whereColumn('monitor_checks.monitor_id', 'monitors.id')
                     ->where('checked_at', '>=', $periodStart),
                 'avg_response_ms' => MonitorCheck::selectRaw('COALESCE(ROUND(AVG(response_time_ms)), 0)')

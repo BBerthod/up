@@ -31,7 +31,7 @@ class PublicStatusPageController extends Controller
             $dailyStats = MonitorCheck::whereIn('monitor_id', $monitorIds)
                 ->where('checked_at', '>=', now()->subDays(90))
                 ->selectRaw('monitor_id, DATE(checked_at) as date')
-                ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
+                ->uptimePercent(1)
                 ->groupBy('monitor_id', 'date')
                 ->orderBy('date')
                 ->get()
@@ -40,7 +40,7 @@ class PublicStatusPageController extends Controller
             $uptime90d = MonitorCheck::whereIn('monitor_id', $monitorIds)
                 ->where('checked_at', '>=', now()->subDays(90))
                 ->selectRaw('monitor_id')
-                ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 2) as uptime")
+                ->uptimePercent(2)
                 ->groupBy('monitor_id')
                 ->pluck('uptime', 'monitor_id');
 
