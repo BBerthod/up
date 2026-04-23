@@ -25,7 +25,9 @@ class RunLighthouseAudit implements ShouldQueue
 
     public function __construct(public Monitor $monitor)
     {
-        $this->onQueue('lighthouse');
+        // Use redis_long connection: retry_after=700s > $timeout=180s, preventing
+        // premature requeue that could cause duplicate audits.
+        $this->onConnection('redis_long')->onQueue('lighthouse');
     }
 
     public function handle(LighthouseService $lighthouseService): void
