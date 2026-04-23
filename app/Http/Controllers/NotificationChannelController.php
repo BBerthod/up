@@ -151,11 +151,11 @@ class NotificationChannelController extends Controller
         $rules = array_merge($rules, match ($request->input('type')) {
             'email' => ['settings.recipients' => ['required', 'string', 'max:1000', 'regex:/^[\w.+\-]+@[\w\-]+\.[\w.]+(\s*,\s*[\w.+\-]+@[\w\-]+\.[\w.]+)*$/']],
             'webhook' => [
-                'settings.url' => ['required', 'url', 'max:2000'],
+                'settings.url' => ['required', 'url', 'regex:#^https?://#i', 'max:2000'],
                 'settings.secret' => ['nullable', 'string', 'max:255'],
             ],
-            'slack' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
-            'discord' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
+            'slack' => ['settings.webhook_url' => ['required', 'url', 'regex:#^https?://#i', 'max:2000']],
+            'discord' => ['settings.webhook_url' => ['required', 'url', 'regex:#^https?://#i', 'max:2000']],
             'telegram' => [
                 'settings.bot_token' => ['required', 'string', 'max:255'],
                 'settings.chat_id' => ['required', 'string', 'max:255'],

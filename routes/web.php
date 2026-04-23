@@ -100,4 +100,4 @@ Route::middleware('auth')->group(function () {
 
 // Public routes (no auth)
 Route::get('/status/{slug}', [PublicStatusPageController::class, 'show'])->name('status.show');
-Route::get('/badge/{hash}.svg', BadgeController::class)->name('badge');
+Route::get('/badge/{secret}.svg', BadgeController::class)->name('badge');

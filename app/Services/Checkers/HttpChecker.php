@@ -79,14 +79,18 @@ class HttpChecker implements MonitorChecker
     {
         $method = strtolower($monitor->method->value);
 
-        return Http::timeout(30)
+        $http = Http::timeout(30)
             ->connectTimeout(10)
-            ->withoutVerifying()
             ->withHeaders([
                 'User-Agent' => 'Up-Monitor/1.0 (+https://github.com/BBerthod/up)',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            ])
-            ->{$method}($monitor->url);
+            ]);
+
+        if ($monitor->verify_tls === false) {
+            $http = $http->withoutVerifying();
+        }
+
+        return $http->{$method}($monitor->url);
     }
 
     private function checkSslExpiry(string $url): ?\DateTime

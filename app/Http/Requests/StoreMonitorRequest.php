@@ -46,10 +46,11 @@ class StoreMonitorRequest extends FormRequest
                 'dns_expected_value' => 'required|string|max:255',
             ]),
             default => array_merge($rules, [
-                'url' => 'required|url|max:2048',
+                'url' => ['required', 'url', 'regex:#^https?://#i', 'max:2048'],
                 'method' => 'required|in:GET,POST,HEAD',
                 'expected_status_code' => 'required|integer|min:100|max:599',
                 'keyword' => 'nullable|string|max:255',
+                'verify_tls' => 'nullable|boolean',
             ]),
         };
     }

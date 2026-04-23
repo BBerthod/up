@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Monitor extends Model
 {
@@ -24,6 +25,7 @@ class Monitor extends Model
         'method',
         'expected_status_code',
         'keyword',
+        'verify_tls',
         'port',
         'dns_record_type',
         'dns_expected_value',
@@ -33,12 +35,14 @@ class Monitor extends Model
         'warning_threshold_ms',
         'critical_threshold_ms',
         'alert_after_failures',
+        'badge_secret',
     ];
 
     protected $casts = [
         'type' => MonitorType::class,
         'method' => MonitorMethod::class,
         'is_active' => 'boolean',
+        'verify_tls' => 'boolean',
         'last_checked_at' => 'datetime',
         'expected_status_code' => 'integer',
         'port' => 'integer',
@@ -46,6 +50,15 @@ class Monitor extends Model
         'critical_threshold_ms' => 'integer',
         'alert_after_failures' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Monitor $monitor): void {
+            if (empty($monitor->badge_secret)) {
+                $monitor->badge_secret = Str::random(32);
+            }
+        });
+    }
 
     public function checks(): HasMany
     {

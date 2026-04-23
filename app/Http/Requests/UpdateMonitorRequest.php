@@ -52,10 +52,11 @@ class UpdateMonitorRequest extends FormRequest
                 'dns_expected_value' => 'sometimes|required|string|max:255',
             ]),
             default => array_merge($rules, [
-                'url' => 'sometimes|required|url|max:2048',
+                'url' => ['sometimes', 'required', 'url', 'regex:#^https?://#i', 'max:2048'],
                 'method' => 'sometimes|required|in:GET,POST,HEAD',
                 'expected_status_code' => 'sometimes|required|integer|min:100|max:599',
                 'keyword' => 'nullable|string|max:255',
+                'verify_tls' => 'nullable|boolean',
             ]),
         };
     }
