@@ -64,6 +64,11 @@ class SendPushNotification extends BaseNotificationJob
             $report = $webPush->sendOneNotification($subscription, $payload);
 
             if ($report->isSuccess()) {
+                // Reset failure counter on success so transient errors don't accumulate.
+                if ($dbSubscription->failure_count > 0) {
+                    $dbSubscription->update(['failure_count' => 0]);
+                }
+
                 continue;
             }
 
@@ -71,10 +76,24 @@ class SendPushNotification extends BaseNotificationJob
                 $dbSubscription->delete();
                 Log::info('Deleted expired push subscription', ['endpoint' => $dbSubscription->endpoint]);
             } else {
-                Log::error('Push notification failed', [
-                    'endpoint' => $dbSubscription->endpoint,
-                    'reason' => $report->getReason(),
-                ]);
+                // Track consecutive non-410 failures. After 3 failures the browser
+                // endpoint is considered permanently unreachable (e.g. revoked, stale).
+                $newCount = $dbSubscription->failure_count + 1;
+
+                if ($newCount >= 3) {
+                    $dbSubscription->delete();
+                    Log::warning('Deleted push subscription after 3 consecutive failures', [
+                        'endpoint' => $dbSubscription->endpoint,
+                        'reason' => $report->getReason(),
+                    ]);
+                } else {
+                    $dbSubscription->update(['failure_count' => $newCount]);
+                    Log::error('Push notification failed', [
+                        'endpoint' => $dbSubscription->endpoint,
+                        'reason' => $report->getReason(),
+                        'failure_count' => $newCount,
+                    ]);
+                }
             }
         }
     }
