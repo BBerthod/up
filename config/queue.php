@@ -73,6 +73,18 @@ return [
             'after_commit' => false,
         ],
 
+        // Dedicated connection for long-running jobs (RunWarmSite timeout = 600s).
+        // retry_after must exceed the longest job timeout to avoid premature requeue
+        // which would defeat ShouldBeUnique and cause duplicate warm runs.
+        'redis_long' => [
+            'driver' => 'redis',
+            'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
+            'queue' => env('REDIS_QUEUE', 'default'),
+            'retry_after' => (int) env('REDIS_LONG_QUEUE_RETRY_AFTER', 700),
+            'block_for' => null,
+            'after_commit' => false,
+        ],
+
         'deferred' => [
             'driver' => 'deferred',
         ],

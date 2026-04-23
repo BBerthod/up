@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\WarmRun;
 use App\Models\WarmSite;
 use App\Services\WarmingService;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
@@ -19,6 +20,23 @@ use Tests\TestCase;
 class RunWarmSiteTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Fake DNS: example.com resolves to a public IP so SSRF guard passes.
+        UrlSafetyValidator::setResolver(static fn (string $host, int $type): array => match ($type) {
+            DNS_A => [['ip' => '93.184.216.34']],
+            default => [],
+        });
+    }
+
+    protected function tearDown(): void
+    {
+        UrlSafetyValidator::setResolver(null);
+        parent::tearDown();
+    }
 
     public function test_creates_warm_run_with_stats(): void
     {
