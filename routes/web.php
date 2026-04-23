@@ -11,12 +11,12 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IngestSourceController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NotificationChannelController;
+use App\Http\Controllers\NotificationLogController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicStatusPageController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TeamSettingsController;
 use App\Http\Controllers\WarmSiteController;
-use App\Http\Controllers\NotificationLogController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,10 +27,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:auth');
 
     // Password reset
-    Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
-    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
-    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
-    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
+    Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request')->middleware('throttle:auth');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email')->middleware('throttle:auth');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset')->middleware('throttle:auth');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update')->middleware('throttle:auth');
 });
 
 Route::middleware('auth')->group(function () {
