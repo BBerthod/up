@@ -12,16 +12,14 @@ use App\Models\IngestSource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class IngestController extends Controller
 {
-    public function receive(Request $request, string $token): JsonResponse
+    public function receive(Request $request, ?string $token = null): JsonResponse
     {
-        $source = IngestSource::withoutGlobalScopes()
-            ->where('token', $token)
-            ->where('is_active', true)
-            ->first();
+        $source = $this->resolveSource($request, $token);
 
         if (! $source) {
             return response()->json(['error' => 'Invalid or inactive source token.'], 401);
@@ -99,6 +97,55 @@ class IngestController extends Controller
         }
 
         Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
+    }
+
+    /**
+     * Resolve an IngestSource from either:
+     *  1. Bearer token header (preferred, performs SHA-256 hash lookup).
+     *  2. URL path token parameter (deprecated — logs a deprecation warning).
+     *
+     * In both cases the lookup is done against token_hash (not the plain token),
+     * preventing the plain-text secret from appearing in DB query logs.
+     */
+    private function resolveSource(Request $request, ?string $urlToken): ?IngestSource
+    {
+        $bearerToken = $request->bearerToken();
+
+        if ($bearerToken !== null) {
+            return IngestSource::withoutGlobalScopes()
+                ->where('token_hash', hash('sha256', $bearerToken))
+                ->where('is_active', true)
+                ->first();
+        }
+
+        if ($urlToken !== null) {
+            // Legacy path: token in the URL. Still supported for backward compat.
+            // Fall back to token_hash when available, plain token otherwise (rows not yet migrated).
+            Log::warning('IngestController: token passed in URL path (deprecated). Migrate to Authorization: Bearer.', [
+                'ip' => $request->ip(),
+            ]);
+
+            $tokenHash = hash('sha256', $urlToken);
+
+            // Primary: hash lookup (post-migration).
+            $source = IngestSource::withoutGlobalScopes()
+                ->where('token_hash', $tokenHash)
+                ->where('is_active', true)
+                ->first();
+
+            // Fallback: plain-token lookup (pre-migration rows where token_hash is still NULL).
+            if ($source === null) {
+                $source = IngestSource::withoutGlobalScopes()
+                    ->whereNull('token_hash')
+                    ->where('token', $urlToken)
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            return $source;
+        }
+
+        return null;
     }
 
     private function validateEvent(Request $request): array

@@ -53,10 +53,13 @@ class IngestSourceController extends Controller
             'notification_channel_ids.*' => ['integer', 'exists:notification_channels,id'],
         ]);
 
+        $token = IngestSource::generateToken();
+
         $source = IngestSource::create([
             'name' => $validated['name'],
             'slug' => IngestSource::generateSlug($validated['name']),
-            'token' => IngestSource::generateToken(),
+            'token' => $token,
+            'token_hash' => IngestSource::hashToken($token),
             'is_active' => $validated['is_active'] ?? true,
             'team_id' => $request->user()->team_id,
         ]);
@@ -104,7 +107,11 @@ class IngestSourceController extends Controller
     {
         $this->authorize('update', $source);
 
-        $source->update(['token' => IngestSource::generateToken()]);
+        $newToken = IngestSource::generateToken();
+        $source->update([
+            'token' => $newToken,
+            'token_hash' => IngestSource::hashToken($newToken),
+        ]);
 
         return back()->with('success', 'Token rotated successfully.');
     }
