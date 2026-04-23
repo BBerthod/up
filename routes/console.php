@@ -27,3 +27,6 @@ Schedule::job(new PruneNotificationLogs)->daily()->withoutOverlapping()->onOneSe
 Schedule::job(new PruneIngestEvents)->daily()->withoutOverlapping()->onOneServer();
 Schedule::job(new PruneLighthouseScores)->daily()->withoutOverlapping()->onOneServer();
 Schedule::job(new SendWeeklyReports)->weeklyOn(1, '08:00')->withoutOverlapping()->onOneServer();
+
+// Prune failed_jobs older than 7 days to prevent unbounded table growth.
+Schedule::command('queue:prune-failed --hours=168')->weekly()->withoutOverlapping();
