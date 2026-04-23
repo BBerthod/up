@@ -160,7 +160,7 @@ class RunWarmSite implements ShouldBeUnique, ShouldQueue
                 'urls_miss' => $misses,
                 'urls_error' => $errors,
                 'avg_response_ms' => $avgResponseMs,
-                'status' => WarmRunStatus::COMPLETED,
+                'status' => $errorMessage ? WarmRunStatus::FAILED : WarmRunStatus::COMPLETED,
                 'error_message' => $errorMessage,
                 'completed_at' => now(),
             ]);
