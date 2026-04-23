@@ -2,7 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3'
 import PageHeader from '@/Components/PageHeader.vue'
 import SkeletonMonitorList from '@/Components/SkeletonMonitorList.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRealtimeUpdates } from '@/Composables/useRealtimeUpdates'
 import { usePageLoading } from '@/Composables/usePageLoading'
 import { useSimplePersistentFilter } from '@/Composables/usePersistentFilters'
@@ -93,38 +93,35 @@ const filteredMonitors = computed(() => {
     )
 })
 
-// Bulk selection
-const selectedIds = ref<Set<number>>(new Set())
+// Bulk selection — reactive Set: Vue 3 tracks add/delete/clear natively
+const selectedIds = reactive(new Set<number>())
 const showDeleteConfirm = ref(false)
 
 const allVisibleSelected = computed(() => {
     if (filteredMonitors.value.length === 0) return false
-    return filteredMonitors.value.every(m => selectedIds.value.has(m.id))
+    return filteredMonitors.value.every(m => selectedIds.has(m.id))
 })
 
-const someSelected = computed(() => selectedIds.value.size > 0)
+const someSelected = computed(() => selectedIds.size > 0)
 
 const toggleSelectAll = () => {
     if (allVisibleSelected.value) {
-        filteredMonitors.value.forEach(m => selectedIds.value.delete(m.id))
+        filteredMonitors.value.forEach(m => selectedIds.delete(m.id))
     } else {
-        filteredMonitors.value.forEach(m => selectedIds.value.add(m.id))
+        filteredMonitors.value.forEach(m => selectedIds.add(m.id))
     }
-    // Trigger reactivity
-    selectedIds.value = new Set(selectedIds.value)
 }
 
 const toggleSelect = (id: number) => {
-    if (selectedIds.value.has(id)) {
-        selectedIds.value.delete(id)
+    if (selectedIds.has(id)) {
+        selectedIds.delete(id)
     } else {
-        selectedIds.value.add(id)
+        selectedIds.add(id)
     }
-    selectedIds.value = new Set(selectedIds.value)
 }
 
 const clearSelection = () => {
-    selectedIds.value = new Set()
+    selectedIds.clear()
 }
 
 const executeBulkAction = (action: 'pause' | 'resume' | 'delete') => {
@@ -134,7 +131,7 @@ const executeBulkAction = (action: 'pause' | 'resume' | 'delete') => {
     }
     router.post(route('monitors.bulk-action'), {
         action,
-        ids: Array.from(selectedIds.value),
+        ids: Array.from(selectedIds),
     }, {
         onSuccess: clearSelection,
     })
@@ -144,7 +141,7 @@ const confirmBulkDelete = () => {
     showDeleteConfirm.value = false
     router.post(route('monitors.bulk-action'), {
         action: 'delete',
-        ids: Array.from(selectedIds.value),
+        ids: Array.from(selectedIds),
     }, {
         onSuccess: clearSelection,
     })

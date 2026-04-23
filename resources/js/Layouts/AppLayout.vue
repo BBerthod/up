@@ -8,17 +8,23 @@ import Drawer from 'primevue/drawer'
 import Button from 'primevue/button'
 import { useFlashToast } from '@/Composables/useFlashToast'
 import { useAuth } from '@/Composables/useAuth'
+import { useEcho } from '@/Composables/useEcho'
 import GlobalSearch from '@/Components/GlobalSearch.vue'
 import InstallPrompt from '@/Components/InstallPrompt.vue'
 
 const page = usePage()
 useFlashToast()
+useEcho()
 const sidebarOpen = ref(true)
 const mobileMenuOpen = ref(false)
 const userMenu = ref()
 const userDropdownOpen = ref(false)
 
 const { user, team, isAdmin } = useAuth()
+
+const openSearch = () => {
+    document.dispatchEvent(new Event('open-global-search'))
+}
 
 const navigation = computed(() => {
     const items = [
@@ -191,7 +197,7 @@ onMounted(() => {
                             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                         </button>
 
-                        <button class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-400 bg-white/5 border border-white/5 rounded-lg hover:bg-white/10 hover:border-white/10 transition-colors" aria-label="Open search">
+                        <button @click="openSearch" class="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-400 bg-white/5 border border-white/5 rounded-lg hover:bg-white/10 hover:border-white/10 transition-colors" aria-label="Open search">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                             </svg>

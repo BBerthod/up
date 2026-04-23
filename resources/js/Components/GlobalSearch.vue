@@ -237,13 +237,17 @@ const applyRecentSearch = (q: string) => {
     search()
 }
 
+const handleOpenSearch = () => open()
+
 onMounted(() => {
     document.addEventListener('keydown', handleKeydown)
+    document.addEventListener('open-global-search', handleOpenSearch)
     loadRecentSearches()
 })
 
 onUnmounted(() => {
     document.removeEventListener('keydown', handleKeydown)
+    document.removeEventListener('open-global-search', handleOpenSearch)
     abortController?.abort()
 })
 </script>
