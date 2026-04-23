@@ -2,7 +2,9 @@
 
 namespace App\Jobs\Notifications;
 
+use App\Exceptions\UnsafeUrlException;
 use App\Models\PushSubscription;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Support\Facades\Log;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
@@ -41,6 +43,18 @@ class SendPushNotification extends BaseNotificationJob
         $subscriptions = PushSubscription::whereIn('user_id', $userIds)->get();
 
         foreach ($subscriptions as $dbSubscription) {
+            // Guard against SSRF via a tampered push endpoint stored in the DB.
+            try {
+                UrlSafetyValidator::assertSafe($dbSubscription->endpoint);
+            } catch (UnsafeUrlException $e) {
+                Log::warning('Push subscription endpoint blocked by SSRF guard', [
+                    'endpoint' => $dbSubscription->endpoint,
+                    'reason' => $e->getMessage(),
+                ]);
+
+                continue;
+            }
+
             $subscription = Subscription::create([
                 'endpoint' => $dbSubscription->endpoint,
                 'publicKey' => $dbSubscription->p256dh,

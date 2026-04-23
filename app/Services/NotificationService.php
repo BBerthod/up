@@ -25,33 +25,45 @@ class NotificationService
 {
     public function notifyDown(Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check = null): void
     {
-        $cooldownKey = "notify:{$monitor->id}:down";
         $cooldownMinutes = config('monitoring.notification_cooldown_minutes', 5);
-
-        if (Cache::has($cooldownKey)) {
-            return;
-        }
-
-        Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
 
         $channels = $monitor->relationLoaded('notificationChannels')
             ? $monitor->notificationChannels->where('is_active', true)
             : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
+            // Per-channel cooldown: each channel gets its own independent key so a
+            // slow/misconfigured channel does not suppress notifications on others.
+            $cooldownKey = "notify:{$monitor->id}:{$channel->id}:down";
+
+            if (Cache::has($cooldownKey)) {
+                continue;
+            }
+
+            Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
             $this->dispatchForChannel($channel, 'down', $monitor, $incident, $check);
         }
     }
 
     public function notifyUp(Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check = null): void
     {
-        Cache::forget("notify:{$monitor->id}:down");
+        $cooldownMinutes = config('monitoring.notification_cooldown_minutes', 5);
 
         $channels = $monitor->relationLoaded('notificationChannels')
             ? $monitor->notificationChannels->where('is_active', true)
             : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
+            // Per-channel cooldown for "up" events prevents flap spam.
+            // We do NOT reset the "down" cooldown here — that key expires naturally,
+            // ensuring a fresh outage always triggers a new "down" notification.
+            $cooldownKey = "notify:{$monitor->id}:{$channel->id}:up";
+
+            if (Cache::has($cooldownKey)) {
+                continue;
+            }
+
+            Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
             $this->dispatchForChannel($channel, 'up', $monitor, $incident, $check);
         }
     }

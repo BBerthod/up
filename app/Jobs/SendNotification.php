@@ -3,12 +3,14 @@
 namespace App\Jobs;
 
 use App\Enums\ChannelType;
+use App\Exceptions\UnsafeUrlException;
 use App\Mail\MonitorAlertMail;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Models\NotificationChannel;
 use App\Models\PushSubscription;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -100,6 +102,14 @@ class SendNotification implements ShouldQueue
             return;
         }
 
+        try {
+            UrlSafetyValidator::assertSafe($url);
+        } catch (UnsafeUrlException $e) {
+            Log::warning('Webhook URL blocked by SSRF guard', ['channel_id' => $this->channel->id, 'reason' => $e->getMessage()]);
+
+            return;
+        }
+
         Http::timeout(10)->post($url, $payload)->throw();
     }
 
@@ -108,6 +118,14 @@ class SendNotification implements ShouldQueue
         $webhookUrl = $this->channel->settings['webhook_url'] ?? null;
         if (! $webhookUrl) {
             Log::warning('Slack channel missing webhook_url', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
+        try {
+            UrlSafetyValidator::assertSafe($webhookUrl);
+        } catch (UnsafeUrlException $e) {
+            Log::warning('Slack webhook URL blocked by SSRF guard', ['channel_id' => $this->channel->id, 'reason' => $e->getMessage()]);
 
             return;
         }
@@ -240,10 +258,25 @@ class SendNotification implements ShouldQueue
 
     private function sendDiscord(): void
     {
+        $webhookUrl = $this->channel->settings['webhook_url'] ?? null;
+        if (! $webhookUrl) {
+            Log::warning('Discord channel missing webhook_url', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
+        try {
+            UrlSafetyValidator::assertSafe($webhookUrl);
+        } catch (UnsafeUrlException $e) {
+            Log::warning('Discord webhook URL blocked by SSRF guard', ['channel_id' => $this->channel->id, 'reason' => $e->getMessage()]);
+
+            return;
+        }
+
         $color = $this->event === 'down' ? 15158332 : 3066993;
         $statusText = $this->event === 'down' ? 'Down' : 'Up';
 
-        Http::timeout(10)->post($this->channel->settings['webhook_url'], [
+        Http::timeout(10)->post($webhookUrl, [
             'embeds' => [[
                 'title' => "[Up] {$this->monitor->name} is {$statusText}",
                 'url' => $this->monitor->url,

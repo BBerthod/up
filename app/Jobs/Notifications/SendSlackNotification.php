@@ -2,6 +2,8 @@
 
 namespace App\Jobs\Notifications;
 
+use App\Exceptions\UnsafeUrlException;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -12,6 +14,14 @@ class SendSlackNotification extends BaseNotificationJob
         $webhookUrl = $this->channel->settings['webhook_url'] ?? null;
         if (! $webhookUrl) {
             Log::warning('Slack channel missing webhook_url', ['channel_id' => $this->channel->id]);
+
+            return;
+        }
+
+        try {
+            UrlSafetyValidator::assertSafe($webhookUrl);
+        } catch (UnsafeUrlException $e) {
+            Log::warning('Slack webhook URL blocked by SSRF guard', ['channel_id' => $this->channel->id, 'reason' => $e->getMessage()]);
 
             return;
         }
