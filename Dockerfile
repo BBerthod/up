@@ -83,7 +83,7 @@ RUN mkdir -p /var/log/supervisor /var/log/php /var/log/php-fpm
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://127.0.0.1:8000/up || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://127.0.0.1:8000/health || exit 1
 
 CMD ["/usr/local/bin/start.sh"]
