@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, Ref } from 'vue'
+import { watch, onUnmounted, Ref } from 'vue'
 
 export function useFocusTrap(containerRef: Ref<HTMLElement | null>, isActive: Ref<boolean>) {
     const focusableSelectors = [
@@ -56,12 +56,18 @@ export function useFocusTrap(containerRef: Ref<HTMLElement | null>, isActive: Re
         }
     }
 
-    onMounted(() => {
-        if (isActive.value) {
+    // Watch isActive so modals that open after mount (the common case with v-if)
+    // correctly activate/deactivate the trap. `immediate: true` runs on mount too,
+    // replacing the old onMounted(if isActive) logic.
+    watch(isActive, (val) => {
+        if (val) {
             activate()
+        } else {
+            deactivate()
         }
-    })
+    }, { immediate: true })
 
+    // If the component is destroyed while the trap is active, always clean up.
     onUnmounted(() => {
         deactivate()
     })

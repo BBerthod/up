@@ -10,7 +10,7 @@ class StoreMonitorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user() !== null;
     }
 
     public function rules(): array
@@ -25,7 +25,11 @@ class StoreMonitorRequest extends FormRequest
             'critical_threshold_ms' => 'nullable|integer|min:1',
             'alert_after_failures' => 'integer|min:1|max:10',
             'notification_channels' => 'array',
-            'notification_channels.*' => 'exists:notification_channels,id',
+            'notification_channels.*' => [
+                'integer',
+                Rule::exists('notification_channels', 'id')
+                    ->where('team_id', $this->user()->team_id),
+            ],
         ];
 
         return match ($type) {
@@ -42,10 +46,11 @@ class StoreMonitorRequest extends FormRequest
                 'dns_expected_value' => 'required|string|max:255',
             ]),
             default => array_merge($rules, [
-                'url' => 'required|url|max:2048',
+                'url' => ['required', 'url', 'regex:#^https?://#i', 'max:2048'],
                 'method' => 'required|in:GET,POST,HEAD',
                 'expected_status_code' => 'required|integer|min:100|max:599',
                 'keyword' => 'nullable|string|max:255',
+                'verify_tls' => 'nullable|boolean',
             ]),
         };
     }

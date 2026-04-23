@@ -6,7 +6,9 @@ use App\Contracts\MonitorChecker;
 use App\DTOs\CheckResult;
 use App\Enums\CheckStatus;
 use App\Enums\IncidentCause;
+use App\Exceptions\UnsafeUrlException;
 use App\Models\Monitor;
+use App\Support\UrlSafetyValidator;
 
 class PortChecker implements MonitorChecker
 {
@@ -15,6 +17,18 @@ class PortChecker implements MonitorChecker
         $host = $this->extractHost($monitor->url);
         $port = $monitor->port;
         $startTime = microtime(true);
+
+        // SSRF guard — validate the hostname before opening a TCP socket.
+        try {
+            UrlSafetyValidator::assertSafe("https://{$host}");
+        } catch (UnsafeUrlException) {
+            return new CheckResult(
+                status: CheckStatus::DOWN,
+                responseTimeMs: 0,
+                errorMessage: 'Host resolves to a private or reserved IP address',
+                cause: IncidentCause::ERROR,
+            );
+        }
 
         try {
             $socket = @stream_socket_client(

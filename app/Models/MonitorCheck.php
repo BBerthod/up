@@ -46,6 +46,28 @@ class MonitorCheck extends Model
         return $query->where('status', CheckStatus::DOWN);
     }
 
+    /**
+     * Add a selectRaw fragment that computes the uptime percentage.
+     *
+     * Usage in plain queries:
+     *   MonitorCheck::uptimePercent()->where(...)->value('uptime')
+     *
+     * Usage as a correlated subquery inside addSelect():
+     *   addSelect(['uptime_24h' => MonitorCheck::uptimeExpr(1)->whereColumn(...)->where(...)])
+     */
+    public function scopeUptimePercent($query, int $decimals = 1): void
+    {
+        $query->selectRaw(self::uptimeRaw($decimals).' as uptime');
+    }
+
+    /**
+     * Return the raw SQL fragment (without alias) for use inside COALESCE or addSelect subqueries.
+     */
+    public static function uptimeRaw(int $decimals = 1): string
+    {
+        return "ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), {$decimals})";
+    }
+
     public function isWarning(): bool
     {
         if (! $this->monitor->warning_threshold_ms) {

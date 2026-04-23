@@ -18,6 +18,7 @@ class MonitorApiController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        // BelongsToTeam global scope ensures only the authenticated team's monitors are returned.
         $monitors = Monitor::query()
             ->with(['checks' => fn ($q) => $q->latest('checked_at')->limit(1)])
             ->latest()
@@ -28,6 +29,8 @@ class MonitorApiController extends Controller
 
     public function show(Monitor $monitor): MonitorResource
     {
+        $this->authorize('view', $monitor);
+
         $monitor->load([
             'checks' => fn ($q) => $q->latest('checked_at')->limit(1),
             'notificationChannels',
@@ -38,7 +41,7 @@ class MonitorApiController extends Controller
 
         $uptimeQuery = fn (int $days) => (float) ($monitor->checks()
             ->where('checked_at', '>=', now()->subDays($days))
-            ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 2) as uptime")
+            ->uptimePercent(2)
             ->value('uptime') ?? 100);
 
         return (new MonitorResource($monitor))->additional([
@@ -71,6 +74,8 @@ class MonitorApiController extends Controller
 
     public function update(UpdateMonitorRequest $request, Monitor $monitor): MonitorResource
     {
+        $this->authorize('update', $monitor);
+
         $validated = $request->validated();
 
         $channels = $validated['notification_channels'] ?? null;
@@ -87,6 +92,8 @@ class MonitorApiController extends Controller
 
     public function destroy(Monitor $monitor): Response
     {
+        $this->authorize('delete', $monitor);
+
         $monitor->delete();
 
         return response()->noContent();
@@ -94,6 +101,8 @@ class MonitorApiController extends Controller
 
     public function pause(Monitor $monitor): JsonResponse
     {
+        $this->authorize('pause', $monitor);
+
         $monitor->update(['is_active' => false]);
 
         return response()->json(['message' => 'Monitor paused.']);
@@ -101,6 +110,8 @@ class MonitorApiController extends Controller
 
     public function resume(Monitor $monitor): JsonResponse
     {
+        $this->authorize('resume', $monitor);
+
         $monitor->update(['is_active' => true]);
 
         return response()->json(['message' => 'Monitor resumed.']);
@@ -108,6 +119,8 @@ class MonitorApiController extends Controller
 
     public function checks(Request $request, Monitor $monitor): AnonymousResourceCollection
     {
+        $this->authorize('view', $monitor);
+
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],

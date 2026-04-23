@@ -2,7 +2,9 @@
 
 namespace App\Jobs\Notifications;
 
+use App\Exceptions\UnsafeUrlException;
 use App\Models\PushSubscription;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Support\Facades\Log;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
@@ -41,6 +43,18 @@ class SendPushNotification extends BaseNotificationJob
         $subscriptions = PushSubscription::whereIn('user_id', $userIds)->get();
 
         foreach ($subscriptions as $dbSubscription) {
+            // Guard against SSRF via a tampered push endpoint stored in the DB.
+            try {
+                UrlSafetyValidator::assertSafe($dbSubscription->endpoint);
+            } catch (UnsafeUrlException $e) {
+                Log::warning('Push subscription endpoint blocked by SSRF guard', [
+                    'endpoint' => $dbSubscription->endpoint,
+                    'reason' => $e->getMessage(),
+                ]);
+
+                continue;
+            }
+
             $subscription = Subscription::create([
                 'endpoint' => $dbSubscription->endpoint,
                 'publicKey' => $dbSubscription->p256dh,
@@ -50,6 +64,11 @@ class SendPushNotification extends BaseNotificationJob
             $report = $webPush->sendOneNotification($subscription, $payload);
 
             if ($report->isSuccess()) {
+                // Reset failure counter on success so transient errors don't accumulate.
+                if ($dbSubscription->failure_count > 0) {
+                    $dbSubscription->update(['failure_count' => 0]);
+                }
+
                 continue;
             }
 
@@ -57,10 +76,24 @@ class SendPushNotification extends BaseNotificationJob
                 $dbSubscription->delete();
                 Log::info('Deleted expired push subscription', ['endpoint' => $dbSubscription->endpoint]);
             } else {
-                Log::error('Push notification failed', [
-                    'endpoint' => $dbSubscription->endpoint,
-                    'reason' => $report->getReason(),
-                ]);
+                // Track consecutive non-410 failures. After 3 failures the browser
+                // endpoint is considered permanently unreachable (e.g. revoked, stale).
+                $newCount = $dbSubscription->failure_count + 1;
+
+                if ($newCount >= 3) {
+                    $dbSubscription->delete();
+                    Log::warning('Deleted push subscription after 3 consecutive failures', [
+                        'endpoint' => $dbSubscription->endpoint,
+                        'reason' => $report->getReason(),
+                    ]);
+                } else {
+                    $dbSubscription->update(['failure_count' => $newCount]);
+                    Log::error('Push notification failed', [
+                        'endpoint' => $dbSubscription->endpoint,
+                        'reason' => $report->getReason(),
+                        'failure_count' => $newCount,
+                    ]);
+                }
             }
         }
     }

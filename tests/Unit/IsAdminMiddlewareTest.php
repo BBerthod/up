@@ -46,7 +46,7 @@ class IsAdminMiddlewareTest extends TestCase
     public function test_member_gets_403(): void
     {
         $team = Team::factory()->create();
-        $user = User::factory()->create(['team_id' => $team->id]);
+        $user = User::factory()->member()->create(['team_id' => $team->id]);
 
         $middleware = new IsAdmin;
         $request = Request::create('/admin/users', 'GET');

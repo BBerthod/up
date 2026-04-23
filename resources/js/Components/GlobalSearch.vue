@@ -91,11 +91,15 @@ const selectableCount = computed(() =>
 const hasResults = computed(() => selectableCount.value > 0)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let abortController: AbortController | null = null
 
 watch(query, (val) => {
     if (debounceTimer) clearTimeout(debounceTimer)
 
     if (val.length < 2) {
+        // Cancel any in-flight request when the query is cleared
+        abortController?.abort()
+        abortController = null
         results.value = { monitors: [], incidents: [], notification_channels: [], status_pages: [] }
         return
     }
@@ -106,17 +110,23 @@ watch(query, (val) => {
 const search = async () => {
     if (query.value.length < 2) return
 
+    // Abort any previous in-flight request to prevent out-of-order results
+    abortController?.abort()
+    abortController = new AbortController()
+
     loading.value = true
     try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(query.value)}`, {
             headers: { 'Accept': 'application/json' },
             credentials: 'include',
+            signal: abortController.signal,
         })
         if (response.ok) {
             results.value = await response.json()
             selectedIndex.value = 0
         }
-    } catch {
+    } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') return
         results.value = { monitors: [], incidents: [], notification_channels: [], status_pages: [] }
     } finally {
         loading.value = false
@@ -227,13 +237,18 @@ const applyRecentSearch = (q: string) => {
     search()
 }
 
+const handleOpenSearch = () => open()
+
 onMounted(() => {
     document.addEventListener('keydown', handleKeydown)
+    document.addEventListener('open-global-search', handleOpenSearch)
     loadRecentSearches()
 })
 
 onUnmounted(() => {
     document.removeEventListener('keydown', handleKeydown)
+    document.removeEventListener('open-global-search', handleOpenSearch)
+    abortController?.abort()
 })
 </script>
 

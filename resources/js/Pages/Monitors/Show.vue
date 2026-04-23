@@ -40,9 +40,27 @@ interface IncidentStats {
     mttr_minutes: number
     downtime_30d_minutes: number
 }
+interface NotificationChannel { id: number; name: string; type: string }
+interface Monitor {
+    id: number
+    name: string
+    url: string
+    type: 'http' | 'ping' | 'port' | 'dns'
+    method?: string
+    expected_status_code?: number | null
+    keyword?: string | null
+    is_active: boolean
+    is_paused?: boolean
+    interval_seconds: number
+    timeout_seconds: number
+    alert_after_failures: number
+    badge_hash?: string | null
+    notification_channels: NotificationChannel[]
+    status_pages?: { id: number; name: string }[]
+}
 
 const props = defineProps<{
-    monitor: any
+    monitor: Monitor
     checks: Check[]
     incidents: PaginatedIncidents
     incidentStats: IncidentStats
@@ -83,12 +101,19 @@ const cancelNotesEditor = () => {
     notesInput.value = ''
 }
 
+const savingNotesId = ref<number | null>(null)
+
 const saveNotes = (incidentId: number) => {
+    if (savingNotesId.value !== null) return
+    savingNotesId.value = incidentId
     router.put(route('incidents.update', incidentId), { notes: notesInput.value }, {
         preserveScroll: true,
         onSuccess: () => {
             editingNotesId.value = null
             notesInput.value = ''
+        },
+        onFinish: () => {
+            savingNotesId.value = null
         },
     })
 }
@@ -226,6 +251,21 @@ const handleIncidentPage = (page: number) => {
         preserveScroll: true,
     })
 }
+
+// Visible page numbers with ellipsis markers (null = ellipsis)
+const visiblePages = computed((): (number | null)[] => {
+    const current = props.incidents.meta.current_page
+    const last = props.incidents.meta.last_page
+    if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1)
+    const pageSet = new Set([1, last, current, current - 1, current + 1].filter(p => p >= 1 && p <= last))
+    const sorted = Array.from(pageSet).sort((a, b) => a - b)
+    const result: (number | null)[] = []
+    for (let i = 0; i < sorted.length; i++) {
+        if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push(null)
+        result.push(sorted[i])
+    }
+    return result
+})
 </script>
 
 <template>
@@ -269,7 +309,7 @@ const handleIncidentPage = (page: number) => {
             </div>
             <div class="flex items-center gap-3">
                 <Link :href="route('monitors.edit', monitor.id)" aria-label="Edit monitor settings" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                <button @click="togglePause" :aria-label="monitor.is_active ? 'Pause monitoring' : 'Resume monitoring'" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
+                <button @click="togglePause" :disabled="pauseForm.processing" :aria-label="monitor.is_active ? 'Pause monitoring' : 'Resume monitoring'" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
                 <button @click="showDeleteDialog = true" aria-label="Delete this monitor" class="px-4 py-2 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
             </div>
         </div>
@@ -432,9 +472,10 @@ const handleIncidentPage = (page: number) => {
                                         <div class="flex items-center gap-2">
                                             <button
                                                 @click="saveNotes(incident.id)"
-                                                class="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/20 transition-colors"
+                                                :disabled="savingNotesId === incident.id"
+                                                class="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                Save
+                                                {{ savingNotesId === incident.id ? 'Saving…' : 'Save' }}
                                             </button>
                                             <button
                                                 @click="cancelNotesEditor"
@@ -466,15 +507,15 @@ const handleIncidentPage = (page: number) => {
                             <i class="pi pi-chevron-left text-xs" />
                         </button>
 
-                        <template v-for="page in incidents.meta.last_page" :key="page">
+                        <template v-for="(page, i) in visiblePages" :key="page ?? `ellipsis-${i}`">
+                            <span v-if="page === null" class="text-slate-600 px-1">…</span>
                             <button
-                                v-if="page === 1 || page === incidents.meta.last_page || Math.abs(page - incidents.meta.current_page) <= 1"
+                                v-else
                                 @click="handleIncidentPage(page)"
                                 :class="['w-8 h-8 rounded-lg text-sm transition-colors', page === incidents.meta.current_page ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white hover:bg-white/5']"
                             >
                                 {{ page }}
                             </button>
-                            <span v-else-if="page === incidents.meta.current_page - 2 || page === incidents.meta.current_page + 2" class="text-slate-600 px-1">…</span>
                         </template>
 
                         <button

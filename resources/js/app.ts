@@ -5,30 +5,10 @@ import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import MyPreset from './primevue-presets'
 import AppLayout from './Layouts/AppLayout.vue'
-import Echo from 'laravel-echo'
-import Pusher from 'pusher-js'
 import '@/Types/page'
 
-declare global {
-    interface Window {
-        Pusher: typeof Pusher
-        Echo: Echo
-    }
-}
-
-if (import.meta.env.VITE_REVERB_APP_KEY) {
-    window.Pusher = Pusher
-
-    window.Echo = new Echo({
-        broadcaster: 'reverb',
-        key: import.meta.env.VITE_REVERB_APP_KEY,
-        wsHost: import.meta.env.VITE_REVERB_HOST,
-        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-        enabledTransports: ['ws', 'wss'],
-    })
-}
+// Echo + Pusher are lazy-loaded by useEcho composable in AppLayout
+// to avoid shipping ~200 KB to unauthenticated / public pages.
 
 createInertiaApp({
     title: (title) => title ? `${title} - Up by Radiank` : 'Up by Radiank',

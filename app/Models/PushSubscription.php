@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PushSubscription extends Model
 {
-    protected $fillable = ['user_id', 'endpoint', 'p256dh', 'auth'];
+    protected $fillable = ['user_id', 'endpoint', 'p256dh', 'auth', 'failure_count'];
 
     protected $hidden = ['p256dh', 'auth'];
 

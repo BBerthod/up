@@ -32,7 +32,7 @@ export default defineConfig({
                 manualChunks: {
                     'primevue': ['primevue', '@primevue/themes'],
                     'vue-vendor': ['vue', '@inertiajs/vue3'],
-                    'echo': ['laravel-echo', 'pusher-js'],
+                    // echo + pusher are lazy-loaded by useEcho composable; no manual chunk needed
                 },
             },
         },

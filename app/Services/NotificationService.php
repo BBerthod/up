@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ChannelType;
+use App\Enums\IncidentCause;
 use App\Enums\WarmRunStatus;
 use App\Jobs\Notifications\SendDiscordNotification;
 use App\Jobs\Notifications\SendEmailNotification;
@@ -25,33 +26,45 @@ class NotificationService
 {
     public function notifyDown(Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check = null): void
     {
-        $cooldownKey = "notify:{$monitor->id}:down";
         $cooldownMinutes = config('monitoring.notification_cooldown_minutes', 5);
-
-        if (Cache::has($cooldownKey)) {
-            return;
-        }
-
-        Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
 
         $channels = $monitor->relationLoaded('notificationChannels')
             ? $monitor->notificationChannels->where('is_active', true)
             : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
+            // Per-channel cooldown: each channel gets its own independent key so a
+            // slow/misconfigured channel does not suppress notifications on others.
+            $cooldownKey = "notify:{$monitor->id}:{$channel->id}:down";
+
+            if (Cache::has($cooldownKey)) {
+                continue;
+            }
+
+            Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
             $this->dispatchForChannel($channel, 'down', $monitor, $incident, $check);
         }
     }
 
     public function notifyUp(Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check = null): void
     {
-        Cache::forget("notify:{$monitor->id}:down");
+        $cooldownMinutes = config('monitoring.notification_cooldown_minutes', 5);
 
         $channels = $monitor->relationLoaded('notificationChannels')
             ? $monitor->notificationChannels->where('is_active', true)
             : $monitor->notificationChannels()->where('is_active', true)->get();
 
         foreach ($channels as $channel) {
+            // Per-channel cooldown for "up" events prevents flap spam.
+            // We do NOT reset the "down" cooldown here — that key expires naturally,
+            // ensuring a fresh outage always triggers a new "down" notification.
+            $cooldownKey = "notify:{$monitor->id}:{$channel->id}:up";
+
+            if (Cache::has($cooldownKey)) {
+                continue;
+            }
+
+            Cache::put($cooldownKey, true, now()->addMinutes($cooldownMinutes));
             $this->dispatchForChannel($channel, 'up', $monitor, $incident, $check);
         }
     }
@@ -154,6 +167,46 @@ class NotificationService
         }
 
         return $previousRun->status === WarmRunStatus::COMPLETED;
+    }
+
+    /**
+     * Send a synchronous test notification through the real Send*Notification jobs.
+     * Uses dispatchSync() so the caller receives immediate feedback on success/failure.
+     * A fake Monitor and MonitorIncident are used — no real data is stored.
+     */
+    public function sendTestNotification(NotificationChannel $channel): void
+    {
+        $monitor = new Monitor([
+            'name' => 'Test Monitor',
+            'url' => 'https://example.com',
+        ]);
+        $monitor->id = 0;
+
+        $incident = new MonitorIncident([
+            'monitor_id' => 0,
+            'cause' => IncidentCause::TIMEOUT,
+            'started_at' => now(),
+        ]);
+        $incident->id = 0;
+
+        $check = new MonitorCheck([
+            'monitor_id' => 0,
+            'status_code' => 0,
+            'response_time_ms' => 0,
+            'checked_at' => now(),
+        ]);
+        $check->id = 0;
+
+        $jobClass = match ($channel->type) {
+            ChannelType::EMAIL => SendEmailNotification::class,
+            ChannelType::WEBHOOK => SendWebhookNotification::class,
+            ChannelType::SLACK => SendSlackNotification::class,
+            ChannelType::DISCORD => SendDiscordNotification::class,
+            ChannelType::PUSH => SendPushNotification::class,
+            ChannelType::TELEGRAM => SendTelegramNotification::class,
+        };
+
+        $jobClass::dispatchSync($channel, 'down', $monitor, $incident, $check);
     }
 
     private function dispatchForChannel(NotificationChannel $channel, string $event, Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check): void

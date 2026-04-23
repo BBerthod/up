@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+export type Severity = 'critical' | 'major' | 'minor' | 'warning'
+
 const props = defineProps<{
-    severity: string
+    severity: Severity | string
 }>()
 
 const config = computed(() => {

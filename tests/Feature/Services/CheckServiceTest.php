@@ -9,6 +9,7 @@ use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Services\CheckService;
+use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -313,5 +314,36 @@ class CheckServiceTest extends TestCase
 
         $monitor->refresh();
         $this->assertNotNull($monitor->last_checked_at);
+    }
+
+    public function test_notification_sent_only_after_threshold_failures(): void
+    {
+        $notificationService = $this->mock(NotificationService::class);
+
+        // notifyDown must NOT be called on the 1st or 2nd failure.
+        // It MUST be called exactly once on the 3rd (threshold = 3).
+        $notificationService->expects('notifyDown')->once();
+        $notificationService->expects('notifyUp')->never();
+
+        // Re-resolve CheckService so it gets the mocked NotificationService.
+        $this->service = app(CheckService::class);
+
+        $monitor = Monitor::factory()->create([
+            'url' => 'https://example.com',
+            'method' => MonitorMethod::GET,
+            'expected_status_code' => 200,
+            'alert_after_failures' => 3,
+        ]);
+
+        Http::fake(['example.com' => Http::response('Internal Server Error', 500)]);
+
+        // 1st failure: opens incident, consecutive count = 1 (below threshold 3).
+        $this->service->check($monitor);
+
+        // 2nd failure: consecutive count = 2, still below threshold.
+        $this->service->check($monitor);
+
+        // 3rd failure: consecutive count = 3 === threshold, notification fires.
+        $this->service->check($monitor);
     }
 }

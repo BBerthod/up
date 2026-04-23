@@ -14,10 +14,16 @@ Route::get('/health', fn () => response()->json(['status' => 'ok', 'timestamp' =
 // Public status page API (no auth)
 Route::get('/status-pages/public/{slug}', [StatusPageApiController::class, 'publicShow'])->name('api.status-pages.public');
 
-// Event ingestion (token-based auth, no Bearer)
+// Event ingestion — legacy URL-path token (deprecated, kept for backward compat).
+// New integrations should use POST /api/ingest with Authorization: Bearer <token>.
 Route::post('/ingest/{token}', [IngestController::class, 'receive'])
     ->name('api.ingest.receive')
-    ->middleware('throttle:100,1');
+    ->middleware('throttle:60,1');
+
+// Event ingestion — Bearer token (preferred).
+Route::post('/ingest', [IngestController::class, 'receive'])
+    ->name('api.ingest.receive.bearer')
+    ->middleware('throttle:60,1');
 
 // Authenticated API routes
 Route::middleware('auth:sanctum')->group(function () {

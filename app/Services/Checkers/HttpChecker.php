@@ -6,7 +6,9 @@ use App\Contracts\MonitorChecker;
 use App\DTOs\CheckResult;
 use App\Enums\CheckStatus;
 use App\Enums\IncidentCause;
+use App\Exceptions\UnsafeUrlException;
 use App\Models\Monitor;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -20,7 +22,9 @@ class HttpChecker implements MonitorChecker
         $status = CheckStatus::UP;
         $cause = null;
 
-        if ($this->isPrivateUrl($monitor->url)) {
+        try {
+            UrlSafetyValidator::assertSafe($monitor->url);
+        } catch (UnsafeUrlException $e) {
             return new CheckResult(
                 status: CheckStatus::DOWN,
                 responseTimeMs: 0,
@@ -71,61 +75,24 @@ class HttpChecker implements MonitorChecker
         );
     }
 
-    private function isPrivateUrl(string $url): bool
-    {
-        $scheme = strtolower(parse_url($url, PHP_URL_SCHEME) ?? '');
-        if (in_array($scheme, ['file', 'gopher', 'dict'], true)) {
-            return true;
-        }
-
-        $host = parse_url($url, PHP_URL_HOST);
-        if ($host === null) {
-            return true;
-        }
-
-        $ip = gethostbyname($host);
-        if ($ip === $host) {
-            return false;
-        }
-
-        $ipLong = ip2long($ip);
-        if ($ipLong === false) {
-            return false;
-        }
-
-        $privateRanges = [
-            ['127.0.0.0', '255.0.0.0'],
-            ['10.0.0.0', '255.0.0.0'],
-            ['172.16.0.0', '255.240.0.0'],
-            ['192.168.0.0', '255.255.0.0'],
-            ['169.254.0.0', '255.255.0.0'],
-            ['0.0.0.0', '255.0.0.0'],
-        ];
-
-        foreach ($privateRanges as [$network, $mask]) {
-            $networkLong = ip2long($network);
-            $maskLong = ip2long($mask);
-
-            if (($ipLong & $maskLong) === ($networkLong & $maskLong)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private function makeHttpRequest(Monitor $monitor)
     {
         $method = strtolower($monitor->method->value);
 
-        return Http::timeout(30)
+        $http = Http::timeout(15)
             ->connectTimeout(10)
-            ->withoutVerifying()
             ->withHeaders([
                 'User-Agent' => 'Up-Monitor/1.0 (+https://github.com/BBerthod/up)',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            ])
-            ->{$method}($monitor->url);
+            ]);
+
+        // TLS verification is enabled by default. Users who manage their own
+        // certificates (e.g. self-signed) can opt out via the verify_tls flag.
+        if ($monitor->verify_tls === false) {
+            $http = $http->withoutVerifying();
+        }
+
+        return $http->{$method}($monitor->url);
     }
 
     private function checkSslExpiry(string $url): ?\DateTime

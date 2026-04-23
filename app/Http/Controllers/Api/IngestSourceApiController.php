@@ -36,10 +36,13 @@ class IngestSourceApiController extends Controller
             'notification_channel_ids.*' => ['integer', 'exists:notification_channels,id'],
         ]);
 
+        $token = IngestSource::generateToken();
+
         $source = IngestSource::create([
             'name' => $validated['name'],
             'slug' => IngestSource::generateSlug($validated['name']),
-            'token' => IngestSource::generateToken(),
+            'token' => $token,
+            'token_hash' => IngestSource::hashToken($token),
             'is_active' => $validated['is_active'] ?? true,
             'team_id' => $request->user()->team_id,
         ]);
@@ -88,7 +91,11 @@ class IngestSourceApiController extends Controller
     {
         $this->authorize('update', $ingestSource);
 
-        $ingestSource->update(['token' => IngestSource::generateToken()]);
+        $newToken = IngestSource::generateToken();
+        $ingestSource->update([
+            'token' => $newToken,
+            'token_hash' => IngestSource::hashToken($newToken),
+        ]);
 
         return response()->json(['token' => $ingestSource->token]);
     }

@@ -7,21 +7,19 @@ use Illuminate\Http\Response;
 
 class BadgeController extends Controller
 {
-    public function __invoke(string $hash): Response
+    public function __invoke(string $secret): Response
     {
-        $decoded = @unpack('V', base64_decode(strtr($hash, '-_', '+/')));
-        if (! $decoded || ! isset($decoded[1])) {
-            abort(404);
-        }
+        $monitor = Monitor::withoutGlobalScopes()
+            ->where('badge_secret', $secret)
+            ->first();
 
-        $monitor = Monitor::withoutGlobalScopes()->find($decoded[1]);
         if (! $monitor) {
             abort(404);
         }
 
         $uptime = (float) ($monitor->checks()
             ->where('checked_at', '>=', now()->subDays(30))
-            ->selectRaw("ROUND(AVG(CASE WHEN status = 'up' THEN 100 ELSE 0 END), 1) as uptime")
+            ->uptimePercent(1)
             ->value('uptime') ?? 100);
 
         $isDown = $monitor->checks()

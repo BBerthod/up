@@ -22,6 +22,12 @@ services:
       resources:
         limits:
           memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   worker:
     build:
@@ -29,7 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: up-worker
     restart: unless-stopped
-    command: php artisan queue:work redis --queue=monitors,notifications,default --sleep=3 --tries=3 --max-time=3600
+    command: php artisan queue:work redis --queue=monitors,notifications,default --sleep=3 --tries=3 --max-time=3600 --max-jobs=500
     env_file:
       - .env
     volumes:
@@ -42,6 +48,67 @@ services:
     networks:
       - up-network
     stop_signal: SIGTERM
+    stop_grace_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'queue:work' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  lighthouse-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: up-lighthouse-worker
+    restart: unless-stopped
+    command: php artisan queue:work redis_long --queue=lighthouse --sleep=2 --tries=2 --max-time=3600 --max-jobs=50
+    env_file:
+      - .env
+    volumes:
+      - up-storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - up-network
+    stop_signal: SIGTERM
+    stop_grace_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'queue:work' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  warming-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: up-warming-worker
+    restart: unless-stopped
+    command: php artisan queue:work redis_long --queue=warming --sleep=2 --tries=2 --max-time=3600 --max-jobs=50
+    env_file:
+      - .env
+    volumes:
+      - up-storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - up-network
+    stop_signal: SIGTERM
+    stop_grace_period: 120s
     deploy:
       resources:
         limits:
@@ -94,7 +161,8 @@ services:
     volumes:
       - up-storage:/var/www/html/storage
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     networks:
       - up-network
     deploy:
@@ -148,6 +216,34 @@ services:
       timeout: 5s
       retries: 5
 
+  pg-backup:
+    image: alpine:3.19
+    container_name: up-pg-backup
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "
+        apk add --no-cache postgresql16-client dcron &&
+        mkdir -p /backups &&
+        echo '0 3 * * * pg_dump -h postgres -U $${DB_USERNAME} -d $${DB_DATABASE} -F c -f /backups/up-$$(date +\\%Y\\%m\\%d).dump && find /backups -name \"*.dump\" -mtime +$${BACKUP_RETENTION_DAYS:-7} -delete' > /etc/crontabs/root &&
+        crond -f -l 6
+      "
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      DB_USERNAME: ${DB_USERNAME:-up}
+      DB_DATABASE: ${DB_DATABASE:-up}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - up-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
 networks:
   up-network:
     driver: bridge
@@ -156,3 +252,4 @@ volumes:
   pgdata:
   redisdata:
   up-storage:
+  backups:

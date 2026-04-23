@@ -5,12 +5,26 @@ namespace App\Services;
 use App\DTOs\WarmUrlResult;
 use App\Enums\WarmSiteMode;
 use App\Models\WarmSite;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class WarmingService
 {
+    /** Headers that must never be forwarded to target servers during cache warming. */
+    public const BLOCKED_HEADERS = [
+        'host',
+        'cookie',
+        'content-length',
+        'transfer-encoding',
+        'connection',
+        'x-forwarded-for',
+        'x-real-ip',
+        'origin',
+        'referer',
+    ];
+
     /**
      * Resolve the list of URLs to warm for a given site.
      *
@@ -55,10 +69,9 @@ class WarmingService
     {
         $start = microtime(true);
 
-        $blockedHeaders = ['host', 'cookie', 'content-length', 'transfer-encoding', 'connection', 'x-forwarded-for', 'x-real-ip', 'origin', 'referer'];
         $safeCustomHeaders = [];
         foreach ($customHeaders as $key => $value) {
-            if (! in_array(strtolower($key), $blockedHeaders, true)) {
+            if (! in_array(strtolower($key), self::BLOCKED_HEADERS, true)) {
                 $safeCustomHeaders[$key] = $value;
             }
         }
@@ -337,39 +350,6 @@ class WarmingService
 
     private function filterSafeUrls(array $urls): array
     {
-        return array_values(array_filter($urls, function (string $url): bool {
-            $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
-
-            if ($host === '') {
-                return false;
-            }
-
-            // Block loopback and common localhost aliases
-            if (in_array($host, ['localhost', '0.0.0.0'], true)) {
-                return false;
-            }
-
-            // Only perform IP-based checks when the host looks like an IP literal
-            if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-                // Block private IPv4 ranges (RFC 1918)
-                if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
-                    if (! filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                        return false;
-                    }
-                }
-
-                // Block link-local / AWS / GCP cloud metadata IP
-                if (str_starts_with($host, '169.254.')) {
-                    return false;
-                }
-
-                // Block IPv6 loopback
-                if ($host === '::1' || $host === '[::1]') {
-                    return false;
-                }
-            }
-
-            return true;
-        }));
+        return array_values(array_filter($urls, fn (string $url): bool => UrlSafetyValidator::isSafe($url)));
     }
 }

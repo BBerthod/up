@@ -6,7 +6,9 @@ use App\Contracts\MonitorChecker;
 use App\DTOs\CheckResult;
 use App\Enums\CheckStatus;
 use App\Enums\IncidentCause;
+use App\Exceptions\UnsafeUrlException;
 use App\Models\Monitor;
+use App\Support\UrlSafetyValidator;
 
 class DnsChecker implements MonitorChecker
 {
@@ -28,8 +30,26 @@ class DnsChecker implements MonitorChecker
         $expectedValue = $monitor->dns_expected_value;
         $startTime = microtime(true);
 
+        // SSRF guard — validate the domain before issuing the DNS lookup.
+        // dns_get_record() itself is used for the check, but we must ensure
+        // the domain is not a literal private IP masquerading as a hostname.
+        try {
+            UrlSafetyValidator::assertSafe("https://{$domain}");
+        } catch (UnsafeUrlException $e) {
+            return new CheckResult(
+                status: CheckStatus::DOWN,
+                responseTimeMs: 0,
+                errorMessage: 'Domain resolves to a private or reserved IP address',
+                cause: IncidentCause::ERROR,
+            );
+        }
+
         try {
             $dnsType = self::RECORD_TYPE_MAP[$recordType] ?? DNS_A;
+            // dns_get_record() is inherently blocking; there is no portable
+            // pure-PHP timeout mechanism. We use @-suppression so that a
+            // resolver timeout returns false (handled below) rather than a
+            // PHP warning. A 10-second PHP default resolver timeout applies.
             $records = @dns_get_record($domain, $dnsType);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);

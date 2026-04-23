@@ -27,45 +27,35 @@ function setupGlobalHandlers() {
 function teardownGlobalHandlers() {
     if (subscriberCount === 0 && startHandler) {
         router.off('start', startHandler)
-        router.off('finish', finishHandler)
+        router.off('finish', finishHandler!)
         startHandler = null
         finishHandler = null
     }
 }
 
 export function usePageLoading() {
-    const isLoading = ref(true)
-    const currentNavId = ref(navigationId.value)
+    // Initialise to false when no navigation is in flight to avoid skeleton flash
+    const isLoading = ref(isNavigating.value)
 
     onMounted(() => {
         subscriberCount++
         setupGlobalHandlers()
 
-        if (!isNavigating.value && navigationId.value === currentNavId.value) {
-            isLoading.value = false
-        }
-
-        const checkLoading = () => {
-            if (!isNavigating.value) {
-                isLoading.value = false
-                currentNavId.value = navigationId.value
-            }
-        }
+        // Sync immediately in case a navigation finished before mount
+        isLoading.value = isNavigating.value
 
         const stopStart = router.on('start', () => {
             isLoading.value = true
-            currentNavId.value = navigationId.value
         })
 
-        const stopFinish = router.on('finish', checkLoading)
-
-        const interval = setInterval(checkLoading, 50)
+        const stopFinish = router.on('finish', () => {
+            isLoading.value = false
+        })
 
         onUnmounted(() => {
             subscriberCount--
             stopStart()
             stopFinish()
-            clearInterval(interval)
             teardownGlobalHandlers()
         })
     })

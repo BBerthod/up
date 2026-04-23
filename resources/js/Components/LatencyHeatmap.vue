@@ -60,10 +60,18 @@ const cellColor = (ms: number | null): string => {
 
 const showTooltip = (e: MouseEvent, cell: { date: string; ms: number | null }) => {
     const formatted = new Date(cell.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const rect = (e.target as SVGElement).getBoundingClientRect()
+    const tooltipWidth = 180
+    const tooltipHeight = 28
+    const margin = 8
+    const rawLeft = rect.left + 6
+    const rawTop = rect.top - tooltipHeight - 4
+    const clampedLeft = Math.min(Math.max(margin, rawLeft), window.innerWidth - tooltipWidth - margin)
+    const clampedTop = Math.min(Math.max(margin, rawTop), window.innerHeight - tooltipHeight - margin)
     tooltip.value = {
         show: true,
-        x: (e.target as SVGElement).getBoundingClientRect().left + 6,
-        y: (e.target as SVGElement).getBoundingClientRect().top - 30,
+        x: clampedLeft,
+        y: clampedTop,
         text: cell.ms !== null ? `${formatted}: ${cell.ms}ms avg` : `${formatted}: No data`,
     }
 }

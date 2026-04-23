@@ -56,6 +56,7 @@ class MonitorControllerTest extends TestCase
 
         $data = [
             'name' => 'Test Website',
+            'type' => 'http',
             'url' => 'https://example.com',
             'method' => MonitorMethod::GET->value,
             'expected_status_code' => 200,
