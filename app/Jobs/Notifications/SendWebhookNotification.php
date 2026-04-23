@@ -26,6 +26,19 @@ class SendWebhookNotification extends BaseNotificationJob
             return;
         }
 
-        Http::timeout(10)->post($url, $this->buildPayload())->throw();
+        $body = json_encode($this->buildPayload(), JSON_THROW_ON_ERROR);
+
+        $headers = ['Content-Type' => 'application/json'];
+
+        $secret = $this->channel->settings['secret'] ?? null;
+        if (! empty($secret)) {
+            $headers['X-Up-Signature'] = 'sha256='.hash_hmac('sha256', $body, $secret);
+        }
+
+        Http::timeout(10)
+            ->withHeaders($headers)
+            ->withBody($body, 'application/json')
+            ->post($url)
+            ->throw();
     }
 }
