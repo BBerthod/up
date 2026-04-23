@@ -6,15 +6,17 @@ use App\Enums\ChannelType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\NotificationChannelResource;
 use App\Models\NotificationChannel;
+use App\Services\Telegram\TelegramValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 
 class NotificationChannelApiController extends Controller
 {
+    public function __construct(private TelegramValidator $telegramValidator) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $channels = NotificationChannel::query()
@@ -35,10 +37,13 @@ class NotificationChannelApiController extends Controller
         $validated = $this->validateChannel($request);
 
         if (($validated['type'] ?? null) === 'telegram') {
-            $this->validateTelegramChat(
+            $result = $this->telegramValidator->validateChat(
                 $validated['settings']['bot_token'],
                 $validated['settings']['chat_id']
             );
+            if (! $result['ok']) {
+                abort(422, $result['error']);
+            }
         }
 
         $channel = NotificationChannel::create(array_merge($validated, [
@@ -53,10 +58,13 @@ class NotificationChannelApiController extends Controller
         $validated = $this->validateChannel($request, isUpdate: true);
 
         if (($validated['type'] ?? null) === 'telegram' && isset($validated['settings']['chat_id'])) {
-            $this->validateTelegramChat(
+            $result = $this->telegramValidator->validateChat(
                 $validated['settings']['bot_token'],
                 $validated['settings']['chat_id']
             );
+            if (! $result['ok']) {
+                abort(422, $result['error']);
+            }
         }
 
         $notificationChannel->update($validated);
@@ -69,25 +77,6 @@ class NotificationChannelApiController extends Controller
         $notificationChannel->delete();
 
         return response()->noContent();
-    }
-
-    private function validateTelegramChat(string $botToken, string $chatId): void
-    {
-        try {
-            $response = Http::timeout(10)
-                ->get("https://api.telegram.org/bot{$botToken}/getChat", [
-                    'chat_id' => $chatId,
-                ]);
-
-            $data = $response->json();
-
-            if (! ($data['ok'] ?? false)) {
-                $error = $data['description'] ?? 'Invalid chat ID.';
-                abort(422, $error);
-            }
-        } catch (\Illuminate\Http\Client\ConnectionException) {
-            abort(422, 'Connection to Telegram API failed. Please try again.');
-        }
     }
 
     private function validateChannel(Request $request, bool $isUpdate = false): array
@@ -103,7 +92,10 @@ class NotificationChannelApiController extends Controller
         if ($type) {
             $rules = array_merge($rules, match ($type) {
                 'email' => ['settings.recipients' => ['required', 'string', 'max:1000']],
-                'webhook' => ['settings.url' => ['required', 'url', 'max:2000']],
+                'webhook' => [
+                    'settings.url' => ['required', 'url', 'max:2000'],
+                    'settings.secret' => ['nullable', 'string', 'max:255'],
+                ],
                 'slack' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
                 'discord' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
                 'telegram' => [

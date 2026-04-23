@@ -3,21 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ChannelType;
-use App\Enums\IncidentCause;
-use App\Jobs\SendNotification;
-use App\Models\Monitor;
-use App\Models\MonitorCheck;
-use App\Models\MonitorIncident;
 use App\Models\NotificationChannel;
+use App\Services\NotificationService;
+use App\Services\Telegram\TelegramValidator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class NotificationChannelController extends Controller
 {
+    public function __construct(
+        private TelegramValidator $telegramValidator,
+        private NotificationService $notificationService,
+    ) {}
+
     public function index(): Response
     {
         $channels = NotificationChannel::query()
@@ -46,12 +47,12 @@ class NotificationChannelController extends Controller
         $validated = $this->validateChannel($request);
 
         if ($validated['type'] === 'telegram') {
-            $validation = $this->validateTelegramChat(
+            $validation = $this->telegramValidator->validateChat(
                 $validated['settings']['bot_token'],
                 $validated['settings']['chat_id']
             );
 
-            if (! $validation['valid']) {
+            if (! $validation['ok']) {
                 return back()->withInput()->withErrors(['settings.chat_id' => $validation['error']]);
             }
         }
@@ -85,12 +86,12 @@ class NotificationChannelController extends Controller
         $validated = $this->validateChannel($request);
 
         if ($validated['type'] === 'telegram') {
-            $validation = $this->validateTelegramChat(
+            $validation = $this->telegramValidator->validateChat(
                 $validated['settings']['bot_token'],
                 $validated['settings']['chat_id']
             );
 
-            if (! $validation['valid']) {
+            if (! $validation['ok']) {
                 return back()->withInput()->withErrors(['settings.chat_id' => $validation['error']]);
             }
         }
@@ -113,59 +114,12 @@ class NotificationChannelController extends Controller
     {
         $this->authorize('test', $channel);
 
-        $monitor = new Monitor([
-            'name' => 'Test Monitor',
-            'url' => 'https://example.com',
-        ]);
-        $monitor->id = 0;
-
-        $incident = new MonitorIncident([
-            'monitor_id' => 0,
-            'cause' => IncidentCause::TIMEOUT,
-            'started_at' => now(),
-        ]);
-        $incident->id = 0;
-
-        $check = new MonitorCheck([
-            'monitor_id' => 0,
-            'status_code' => 0,
-            'response_time_ms' => 0,
-            'checked_at' => now(),
-        ]);
-        $check->id = 0;
-
         try {
-            (new SendNotification($channel, 'down', $monitor, $incident, $check))->handle();
+            $this->notificationService->sendTestNotification($channel);
 
             return back()->with('success', "Test notification sent to {$channel->name}.");
         } catch (\Throwable $e) {
             return back()->with('error', "Test notification failed: {$e->getMessage()}");
-        }
-    }
-
-    private function validateTelegramChat(string $botToken, string $chatId): array
-    {
-        try {
-            $response = Http::timeout(10)
-                ->get("https://api.telegram.org/bot{$botToken}/getChat", [
-                    'chat_id' => $chatId,
-                ]);
-
-            $data = $response->json();
-
-            if (! ($data['ok'] ?? false)) {
-                return [
-                    'valid' => false,
-                    'error' => $data['description'] ?? 'Invalid chat ID.',
-                ];
-            }
-
-            return ['valid' => true, 'error' => null];
-        } catch (\Exception) {
-            return [
-                'valid' => false,
-                'error' => 'Connection to Telegram API failed. Please try again.',
-            ];
         }
     }
 
@@ -196,7 +150,10 @@ class NotificationChannelController extends Controller
 
         $rules = array_merge($rules, match ($request->input('type')) {
             'email' => ['settings.recipients' => ['required', 'string', 'max:1000', 'regex:/^[\w.+\-]+@[\w\-]+\.[\w.]+(\s*,\s*[\w.+\-]+@[\w\-]+\.[\w.]+)*$/']],
-            'webhook' => ['settings.url' => ['required', 'url', 'max:2000']],
+            'webhook' => [
+                'settings.url' => ['required', 'url', 'max:2000'],
+                'settings.secret' => ['nullable', 'string', 'max:255'],
+            ],
             'slack' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
             'discord' => ['settings.webhook_url' => ['required', 'url', 'max:2000']],
             'telegram' => [
