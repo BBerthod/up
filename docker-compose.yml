@@ -35,7 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: up-worker
     restart: unless-stopped
-    command: php artisan queue:work redis --queue=monitors,notifications,default --sleep=3 --tries=3 --max-time=3600
+    command: php artisan queue:work redis --queue=monitors,notifications,default --sleep=3 --tries=3 --max-time=3600 --max-jobs=500
     env_file:
       - .env
     volumes:
@@ -66,6 +66,36 @@ services:
     container_name: up-lighthouse-worker
     restart: unless-stopped
     command: php artisan queue:work redis_long --queue=lighthouse --sleep=2 --tries=2 --max-time=3600 --max-jobs=50
+    env_file:
+      - .env
+    volumes:
+      - up-storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - up-network
+    stop_signal: SIGTERM
+    stop_grace_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'queue:work' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  warming-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: up-warming-worker
+    restart: unless-stopped
+    command: php artisan queue:work redis_long --queue=warming --sleep=2 --tries=2 --max-time=3600 --max-jobs=50
     env_file:
       - .env
     volumes:
