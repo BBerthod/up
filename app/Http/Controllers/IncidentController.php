@@ -14,9 +14,12 @@ class IncidentController extends Controller
 {
     public function index(Request $request): \Inertia\Response
     {
+        $teamId = $request->user()->team_id;
+
         $query = MonitorIncident::query()
             ->join('monitors', 'monitor_incidents.monitor_id', '=', 'monitors.id')
             ->leftJoin('functional_checks', 'monitor_incidents.functional_check_id', '=', 'functional_checks.id')
+            ->where('monitors.team_id', $teamId)
             ->select([
                 'monitor_incidents.*',
                 'monitors.name as monitor_name',
@@ -76,9 +79,11 @@ class IncidentController extends Controller
     public function export(Request $request): Response|\Symfony\Component\HttpFoundation\StreamedResponse
     {
         $format = $request->input('format', 'csv');
+        $teamId = $request->user()->team_id;
 
         $query = MonitorIncident::query()
             ->join('monitors', 'monitor_incidents.monitor_id', '=', 'monitors.id')
+            ->where('monitors.team_id', $teamId)
             ->select([
                 'monitors.name as monitor_name',
                 'monitors.type as monitor_type',
@@ -158,6 +163,8 @@ class IncidentController extends Controller
 
     public function update(Request $request, MonitorIncident $incident): RedirectResponse
     {
+        $this->authorize('update', $incident);
+
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:5000'],
             'severity' => ['nullable', 'string', 'in:critical,major,minor,warning'],

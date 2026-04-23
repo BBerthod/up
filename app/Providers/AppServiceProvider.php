@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use App\Models\IngestSource;
 use App\Models\Monitor;
+use App\Models\MonitorIncident;
 use App\Models\NotificationChannel;
 use App\Models\StatusPage;
 use App\Models\WarmSite;
 use App\Policies\IngestSourcePolicy;
+use App\Policies\MonitorIncidentPolicy;
 use App\Policies\MonitorPolicy;
 use App\Policies\NotificationChannelPolicy;
 use App\Policies\StatusPagePolicy;
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     protected $policies = [
         IngestSource::class => IngestSourcePolicy::class,
         Monitor::class => MonitorPolicy::class,
+        MonitorIncident::class => MonitorIncidentPolicy::class,
         NotificationChannel::class => NotificationChannelPolicy::class,
         StatusPage::class => StatusPagePolicy::class,
         WarmSite::class => WarmSitePolicy::class,

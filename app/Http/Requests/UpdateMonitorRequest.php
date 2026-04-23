@@ -10,7 +10,13 @@ class UpdateMonitorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $monitor = $this->route('monitor');
+
+        if (! $this->user() || ! $monitor instanceof \App\Models\Monitor) {
+            return false;
+        }
+
+        return $this->user()->team_id === $monitor->team_id;
     }
 
     public function rules(): array
@@ -25,7 +31,11 @@ class UpdateMonitorRequest extends FormRequest
             'critical_threshold_ms' => 'nullable|integer|min:1',
             'alert_after_failures' => 'integer|min:1|max:10',
             'notification_channels' => 'array',
-            'notification_channels.*' => 'exists:notification_channels,id',
+            'notification_channels.*' => [
+                'integer',
+                Rule::exists('notification_channels', 'id')
+                    ->where('team_id', $this->user()->team_id),
+            ],
         ];
 
         return match ($type) {

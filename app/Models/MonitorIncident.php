@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\IncidentCause;
 use App\Enums\IncidentSeverity;
+use App\Models\Traits\ScopedByMonitorTeam;
 use Carbon\CarbonInterval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MonitorIncident extends Model
 {
     use HasFactory;
+    use ScopedByMonitorTeam;
 
     public $timestamps = false;
 
