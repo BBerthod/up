@@ -31,11 +31,11 @@ class Monitor extends Model
         'dns_expected_value',
         'interval',
         'is_active',
+        'badge_secret',
         'last_checked_at',
         'warning_threshold_ms',
         'critical_threshold_ms',
         'alert_after_failures',
-        'badge_secret',
     ];
 
     protected $casts = [

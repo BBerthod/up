@@ -79,13 +79,15 @@ class HttpChecker implements MonitorChecker
     {
         $method = strtolower($monitor->method->value);
 
-        $http = Http::timeout(30)
+        $http = Http::timeout(15)
             ->connectTimeout(10)
             ->withHeaders([
                 'User-Agent' => 'Up-Monitor/1.0 (+https://github.com/BBerthod/up)',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             ]);
 
+        // TLS verification is enabled by default. Users who manage their own
+        // certificates (e.g. self-signed) can opt out via the verify_tls flag.
         if ($monitor->verify_tls === false) {
             $http = $http->withoutVerifying();
         }
