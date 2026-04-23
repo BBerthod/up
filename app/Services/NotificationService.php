@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ChannelType;
+use App\Enums\IncidentCause;
 use App\Enums\WarmRunStatus;
 use App\Jobs\Notifications\SendDiscordNotification;
 use App\Jobs\Notifications\SendEmailNotification;
@@ -166,6 +167,46 @@ class NotificationService
         }
 
         return $previousRun->status === WarmRunStatus::COMPLETED;
+    }
+
+    /**
+     * Send a synchronous test notification through the real Send*Notification jobs.
+     * Uses dispatchSync() so the caller receives immediate feedback on success/failure.
+     * A fake Monitor and MonitorIncident are used — no real data is stored.
+     */
+    public function sendTestNotification(NotificationChannel $channel): void
+    {
+        $monitor = new Monitor([
+            'name' => 'Test Monitor',
+            'url' => 'https://example.com',
+        ]);
+        $monitor->id = 0;
+
+        $incident = new MonitorIncident([
+            'monitor_id' => 0,
+            'cause' => IncidentCause::TIMEOUT,
+            'started_at' => now(),
+        ]);
+        $incident->id = 0;
+
+        $check = new MonitorCheck([
+            'monitor_id' => 0,
+            'status_code' => 0,
+            'response_time_ms' => 0,
+            'checked_at' => now(),
+        ]);
+        $check->id = 0;
+
+        $jobClass = match ($channel->type) {
+            ChannelType::EMAIL => SendEmailNotification::class,
+            ChannelType::WEBHOOK => SendWebhookNotification::class,
+            ChannelType::SLACK => SendSlackNotification::class,
+            ChannelType::DISCORD => SendDiscordNotification::class,
+            ChannelType::PUSH => SendPushNotification::class,
+            ChannelType::TELEGRAM => SendTelegramNotification::class,
+        };
+
+        $jobClass::dispatchSync($channel, 'down', $monitor, $incident, $check);
     }
 
     private function dispatchForChannel(NotificationChannel $channel, string $event, Monitor $monitor, MonitorIncident $incident, ?MonitorCheck $check): void

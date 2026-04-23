@@ -7,6 +7,7 @@ use App\Models\MonitorCheck;
 use App\Models\MonitorIncident;
 use App\Models\NotificationChannel;
 use App\Models\NotificationLog;
+use App\Support\CircuitBreaker;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,6 +21,8 @@ abstract class BaseNotificationJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
+    public int $timeout = 30;
 
     public array $backoff = [30, 60, 120];
 
@@ -37,7 +40,26 @@ abstract class BaseNotificationJob implements ShouldQueue
 
     public function handle(): void
     {
-        $this->send();
+        $circuitKey = "notification:{$this->channel->id}";
+
+        if (CircuitBreaker::isOpen($circuitKey)) {
+            Log::info('Notification skipped — circuit breaker open', [
+                'channel_id' => $this->channel->id,
+                'channel_type' => $this->channel->type->value,
+                'event' => $this->event,
+            ]);
+
+            return;
+        }
+
+        try {
+            $this->send();
+            CircuitBreaker::recordSuccess($circuitKey);
+        } catch (Throwable $e) {
+            CircuitBreaker::recordFailure($circuitKey);
+            throw $e;
+        }
+
         $this->logSuccess();
     }
 
