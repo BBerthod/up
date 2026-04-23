@@ -40,9 +40,27 @@ interface IncidentStats {
     mttr_minutes: number
     downtime_30d_minutes: number
 }
+interface NotificationChannel { id: number; name: string; type: string }
+interface Monitor {
+    id: number
+    name: string
+    url: string
+    type: 'http' | 'ping' | 'port' | 'dns'
+    method?: string
+    expected_status_code?: number | null
+    keyword?: string | null
+    is_active: boolean
+    is_paused?: boolean
+    interval_seconds: number
+    timeout_seconds: number
+    alert_after_failures: number
+    badge_hash?: string | null
+    notification_channels: NotificationChannel[]
+    status_pages?: { id: number; name: string }[]
+}
 
 const props = defineProps<{
-    monitor: any
+    monitor: Monitor
     checks: Check[]
     incidents: PaginatedIncidents
     incidentStats: IncidentStats
@@ -226,6 +244,21 @@ const handleIncidentPage = (page: number) => {
         preserveScroll: true,
     })
 }
+
+// Visible page numbers with ellipsis markers (null = ellipsis)
+const visiblePages = computed((): (number | null)[] => {
+    const current = props.incidents.meta.current_page
+    const last = props.incidents.meta.last_page
+    if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1)
+    const pageSet = new Set([1, last, current, current - 1, current + 1].filter(p => p >= 1 && p <= last))
+    const sorted = Array.from(pageSet).sort((a, b) => a - b)
+    const result: (number | null)[] = []
+    for (let i = 0; i < sorted.length; i++) {
+        if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push(null)
+        result.push(sorted[i])
+    }
+    return result
+})
 </script>
 
 <template>
@@ -466,15 +499,15 @@ const handleIncidentPage = (page: number) => {
                             <i class="pi pi-chevron-left text-xs" />
                         </button>
 
-                        <template v-for="page in incidents.meta.last_page" :key="page">
+                        <template v-for="(page, i) in visiblePages" :key="page ?? `ellipsis-${i}`">
+                            <span v-if="page === null" class="text-slate-600 px-1">…</span>
                             <button
-                                v-if="page === 1 || page === incidents.meta.last_page || Math.abs(page - incidents.meta.current_page) <= 1"
+                                v-else
                                 @click="handleIncidentPage(page)"
                                 :class="['w-8 h-8 rounded-lg text-sm transition-colors', page === incidents.meta.current_page ? 'bg-white/10 text-white font-medium' : 'text-slate-400 hover:text-white hover:bg-white/5']"
                             >
                                 {{ page }}
                             </button>
-                            <span v-else-if="page === incidents.meta.current_page - 2 || page === incidents.meta.current_page + 2" class="text-slate-600 px-1">…</span>
                         </template>
 
                         <button
