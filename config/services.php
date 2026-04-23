@@ -43,7 +43,16 @@ return [
     ],
 
     'google' => [
+        // Legacy single-key support (kept for backward compatibility).
         'pagespeed_api_key' => env('GOOGLE_PAGESPEED_API_KEY'),
+
+        // Multi-key rotation: comma-separated list of API keys.
+        // Example: GOOGLE_PAGESPEED_API_KEYS="key1,key2,key3"
+        // When set, keys are rotated round-robin; each key has a daily quota
+        // counter capped at 400 calls (conservative margin below Google's 500/day limit).
+        // If empty, falls back to GOOGLE_PAGESPEED_API_KEY (single key).
+        // If both are empty, the API is called without a key (very low quota).
+        'pagespeed_api_keys' => env('GOOGLE_PAGESPEED_API_KEYS'),
     ],
 
 ];

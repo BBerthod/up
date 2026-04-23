@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Events\LighthouseAuditCompleted;
+use App\Exceptions\GooglePSI403Exception;
+use App\Exceptions\GooglePSI429Exception;
 use App\Models\Monitor;
 use App\Services\LighthouseService;
 use Illuminate\Bus\Queueable;
@@ -32,7 +34,28 @@ class RunLighthouseAudit implements ShouldQueue
 
     public function handle(LighthouseService $lighthouseService): void
     {
-        $score = $lighthouseService->audit($this->monitor);
+        try {
+            $score = $lighthouseService->audit($this->monitor);
+        } catch (GooglePSI403Exception $e) {
+            // Key invalid/revoked — release back to queue with a 1-hour delay
+            // to give an admin time to rotate the key in config.
+            Log::critical('RunLighthouseAudit: PSI key 403, releasing with 1h delay', [
+                'monitor_id' => $this->monitor->id,
+                'error' => $e->getMessage(),
+            ]);
+            $this->release(3600);
+
+            return;
+        } catch (GooglePSI429Exception $e) {
+            // Quota exhausted — release back to queue with a 30-minute delay.
+            Log::warning('RunLighthouseAudit: PSI quota 429, releasing with 30 min delay', [
+                'monitor_id' => $this->monitor->id,
+                'error' => $e->getMessage(),
+            ]);
+            $this->release(1800);
+
+            return;
+        }
 
         LighthouseAuditCompleted::dispatch($this->monitor, $score);
     }
