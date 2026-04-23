@@ -6,6 +6,7 @@ use App\DTOs\WarmUrlResult;
 use App\Enums\WarmSiteMode;
 use App\Models\WarmSite;
 use App\Services\WarmingService;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -21,6 +22,19 @@ class WarmingServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = app(WarmingService::class);
+
+        // Fake DNS resolver: example.com resolves to a public IP, literal private IPs
+        // are already caught by the IP-literal path without any DNS lookup.
+        UrlSafetyValidator::setResolver(static fn (string $host, int $type): array => match ($type) {
+            DNS_A => [['ip' => '93.184.216.34']], // example.com / IANA
+            default => [],
+        });
+    }
+
+    protected function tearDown(): void
+    {
+        UrlSafetyValidator::setResolver(null);
+        parent::tearDown();
     }
 
     public function test_resolve_urls_from_manual_list(): void
@@ -45,7 +59,7 @@ class WarmingServiceTest extends TestCase
 
     public function test_resolve_urls_from_sitemap(): void
     {
-        $sitemapXml = <<<XML
+        $sitemapXml = <<<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url><loc>https://example.com/</loc></url>
@@ -207,21 +221,21 @@ XML;
     public function test_resolve_urls_from_sitemap_index(): void
     {
         $indexXml = '<?xml version="1.0"?>'
-            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            . '<sitemap><loc>https://example.com/sitemap-pages.xml</loc></sitemap>'
-            . '<sitemap><loc>https://example.com/sitemap-posts.xml</loc></sitemap>'
-            . '</sitemapindex>';
+            .'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            .'<sitemap><loc>https://example.com/sitemap-pages.xml</loc></sitemap>'
+            .'<sitemap><loc>https://example.com/sitemap-posts.xml</loc></sitemap>'
+            .'</sitemapindex>';
 
         $pagesXml = '<?xml version="1.0"?>'
-            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            . '<url><loc>https://example.com/about</loc></url>'
-            . '</urlset>';
+            .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            .'<url><loc>https://example.com/about</loc></url>'
+            .'</urlset>';
 
         $postsXml = '<?xml version="1.0"?>'
-            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            . '<url><loc>https://example.com/blog/post1</loc></url>'
-            . '<url><loc>https://example.com/blog/post2</loc></url>'
-            . '</urlset>';
+            .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            .'<url><loc>https://example.com/blog/post1</loc></url>'
+            .'<url><loc>https://example.com/blog/post2</loc></url>'
+            .'</urlset>';
 
         Http::fake([
             'https://example.com/sitemap.xml' => Http::response($indexXml, 200, ['Content-Type' => 'application/xml']),
@@ -247,27 +261,27 @@ XML;
     {
         // Level 0: sitemap index pointing to another index
         $level0 = '<?xml version="1.0"?>'
-            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            . '<sitemap><loc>https://example.com/level1.xml</loc></sitemap>'
-            . '</sitemapindex>';
+            .'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            .'<sitemap><loc>https://example.com/level1.xml</loc></sitemap>'
+            .'</sitemapindex>';
 
         // Level 1: another index
         $level1 = '<?xml version="1.0"?>'
-            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            . '<sitemap><loc>https://example.com/level2.xml</loc></sitemap>'
-            . '</sitemapindex>';
+            .'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            .'<sitemap><loc>https://example.com/level2.xml</loc></sitemap>'
+            .'</sitemapindex>';
 
         // Level 2: yet another index (should be the limit)
         $level2 = '<?xml version="1.0"?>'
-            . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            . '<sitemap><loc>https://example.com/level3.xml</loc></sitemap>'
-            . '</sitemapindex>';
+            .'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            .'<sitemap><loc>https://example.com/level3.xml</loc></sitemap>'
+            .'</sitemapindex>';
 
         // Level 3: actual URLs (should NOT be reached - depth > 2)
         $level3 = '<?xml version="1.0"?>'
-            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            . '<url><loc>https://example.com/deep-page</loc></url>'
-            . '</urlset>';
+            .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            .'<url><loc>https://example.com/deep-page</loc></url>'
+            .'</urlset>';
 
         Http::fake([
             'https://example.com/sitemap.xml' => Http::response($level0, 200),
