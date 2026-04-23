@@ -69,7 +69,7 @@ class MonitorApiControllerTest extends TestCase
         $response->assertJsonPath('data.id', $monitor->id);
     }
 
-    public function test_show_returns_403_for_other_team_monitor(): void
+    public function test_show_returns_404_for_other_team_monitor(): void
     {
         $userA = $this->createUserWithTeam();
         $userB = $this->createUserWithTeam();
@@ -80,7 +80,9 @@ class MonitorApiControllerTest extends TestCase
 
         $response = $this->getJson(route('api.monitors.show', $monitorB));
 
-        $response->assertForbidden();
+        // TeamScope global scope filters out monitors from other teams before policy runs,
+        // so route-model binding returns 404 rather than policy returning 403.
+        $response->assertNotFound();
     }
 
     // ──────────────────────────────────────────────────
@@ -113,7 +115,7 @@ class MonitorApiControllerTest extends TestCase
     // update — cross-team 403
     // ──────────────────────────────────────────────────
 
-    public function test_update_returns_403_for_other_team_monitor(): void
+    public function test_update_returns_404_for_other_team_monitor(): void
     {
         $userA = $this->createUserWithTeam();
         $userB = $this->createUserWithTeam();
@@ -126,7 +128,8 @@ class MonitorApiControllerTest extends TestCase
             'name' => 'Hacked',
         ]);
 
-        $response->assertForbidden();
+        // TeamScope prevents cross-team monitors from being found; route-model binding returns 404.
+        $response->assertNotFound();
     }
 
     public function test_update_succeeds_for_own_monitor(): void
@@ -148,7 +151,7 @@ class MonitorApiControllerTest extends TestCase
     // destroy — cross-team 403
     // ──────────────────────────────────────────────────
 
-    public function test_destroy_returns_403_for_other_team_monitor(): void
+    public function test_destroy_returns_404_for_other_team_monitor(): void
     {
         $userA = $this->createUserWithTeam();
         $userB = $this->createUserWithTeam();
@@ -159,7 +162,8 @@ class MonitorApiControllerTest extends TestCase
 
         $response = $this->deleteJson(route('api.monitors.destroy', $monitorB));
 
-        $response->assertForbidden();
+        // TeamScope prevents cross-team monitors from being found; route-model binding returns 404.
+        $response->assertNotFound();
         $this->assertDatabaseHas('monitors', ['id' => $monitorB->id]);
     }
 
@@ -180,7 +184,7 @@ class MonitorApiControllerTest extends TestCase
     // pause / resume — cross-team 403
     // ──────────────────────────────────────────────────
 
-    public function test_pause_returns_403_for_other_team_monitor(): void
+    public function test_pause_returns_404_for_other_team_monitor(): void
     {
         $userA = $this->createUserWithTeam();
         $userB = $this->createUserWithTeam();
@@ -191,10 +195,11 @@ class MonitorApiControllerTest extends TestCase
 
         $response = $this->postJson(route('api.monitors.pause', $monitorB));
 
-        $response->assertForbidden();
+        // TeamScope prevents cross-team monitors from being found; route-model binding returns 404.
+        $response->assertNotFound();
     }
 
-    public function test_resume_returns_403_for_other_team_monitor(): void
+    public function test_resume_returns_404_for_other_team_monitor(): void
     {
         $userA = $this->createUserWithTeam();
         $userB = $this->createUserWithTeam();
@@ -205,7 +210,8 @@ class MonitorApiControllerTest extends TestCase
 
         $response = $this->postJson(route('api.monitors.resume', $monitorB));
 
-        $response->assertForbidden();
+        // TeamScope prevents cross-team monitors from being found; route-model binding returns 404.
+        $response->assertNotFound();
     }
 
     public function test_pause_resume_round_trip_for_own_monitor(): void
@@ -228,7 +234,7 @@ class MonitorApiControllerTest extends TestCase
     // checks endpoint — cross-team 403
     // ──────────────────────────────────────────────────
 
-    public function test_checks_endpoint_returns_403_for_other_team_monitor(): void
+    public function test_checks_endpoint_returns_404_for_other_team_monitor(): void
     {
         $userA = $this->createUserWithTeam();
         $userB = $this->createUserWithTeam();
@@ -239,7 +245,8 @@ class MonitorApiControllerTest extends TestCase
 
         $response = $this->getJson(route('api.monitors.checks', $monitorB));
 
-        $response->assertForbidden();
+        // TeamScope prevents cross-team monitors from being found; route-model binding returns 404.
+        $response->assertNotFound();
     }
 
     public function test_checks_endpoint_returns_paginated_checks_for_own_monitor(): void

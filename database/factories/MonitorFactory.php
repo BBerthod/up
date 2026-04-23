@@ -53,8 +53,6 @@ class MonitorFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'type' => MonitorType::PING,
             'url' => fake()->ipv4(),
-            'method' => null,
-            'expected_status_code' => null,
         ]);
     }
 
@@ -64,8 +62,6 @@ class MonitorFactory extends Factory
             'type' => MonitorType::PORT,
             'url' => fake()->domainName(),
             'port' => $port,
-            'method' => null,
-            'expected_status_code' => null,
         ]);
     }
 
@@ -76,8 +72,6 @@ class MonitorFactory extends Factory
             'url' => fake()->domainName(),
             'dns_record_type' => $recordType,
             'dns_expected_value' => $expectedValue,
-            'method' => null,
-            'expected_status_code' => null,
         ]);
     }
 }
