@@ -34,7 +34,8 @@ class RunWarmSite implements ShouldBeUnique, ShouldQueue
     {
         // Use redis_long connection: retry_after=700s > $timeout=600s, preventing
         // premature requeue that would defeat ShouldBeUnique and cause duplicate warm runs.
-        $this->onConnection('redis_long')->onQueue('lighthouse');
+        // Dedicated 'warming' queue keeps warm runs isolated from lighthouse audits.
+        $this->onConnection('redis_long')->onQueue('warming');
     }
 
     public function uniqueId(): string
