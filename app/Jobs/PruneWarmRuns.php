@@ -9,10 +9,13 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PruneWarmRuns implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $tries = 3;
 
     public int $timeout = 300;
 
@@ -36,5 +39,14 @@ class PruneWarmRuns implements ShouldQueue
                 'retention_days' => $retentionDays,
             ]);
         }
+    }
+
+    public function failed(Throwable $e): void
+    {
+        Log::error('Dispatcher job failed', [
+            'job' => static::class,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
     }
 }
