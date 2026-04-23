@@ -9,6 +9,7 @@ use App\Jobs\RunWarmSite;
 use App\Models\Monitor;
 use App\Models\WarmRun;
 use App\Models\WarmSite;
+use App\Services\WarmingService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,7 +74,7 @@ class WarmSiteController extends Controller
             'frequencies' => $this->frequencies(),
             'modes' => $this->modes(),
             'monitors' => Monitor::select('id', 'name', 'url')->orderBy('name')->get(),
-            'blockedHeaders' => ['host', 'cookie', 'content-length', 'transfer-encoding', 'connection', 'x-forwarded-for', 'x-real-ip', 'origin', 'referer'],
+            'blockedHeaders' => WarmingService::BLOCKED_HEADERS,
         ]);
     }
 

@@ -12,6 +12,19 @@ use Illuminate\Support\Facades\Log;
 
 class WarmingService
 {
+    /** Headers that must never be forwarded to target servers during cache warming. */
+    public const BLOCKED_HEADERS = [
+        'host',
+        'cookie',
+        'content-length',
+        'transfer-encoding',
+        'connection',
+        'x-forwarded-for',
+        'x-real-ip',
+        'origin',
+        'referer',
+    ];
+
     /**
      * Resolve the list of URLs to warm for a given site.
      *
@@ -56,10 +69,9 @@ class WarmingService
     {
         $start = microtime(true);
 
-        $blockedHeaders = ['host', 'cookie', 'content-length', 'transfer-encoding', 'connection', 'x-forwarded-for', 'x-real-ip', 'origin', 'referer'];
         $safeCustomHeaders = [];
         foreach ($customHeaders as $key => $value) {
-            if (! in_array(strtolower($key), $blockedHeaders, true)) {
+            if (! in_array(strtolower($key), self::BLOCKED_HEADERS, true)) {
                 $safeCustomHeaders[$key] = $value;
             }
         }
