@@ -186,6 +186,34 @@ services:
       timeout: 5s
       retries: 5
 
+  pg-backup:
+    image: alpine:3.19
+    container_name: up-pg-backup
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "
+        apk add --no-cache postgresql16-client dcron &&
+        mkdir -p /backups &&
+        echo '0 3 * * * pg_dump -h postgres -U $${DB_USERNAME} -d $${DB_DATABASE} -F c -f /backups/up-$$(date +\\%Y\\%m\\%d).dump && find /backups -name \"*.dump\" -mtime +$${BACKUP_RETENTION_DAYS:-7} -delete' > /etc/crontabs/root &&
+        crond -f -l 6
+      "
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      DB_USERNAME: ${DB_USERNAME:-up}
+      DB_DATABASE: ${DB_DATABASE:-up}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - up-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
 networks:
   up-network:
     driver: bridge
@@ -194,3 +222,4 @@ volumes:
   pgdata:
   redisdata:
   up-storage:
+  backups:
