@@ -101,12 +101,19 @@ const cancelNotesEditor = () => {
     notesInput.value = ''
 }
 
+const savingNotesId = ref<number | null>(null)
+
 const saveNotes = (incidentId: number) => {
+    if (savingNotesId.value !== null) return
+    savingNotesId.value = incidentId
     router.put(route('incidents.update', incidentId), { notes: notesInput.value }, {
         preserveScroll: true,
         onSuccess: () => {
             editingNotesId.value = null
             notesInput.value = ''
+        },
+        onFinish: () => {
+            savingNotesId.value = null
         },
     })
 }
@@ -302,7 +309,7 @@ const visiblePages = computed((): (number | null)[] => {
             </div>
             <div class="flex items-center gap-3">
                 <Link :href="route('monitors.edit', monitor.id)" aria-label="Edit monitor settings" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">Edit</Link>
-                <button @click="togglePause" :aria-label="monitor.is_active ? 'Pause monitoring' : 'Resume monitoring'" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
+                <button @click="togglePause" :disabled="pauseForm.processing" :aria-label="monitor.is_active ? 'Pause monitoring' : 'Resume monitoring'" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ monitor.is_active ? 'Pause' : 'Resume' }}</button>
                 <button @click="showDeleteDialog = true" aria-label="Delete this monitor" class="px-4 py-2 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors">Delete</button>
             </div>
         </div>
@@ -465,9 +472,10 @@ const visiblePages = computed((): (number | null)[] => {
                                         <div class="flex items-center gap-2">
                                             <button
                                                 @click="saveNotes(incident.id)"
-                                                class="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/20 transition-colors"
+                                                :disabled="savingNotesId === incident.id"
+                                                class="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                Save
+                                                {{ savingNotesId === incident.id ? 'Saving…' : 'Save' }}
                                             </button>
                                             <button
                                                 @click="cancelNotesEditor"
