@@ -17,7 +17,6 @@ use App\Services\Checkers\HttpChecker;
 use App\Services\Checkers\PingChecker;
 use App\Services\Checkers\PortChecker;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 
 class CheckService
 {
@@ -46,7 +45,9 @@ class CheckService
 
         $monitor->load('notificationChannels');
 
-        $lock = Cache::lock("monitor:check:{$monitor->id}", 30);
+        // TTL of 60s: the lock covers incident detection + checkThresholds() DB queries.
+        // 30s was too tight under load; flapping monitors with threshold checks could exceed it.
+        $lock = Cache::lock("monitor:check:{$monitor->id}", 60);
 
         if ($lock->block(10)) {
             try {
