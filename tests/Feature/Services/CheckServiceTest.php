@@ -319,6 +319,9 @@ class CheckServiceTest extends TestCase
     public function test_notification_sent_only_after_threshold_failures(): void
     {
         $notificationService = $this->mock(NotificationService::class);
+
+        // notifyDown must NOT be called on the 1st or 2nd failure.
+        // It MUST be called exactly once on the 3rd (threshold = 3).
         $notificationService->expects('notifyDown')->once();
         $notificationService->expects('notifyUp')->never();
 
