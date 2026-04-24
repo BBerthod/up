@@ -126,6 +126,15 @@ class DnsCheckerTest extends TestCase
      */
     public function test_valid_a_record_for_example_com_returns_up(): void
     {
+        // Real-network test: flaky in CI where DNS round-robin can return a
+        // different A record between the test setup call and the checker
+        // call, yielding a false mismatch. Skip when CI=true and rely on the
+        // mismatch test above plus the extractValue white-box tests for
+        // behavioural coverage.
+        if (getenv('CI')) {
+            $this->markTestSkipped('Network-dependent test skipped in CI.');
+        }
+
         $records = @dns_get_record('example.com', DNS_A);
 
         if ($records === false || empty($records)) {
