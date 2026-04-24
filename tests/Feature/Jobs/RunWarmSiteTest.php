@@ -50,6 +50,7 @@ class RunWarmSiteTest extends TestCase
         ]);
 
         $site = WarmSite::factory()->create([
+            'domain' => 'example.com',
             'urls' => [
                 'https://example.com/',
                 'https://example.com/about',
@@ -87,6 +88,7 @@ class RunWarmSiteTest extends TestCase
         ]);
 
         $site = WarmSite::factory()->create([
+            'domain' => 'example.com',
             'urls' => [
                 'https://example.com/',
                 'https://example.com/slow',
@@ -113,6 +115,7 @@ class RunWarmSiteTest extends TestCase
         ]);
 
         $site = WarmSite::factory()->create([
+            'domain' => 'example.com',
             'mode' => 'urls',
             'urls' => ['https://example.com/page1', 'https://example.com/page2'],
         ]);
@@ -151,6 +154,7 @@ class RunWarmSiteTest extends TestCase
         $team = Team::factory()->create();
         $user = User::factory()->for($team)->create();
         $site = WarmSite::factory()->for($team)->create([
+            'domain' => 'example.com',
             'mode' => 'urls',
             'urls' => ['https://example.com/page1', 'https://example.com/page2', 'https://example.com/page3'],
         ]);

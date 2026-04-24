@@ -40,6 +40,7 @@ class WarmingServiceTest extends TestCase
     public function test_resolve_urls_from_manual_list(): void
     {
         $site = WarmSite::factory()->create([
+            'domain' => 'example.com',
             'mode' => WarmSiteMode::URLS,
             'urls' => [
                 'https://example.com/',
@@ -98,6 +99,7 @@ XML;
         }
 
         $site = WarmSite::factory()->create([
+            'domain' => 'example.com',
             'mode' => WarmSiteMode::URLS,
             'urls' => $allUrls,
             'max_urls' => 10,
@@ -112,6 +114,7 @@ XML;
     {
         // All three variants should collapse to one unique URL
         $site = WarmSite::factory()->create([
+            'domain' => 'example.com',
             'mode' => WarmSiteMode::URLS,
             'urls' => [
                 'https://example.com/page',
@@ -305,6 +308,7 @@ XML;
     public function test_resolve_urls_rejects_private_ips(): void
     {
         $site = WarmSite::factory()->create([
+            'domain' => 'example.com',
             'mode' => WarmSiteMode::URLS,
             'urls' => [
                 'https://example.com/safe',
