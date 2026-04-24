@@ -112,10 +112,6 @@ jobs:
 
       - name: Security audit (PHP)
         run: composer audit
-        # Non-blocking: surfaces advisories in the log but does not fail CI.
-        # Bump affected packages in a dedicated PR once a fixed version is on
-        # Packagist and re-tighten once the baseline is clean.
-        continue-on-error: true
 
   frontend:
     name: Node — Build & Audit
