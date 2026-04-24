@@ -109,8 +109,14 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        if ($user->id === $request->user()->id) {
+        $actor = $request->user();
+
+        if ($user->id === $actor->id) {
             return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own account.');
+        }
+
+        if ($user->role->level() >= $actor->role->level()) {
+            return redirect()->route('admin.users.index')->with('error', 'You cannot delete a user with an equal or higher role.');
         }
 
         $teamId = $user->team_id;

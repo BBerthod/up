@@ -7,6 +7,7 @@ use App\Enums\IncidentCause;
 use App\Models\Monitor;
 use App\Models\Team;
 use App\Services\Checkers\DnsChecker;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use ReflectionMethod;
 use Tests\TestCase;
@@ -21,6 +22,12 @@ class DnsCheckerTest extends TestCase
     {
         parent::setUp();
         $this->checker = new DnsChecker;
+    }
+
+    protected function tearDown(): void
+    {
+        UrlSafetyValidator::setResolver(null);
+        parent::tearDown();
     }
 
     // ──────────────────────────────────────────────────
@@ -119,11 +126,25 @@ class DnsCheckerTest extends TestCase
      */
     public function test_valid_a_record_for_example_com_returns_up(): void
     {
+        // Real-network test: flaky in CI where DNS round-robin can return a
+        // different A record between the test setup call and the checker
+        // call, yielding a false mismatch. Skip when CI=true and rely on the
+        // mismatch test above plus the extractValue white-box tests for
+        // behavioural coverage.
+        if (getenv('CI')) {
+            $this->markTestSkipped('Network-dependent test skipped in CI.');
+        }
+
         $records = @dns_get_record('example.com', DNS_A);
 
         if ($records === false || empty($records)) {
             $this->markTestSkipped('DNS resolution unavailable in this environment.');
         }
+
+        // Bypass the SSRF guard in this test — we're validating DnsChecker
+        // behaviour, not UrlSafetyValidator. The fake resolver returns a
+        // known public IP so assertSafe passes regardless of runner DNS.
+        UrlSafetyValidator::setResolver(fn () => ['93.184.216.34']);
 
         $team = Team::factory()->create();
         $monitor = Monitor::factory()->dns('A', $records[0]['ip'])->for($team)->create([
