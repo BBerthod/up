@@ -206,7 +206,7 @@ class WarmSiteControllerTest extends TestCase
             ->where('stats24h.runs_completed', 2)
             ->where('stats24h.runs_total', 3)
             ->where('stats24h.total_urls', 200)
-            ->where('stats24h.hit_ratio', 70.0)
+            ->where('stats24h.hit_ratio', fn ($v) => (float) $v === 70.0)
             ->has('lastSuccessfulRun')
         );
     }

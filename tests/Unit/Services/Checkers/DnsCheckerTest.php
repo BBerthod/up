@@ -7,6 +7,7 @@ use App\Enums\IncidentCause;
 use App\Models\Monitor;
 use App\Models\Team;
 use App\Services\Checkers\DnsChecker;
+use App\Support\UrlSafetyValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use ReflectionMethod;
 use Tests\TestCase;
@@ -21,6 +22,12 @@ class DnsCheckerTest extends TestCase
     {
         parent::setUp();
         $this->checker = new DnsChecker;
+    }
+
+    protected function tearDown(): void
+    {
+        UrlSafetyValidator::setResolver(null);
+        parent::tearDown();
     }
 
     // ──────────────────────────────────────────────────
@@ -124,6 +131,11 @@ class DnsCheckerTest extends TestCase
         if ($records === false || empty($records)) {
             $this->markTestSkipped('DNS resolution unavailable in this environment.');
         }
+
+        // Bypass the SSRF guard in this test — we're validating DnsChecker
+        // behaviour, not UrlSafetyValidator. The fake resolver returns a
+        // known public IP so assertSafe passes regardless of runner DNS.
+        UrlSafetyValidator::setResolver(fn () => ['93.184.216.34']);
 
         $team = Team::factory()->create();
         $monitor = Monitor::factory()->dns('A', $records[0]['ip'])->for($team)->create([
