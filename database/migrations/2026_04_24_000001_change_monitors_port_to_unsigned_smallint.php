@@ -10,8 +10,11 @@ return new class extends Migration
     {
         Schema::table('monitors', function (Blueprint $table) {
             // TCP ports go up to 65535 but the column was signed smallint (max 32767),
-            // so any monitor on a high port threw SQLSTATE[22003] on Postgres.
-            $table->unsignedSmallInteger('port')->nullable()->change();
+            // so any monitor on a high port threw SQLSTATE[22003] on Postgres. Postgres
+            // has no native unsigned type — unsignedSmallInteger still stores as signed
+            // smallint with a check constraint, so we promote to integer which covers
+            // the full port range comfortably.
+            $table->integer('port')->nullable()->change();
         });
     }
 

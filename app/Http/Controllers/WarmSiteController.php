@@ -172,7 +172,7 @@ class WarmSiteController extends Controller
                 'runs_total' => $totalRuns24h,
                 'total_urls' => (int) ($stats24h->total_urls ?? 0),
                 'hit_ratio' => ($stats24h->total_urls ?? 0) > 0
-                    ? round(($stats24h->total_hits / $stats24h->total_urls) * 100, 1)
+                    ? (float) round(($stats24h->total_hits / $stats24h->total_urls) * 100, 1)
                     : null,
                 'avg_response_ms' => (int) ($stats24h->avg_response_ms ?? 0),
                 'total_errors' => (int) ($stats24h->total_errors ?? 0),
